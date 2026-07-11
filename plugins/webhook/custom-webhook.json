@@ -1,0 +1,17 @@
+{
+  "auto_run": false,
+  "config": {
+    "WEBHOOK_AUTH_HEADER": "",
+    "WEBHOOK_URL": ""
+  },
+  "description": "POST incident context to any endpoint (Linear, TestRail, internal runbook API, n8n, etc.).",
+  "integration": "webhook",
+  "name": "Custom HTTP Webhook",
+  "status": "Active",
+  "trigger_on": [
+    "CRITICAL",
+    "Timeout",
+    "ECONNREFUSED"
+  ],
+  "version": "1.0.0"
+}

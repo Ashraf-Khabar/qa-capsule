@@ -1,0 +1,22 @@
+{
+  "auto_run": true,
+  "config": {
+    "OPSGENIE_API_KEY": "",
+    "OPSGENIE_API_URL": "https://api.opsgenie.com"
+  },
+  "description": "Creates an Opsgenie (Jira Service Management ops) alert for on-call SRE teams.",
+  "integration": "opsgenie",
+  "name": "Opsgenie Alert",
+<<<<<<< HEAD
+  "routing_enabled": false,
+=======
+  "routing_enabled": true,
+>>>>>>> 70a3559fb4d4fbfe14293d19734d53e04a1553fb
+  "status": "Active",
+  "trigger_on": [
+    "CRITICAL",
+    "FATAL",
+    "[FATAL]"
+  ],
+  "version": "1.0.0"
+}

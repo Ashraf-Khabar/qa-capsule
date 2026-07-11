@@ -1,0 +1,18 @@
+{
+  "auto_run": true,
+  "config": {
+    "DEPLOYMENT_NAME": "my-app",
+    "K8S_NAMESPACE": "default"
+  },
+  "description": "Rollout restart for a Kubernetes deployment (requires kubectl and cluster credentials on the host).",
+  "integration": "k8s",
+  "name": "K8s Deployment Restart",
+  "routing_enabled": true,
+  "status": "Active",
+  "trigger_on": [
+    "CRITICAL",
+    "OOM",
+    "CrashLoopBackOff"
+  ],
+  "version": "1.0.1"
+}

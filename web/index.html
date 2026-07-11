@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>QA Flight Recorder | Control Plane</title>
+    <link rel="icon" href="/assets/logo.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap">
+    <link rel="stylesheet" href="/style.css?v=1.0.23-demo">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+    <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 100000; display: flex; flex-direction: column; gap: 10px;"></div>
+
+    <div id="analytics-layout-modal" class="analytics-layout-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="analytics-modal-title">
+        <div class="analytics-layout-modal-backdrop" onclick="closeAnalyticsLayoutModal(true)"></div>
+        <div class="analytics-layout-modal-panel">
+            <header class="analytics-layout-modal-header">
+                <div>
+                    <h2 id="analytics-modal-title">Customize analytics layout</h2>
+                    <p>Drag widgets to reorder. Add widgets below, then click <strong>Save layout</strong> to apply.</p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeAnalyticsLayoutModal(true)" aria-label="Close">Close</button>
+            </header>
+            <div class="analytics-layout-modal-body">
+                <div id="analytics-customize-bar" class="analytics-customize-bar">
+                    <label>Type
+                        <select id="aw-type" class="login-input" onchange="syncAnalyticsWidgetForm()">
+                            <option value="metric">Count / KPI</option>
+                            <option value="doughnut">Donut chart</option>
+                            <option value="evolution">Evolution chart</option>
+                        </select>
+                    </label>
+                    <label>Title <input type="text" id="aw-title" class="login-input" placeholder="Widget title"></label>
+                    <label id="aw-metric-wrap">Metric
+                        <select id="aw-metric" class="login-input">
+                            <option value="total_incidents">Total incidents</option>
+                            <option value="active_backlog">Active backlog</option>
+                            <option value="resolved_incidents">Resolved</option>
+                            <option value="flaky_tests">Flaky tests</option>
+                            <option value="stable_failures">Stable failures</option>
+                            <option value="resolution_rate">Resolution rate</option>
+                            <option value="flaky_ratio">Flaky ratio</option>
+                            <option value="mttr_minutes">MTTR</option>
+                            <option value="mttf_minutes">MTTF</option>
+                        </select>
+                    </label>
+                    <label>Palette
+                        <select id="aw-color-preset" class="login-input" onchange="applyAnalyticsColorPreset(1)">
+                            <option value="">Pick color 1…</option>
+                            <option value="#1e3a5f">Navy</option>
+                            <option value="#4a7c59">Sage</option>
+                            <option value="#9a7b4f">Ochre</option>
+                            <option value="#b54a4a">Brick</option>
+                            <option value="#3d6b8c">Steel</option>
+                            <option value="#6b7785">Slate</option>
+                        </select>
+                    </label>
+                    <label>Color <input type="color" id="aw-color" value="#1e3a5f"></label>
+                    <label>Palette 2
+                        <select id="aw-color2-preset" class="login-input" onchange="applyAnalyticsColorPreset(2)">
+                            <option value="">Pick color 2…</option>
+                            <option value="#9a7b4f">Ochre</option>
+                            <option value="#b54a4a">Brick</option>
+                            <option value="#1e3a5f">Navy</option>
+                            <option value="#4a7c59">Sage</option>
+                        </select>
+                    </label>
+                    <label>Color 2 <input type="color" id="aw-color2" value="#9a7b4f"></label>
+                    <label>Width
+                        <select id="aw-span" class="login-input">
+                            <option value="1">1 column</option>
+                            <option value="2">2 columns</option>
+                            <option value="3">3 columns</option>
+                            <option value="4">Full width</option>
+                        </select>
+                    </label>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="addAnalyticsWidget()">+ Add widget</button>
+                </div>
+                <div id="analytics-grid-modal" class="analytics-widget-grid analytics-widget-grid-edit"></div>
+            </div>
+            <footer class="analytics-layout-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="resetAnalyticsLayout()">Reset default</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAnalyticsLayoutModal(true)">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveAnalyticsLayoutFromModal()">Save layout</button>
+            </footer>
+        </div>
+    </div>
+
+    <div id="custom-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:99999; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
+        <div id="custom-modal-box" style="background:var(--bg-surface); border:2px solid var(--border-main); padding:30px; width:400px; box-shadow: 10px 10px 0px rgba(0,0,0,0.5);">
+            <h3 id="custom-modal-title" style="margin-top:0; text-transform:uppercase; letter-spacing:1px;">Confirm Action</h3>
+            <p id="custom-modal-message" style="color:var(--text-main); opacity:0.8; line-height:1.5; font-size:14px; margin-bottom:20px;"></p>
+            <input type="text" id="custom-modal-input" class="login-input u-hidden" style="margin-bottom:20px;" autocomplete="off">
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn-secondary" onclick="closeModal()" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-primary" id="custom-modal-confirm" data-i18n="common.confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="login-screen" class="login-container">
+        <div class="login-box">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 5px;">
+                <img src="assets/logo.png" alt="Logo" style="width: 200px; height: auto;">
+                <br />
+            </div>
+            <p class="login-tagline" data-i18n="login.tagline">SRE CONTROL PLANE</p>
+            <p id="login-edition-badge" class="login-edition-badge" data-i18n="login.edition">Community Edition</p>
+            <div id="login-error" class="sre-notification error u-hidden" style="margin-bottom: 15px; font-size: 12px; padding: 10px;"></div>
+            <p id="login-server-hint" class="login-hint-warn u-hidden" style="font-size: 11px; margin-bottom: 12px; line-height: 1.4;"></p>
+            
+            <input type="text" id="login-username" class="login-input" data-i18n-placeholder="login.username" placeholder="Username" autocomplete="username">
+            <br /><br>
+            <input type="password" id="login-password" class="login-input" data-i18n-placeholder="login.password" placeholder="Password" autocomplete="current-password">
+            <br /><br>
+            <button class="btn-primary login-btn-full" onclick="performLogin()" data-i18n="login.signIn">Sign in</button>
+
+            <p id="login-community-hint" class="login-hint login-hint--credentials" data-i18n-html="login.hint">First login: <strong>admin</strong> / <strong>admin</strong> — you will be prompted to set a new password.</p>
+
+            <div id="login-sso-section" class="login-divider u-hidden">
+                <div id="sso-container" class="u-hidden">
+                    <button class="btn-secondary login-sso-btn" onclick="triggerSSO()">
+                        <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                        Sign in with Google Workspace
+                    </button>
+                </div>
+                <div id="sso-locked" class="u-hidden" style="text-align: center;">
+                    <button type="button" class="btn-secondary login-sso-btn" style="opacity:0.5; cursor:not-allowed;" disabled>
+                        Sign in with SSO (Enterprise)
+                    </button>
+                    <p class="login-hint">Install an Enterprise license in Settings to enable SSO.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="force-password-screen" class="login-container" style="display: none;">
+        <div class="login-box force-password-box">
+            <h2>SECURITY PROTOCOL</h2>
+            <p style="opacity: 0.8; font-size: 13px; margin-bottom: 25px; line-height: 1.5;">Your identity uses a temporary passphrase. You must secure your account before accessing the Control Plane.</p>
+            <input type="password" id="force-new-pass" class="login-input" placeholder="New Secure Passphrase">
+            <input type="password" id="force-new-pass-confirm" class="login-input" placeholder="Confirm Passphrase">
+            <button class="btn-primary force-password-submit" onclick="submitNewPassword()">SECURE IDENTITY</button>
+        </div>
+    </div>
+
+    <div id="user-teams-modal" class="login-container" style="display: none; background: rgba(0,0,0,0.8); z-index: 99998;">
+        <div class="login-box modal-panel--wide">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="modal-panel__title">Group Memberships</h2>
+                <button type="button" class="modal-close-btn" onclick="closeUserTeamsModal()" aria-label="Close">Close</button>
+            </div>
+            <div class="identity-box">
+                <span class="identity-box__label">MANAGING IDENTITY:</span>
+                <strong id="manage-teams-username" style="font-size: 16px;"></strong>
+            </div>
+            <div style="position: relative; display: flex; gap: 10px; margin-bottom: 20px; text-align: left;">
+                <div style="flex-grow: 1; position: relative;">
+                    <input type="text" id="user-add-team-input" class="login-input" style="margin: 0;" placeholder="Search to add user to a new group..." autocomplete="off">
+                    <div id="team-autocomplete-list" class="autocomplete-items" style="display:none; text-align: left;"></div>
+                </div>
+            </div>
+            <div class="identity-scroll">
+                <table class="data-table">
+                    <tbody id="user-teams-list">
+                        <tr><td class="table-empty">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" style="display: none; width: 100%; height: 100%; flex-direction: column;">
+
+        <div id="api-offline-banner" style="display: none; background: #3d1f1f; color: #ff7b72; padding: 10px 20px; text-align: center; font-size: 13px; border-bottom: 1px solid #ff7b72; flex-shrink: 0;" data-i18n="login.offline">
+            Cannot reach the QA Capsule server. Start the application backend, then refresh this page.
+        </div>
+
+        <div style="display: flex; flex: 1; min-height: 0; width: 100%;">
+        <div class="sidebar" id="app-sidebar">
+            <div class="sidebar-top">
+                <button type="button" class="sidebar-collapse-btn" id="sidebar-collapse-btn" onclick="toggleSidebar()" aria-expanded="true" title="Collapse sidebar">
+                    <svg class="sidebar-collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <div class="sidebar-brand">
+                    <img src="assets/logo.png" alt="QA Capsule Logo" class="sidebar-logo">
+                    <div class="sidebar-brand-text">
+                        <span class="sidebar-product-name">QA Capsule</span>
+                        <span class="sidebar-product-tagline">SRE SYS MONITORING</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-section-label role-workspace" data-i18n="nav.section.workspaces">WORKSPACES</div>
+            <div class="nav-item role-workspace" onclick="switchView('organizations', this)" data-tooltip="Workspaces">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg><span class="nav-text" data-i18n="nav.workspaces">Workspaces</span>
+            </div>
+            <div class="nav-section-label role-non-admin" style="margin-top: 10px;" data-i18n="nav.section.operations">OPERATIONS</div>
+            <div class="nav-item role-non-admin active" onclick="switchView('dashboard', this)" data-tooltip="Dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg><span class="nav-text" data-i18n="nav.dashboard">Dashboard</span>
+            </div>
+            <div class="nav-section-label role-manager-only" style="margin-top: 10px;" data-i18n="nav.section.executive">EXECUTIVE</div>
+            <div class="nav-item role-manager-only" onclick="switchView('dora', this)" data-tooltip="DORA Dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg><span class="nav-text" data-i18n="nav.dora">DORA Dashboard</span>
+            </div>
+            <div class="nav-section-label role-manager-only" style="margin-top: 10px;" data-i18n="nav.section.finops">FINOPS</div>
+            <div class="nav-item role-manager-only" onclick="switchView('finops', this)" data-tooltip="FinOps Intelligence">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg><span class="nav-text" data-i18n="nav.finops">FinOps Intelligence</span>
+            </div>
+            <div class="nav-section-label role-non-admin" style="margin-top: 10px;" data-i18n="nav.section.intelligence">INTELLIGENCE</div>
+            <div class="nav-item role-non-admin" onclick="switchView('healing', this)" data-tooltip="Self-Healing Hub">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a7 7 0 0 1 7 7c0 3-2 5-2 5H7s-2-2-2-5a7 7 0 0 1 7-7z"></path>
+                    <path d="M9 18h6"></path><path d="M10 22h4"></path>
+                </svg><span class="nav-text" data-i18n="nav.healing">Self-Healing Hub</span>
+            </div>
+            <div class="nav-item role-non-admin" onclick="switchView('ai-usage', this)" data-tooltip="AI & MCP Guide">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+                <span class="nav-text">AI &amp; MCP Guide</span>
+            </div>
+            <div class="nav-item role-manager-only" onclick="switchView('ai-config', this)" data-tooltip="AI Configuration">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                    <path d="M4.93 4.93a10 10 0 0 0 0 14.14"></path>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    <path d="M8.46 8.46a5 5 0 0 0 0 7.07"></path>
+                </svg><span class="nav-text" data-i18n="nav.aiConfig">AI &amp; MCP Config</span>
+            </div>
+            <div class="nav-section-label role-non-admin" style="margin-top: 10px;" data-i18n="nav.section.help">HELP CENTER</div>
+            <div class="nav-item role-non-admin" onclick="switchView('about', this)" data-tooltip="Help Center">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg><span class="nav-text" data-i18n="nav.help">Help Center</span>
+            </div>
+
+            <div class="nav-section-label role-lead" style="margin-top: 10px;" data-i18n="nav.section.infrastructure">INFRASTRUCTURE</div>
+            <div class="nav-item role-lead" onclick="switchView('ingestion', this)" data-tooltip="CI/CD Gateways">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg><span class="nav-text" data-i18n="nav.gateways">CI/CD Gateways</span>
+            </div>
+            <div class="nav-item role-lead" onclick="switchView('plugins', this)" data-tooltip="Plugin Engine">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg><span class="nav-text" data-i18n="nav.plugins">Plugin Engine</span>
+            </div>
+
+            <div class="nav-section-label admin-only" style="margin-top: 10px;" data-i18n="nav.section.security">SECURITY</div>
+            <div class="nav-item admin-only" onclick="switchView('management', this)" data-tooltip="IAM Access">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg><span class="nav-text" data-i18n="nav.iam">IAM Access</span>
+            </div>
+            <div class="nav-item" onclick="switchView('profile', this)" data-tooltip="My Account">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg><span class="nav-text" data-i18n="nav.myAccount">My Account</span>
+            </div>
+            <div class="nav-item admin-only" onclick="switchView('settings', this)" data-tooltip="Settings">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg><span class="nav-text" data-i18n="nav.settings">Settings</span>
+            </div>
+
+            <div class="spacer"></div>
+            <div class="nav-item nav-theme" style="opacity: 1;" data-tooltip="Dark mode">
+                <span class="nav-text" style="font-size: 11px; opacity: 0.6; font-weight: bold; margin-right: 10px;" data-i18n="common.darkMode">DARK MODE</span>
+                <div class="toggle-switch" onclick="toggleTheme(event)">
+                    <div class="toggle-circle"></div>
+                </div>
+            </div>
+            <div class="nav-item logout" onclick="performLogout()" style="color: var(--log-fatal); border-top: 1px solid var(--border-main);" data-tooltip="Sign Out">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg><span class="nav-text" data-i18n="common.signOut">Sign Out</span>
+            </div>
+        </div>
+
+        <main class="main-content">
+
+            <section id="view-dashboard" class="view-section active ops-dashboard">
+                <div class="dashboard-time-bar" role="region" aria-label="Time range filter">
+                    <div class="dashboard-time-head">
+                        <div class="dashboard-time-title">
+                            <svg class="dashboard-time-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>Time range</span>
+                        </div>
+                        <span id="dashboard-range-summary" class="dashboard-range-badge">Last 1 hour</span>
+                    </div>
+                    <div class="dashboard-time-quick" id="dashboard-range-quick">
+                        <button type="button" class="range-chip" data-range="5m" onclick="setDashboardRangePreset('5m')">5m</button>
+                        <button type="button" class="range-chip" data-range="15m" onclick="setDashboardRangePreset('15m')">15m</button>
+                        <button type="button" class="range-chip active" data-range="1h" onclick="setDashboardRangePreset('1h')">1h</button>
+                        <button type="button" class="range-chip" data-range="24h" onclick="setDashboardRangePreset('24h')">24h</button>
+                        <button type="button" class="range-chip" data-range="7d" onclick="setDashboardRangePreset('7d')">7d</button>
+                        <button type="button" class="range-chip" data-range="today" onclick="setDashboardRangePreset('today')">Today</button>
+                    </div>
+                    <div class="dashboard-time-more">
+                        <label class="sr-only" for="dashboard-range-preset">More ranges</label>
+                        <select id="dashboard-range-preset" class="login-input dashboard-control dashboard-range-select" onchange="onDashboardRangeChange()">
+                            <option value="5m">Last 5 minutes</option>
+                            <option value="15m">Last 15 minutes</option>
+                            <option value="30m">Last 30 minutes</option>
+                            <option value="1h" selected>Last 1 hour</option>
+                            <option value="6h">Last 6 hours</option>
+                            <option value="24h">Last 24 hours</option>
+                            <option value="7d">Last 7 days</option>
+                            <option value="30d">Last 30 days</option>
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="all">All time (1 year)</option>
+                            <option value="custom">Absolute time range…</option>
+                        </select>
+                    </div>
+                    <div id="dashboard-custom-range" class="dashboard-custom-panel" style="display: none;">
+                        <div class="dashboard-custom-field">
+                            <span class="dashboard-custom-label">Start</span>
+                            <div class="dashboard-datetime-row">
+                                <input type="date" id="dashboard-range-from-date" class="login-input dashboard-date-input" aria-label="Start date" onchange="onDashboardCustomRangeInput()">
+                                <input type="time" id="dashboard-range-from-time" class="login-input dashboard-time-input" aria-label="Start time" onchange="onDashboardCustomRangeInput()">
+                            </div>
+                        </div>
+                        <span class="dashboard-range-arrow" aria-hidden="true">→</span>
+                        <div class="dashboard-custom-field">
+                            <span class="dashboard-custom-label">End</span>
+                            <div class="dashboard-datetime-row">
+                                <input type="date" id="dashboard-range-to-date" class="login-input dashboard-date-input" aria-label="End date" onchange="onDashboardCustomRangeInput()">
+                                <input type="time" id="dashboard-range-to-time" class="login-input dashboard-time-input" aria-label="End time" onchange="onDashboardCustomRangeInput()">
+                            </div>
+                            <button type="button" class="range-now-link" onclick="setDashboardRangeEndToNow()">Now</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ops-page-head">
+                    <div>
+                        <h1>Telemetry Stream</h1>
+                        <p>Real-time incident monitoring and correlation.</p>
+                    </div>
+
+                    <div class="dashboard-toolbar">
+                        <div class="dashboard-toolbar-group">
+                            <div class="ac-wrap" style="width: 250px;">
+                            <input type="text" id="incident-search" class="login-input dashboard-control" style="width: 100%; margin:0;" placeholder="Search error or project..." autocomplete="off">
+                            <div id="incident-search-ac" class="autocomplete-items" style="display:none;"></div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-toolbar-group">
+                            <label for="project-filter" class="dashboard-toolbar-label">Filter:</label>
+                            <select id="project-filter" class="login-input dashboard-control" style="width: 200px;" onchange="refreshDashboard()">
+                                <option value="all">All My Projects</option>
+                            </select>
+                        </div>
+
+                        <div class="status-filter-group">
+                            <span class="dashboard-toolbar-label">Status:</span>
+                            <div class="status-filter-buttons">
+                                <button type="button" class="status-filter-btn active-all" id="status-all-btn" onclick="setStatusFilter('all')">All</button>
+                                <button type="button" class="status-filter-btn" id="status-active-btn" onclick="setStatusFilter('active')">Active</button>
+                                <button type="button" class="status-filter-btn" id="status-resolved-btn" onclick="setStatusFilter('resolved')">Resolved</button>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-secondary" onclick="refreshDashboard()">Refresh</button>
+                        <button type="button" class="btn btn-secondary btn-accent" onclick="toggleAnalytics()">
+                            <svg style="width:14px;height:14px;stroke:currentColor;fill:none;flex-shrink:0;" viewBox="0 0 24 24" stroke-width="2">
+                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                            Analytics
+                        </button>
+
+                        <div class="dashboard-btn-group role-hide-observer">
+                            <button type="button" class="btn btn-secondary btn-success" onclick="downloadWeeklyReportCSV()" title="Download CSV Report">
+                                <svg style="width:14px;height:14px;stroke:currentColor;fill:none;flex-shrink:0;" viewBox="0 0 24 24" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="8" y1="13" x2="16" y2="13"></line>
+                                    <line x1="8" y1="17" x2="16" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                CSV
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-danger" onclick="downloadWeeklyReportPDF()" title="Download PDF Report">
+                                <svg style="width:14px;height:14px;stroke:currentColor;fill:none;flex-shrink:0;" viewBox="0 0 24 24" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <path d="M9 15v-4"></path>
+                                    <path d="M12 15v-4"></path>
+                                    <path d="M15 15v-4"></path>
+                                </svg>
+                                PDF
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+                
+                <div class="ops-metric-strip">
+                    <div class="kpi-card ops-metric-tile metric-danger">
+                        <div class="metric-label">Active alerts</div>
+                        <div class="kpi-value log-fatal" id="kpi-active">0</div>
+                    </div>
+                    <div class="kpi-card ops-metric-tile metric-success">
+                        <div class="metric-label" id="kpi-resolved-label">Resolved</div>
+                        <div class="kpi-value" style="color: var(--log-pass);" id="kpi-resolved">0</div>
+                    </div>
+                    <div class="kpi-card ops-metric-tile metric-info">
+                        <div class="metric-label">Pipeline health</div>
+                        <div class="kpi-value" style="color: var(--log-info);" id="kpi-health">100%</div>
+                    </div>
+                    <div class="kpi-card ops-metric-tile metric-warn">
+                        <div class="metric-label">Flaky tests</div>
+                        <div class="kpi-value" style="color: var(--log-warn);" id="kpi-flaky">0</div>
+                        <div class="metric-hint">Unstable flickering failures</div>
+                    </div>
+                </div>
+
+                <div id="analytics-view" class="ops-analytics-panel" style="display:none;">
+                    <div class="analytics-panel-head">
+                        <div>
+                            <h3>System analytics &amp; quality</h3>
+                            <p class="ops-chart-caption" style="margin:4px 0 0;">
+                                Metrics and charts follow the dashboard time range above. Customize layout, colors, and order — saved to your profile.
+                            </p>
+                        </div>
+                        <div class="analytics-panel-actions">
+                            <span id="dashboard-auto-refresh-hint" class="analytics-refresh-hint" title="Dashboard auto-refresh interval"></span>
+                            <button type="button" id="analytics-customize-toggle" class="btn btn-secondary btn-sm" onclick="toggleAnalyticsCustomize()">Customize layout</button>
+                        </div>
+                    </div>
+                    <div id="analytics-grid" class="analytics-widget-grid"></div>
+                </div>
+
+                <div class="incident-log-toolbar">
+                    <h3>Incident History Log</h3>
+                    <div class="incident-log-toolbar-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="expandAllIncidentLogs()">Expand all logs</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="collapseAllIncidentLogs()">Collapse all logs</button>
+                    </div>
+                </div>
+                <div id="incident-list" class="loading-placeholder">Loading telemetry…</div>
+                <div id="exec-side-sheet" class="exec-side-sheet" hidden>
+                    <div class="exec-side-sheet__backdrop" onclick="closeExecutionSheet()" aria-hidden="true"></div>
+                    <aside class="exec-side-sheet__panel" role="dialog" aria-labelledby="exec-sheet-title">
+                        <header class="exec-side-sheet__header">
+                            <h3 id="exec-sheet-title">Test detail</h3>
+                            <button type="button" class="exec-side-sheet__close" onclick="closeExecutionSheet()" aria-label="Close">×</button>
+                        </header>
+                        <div id="exec-sheet-meta" class="exec-side-sheet__meta"></div>
+                        <div id="exec-sheet-rca" class="exec-side-sheet__rca" hidden></div>
+                        <pre id="exec-sheet-logs" class="exec-side-sheet__logs"></pre>
+                        <div id="exec-sheet-actions" class="exec-side-sheet__actions"></div>
+                    </aside>
+                </div>
+                <button type="button" id="scroll-top-btn" class="scroll-top-btn" onclick="scrollDashboardToTop()" title="Back to top" aria-label="Back to top">↑</button>
+            </section>
+
+            <section id="view-unified-report" class="view-section unified-report-view" aria-label="Unified pipeline report">
+                <div class="unified-report-toolbar">
+                    <button type="button" class="btn btn-secondary" onclick="closeUnifiedReport()">← Back to Dashboard</button>
+                    <span class="unified-report-toolbar-title">Unified execution report</span>
+                </div>
+                <div id="unified-report-root" class="unified-report-root">
+                    <div class="unified-report-loading">Select a pipeline execution and open View Full Report.</div>
+                </div>
+            </section>
+
+            <section id="view-plugins" class="view-section">
+                <div class="header-bar">
+                    <div>
+                        <h1 style="margin: 0; font-size: 24px;">Auto-Remediation Engine</h1>
+                        <p style="margin: 5px 0 0 0; opacity: 0.6; font-size: 14px;">QA &amp; SRE runbooks: paging, ticketing, CI retries, observability events, and custom webhooks.</p>
+                    </div>
+                </div>
+                <div class="plugin-toolbar data-card">
+                    <div class="plugin-toolbar-row">
+                        <div class="plugin-search-wrap">
+                            <svg class="plugin-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="search" id="plugin-search" class="login-input plugin-search-input" placeholder="Search plugins (name, category, triggers, env vars…)" autocomplete="off" oninput="window.filterPlugins()">
+                        </div>
+                        <select id="plugin-category-filter" class="login-input plugin-category-select" onchange="window.filterPlugins()">
+                            <option value="all">All categories</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="window.resetPluginFilters()" title="Clear search">Clear</button>
+                    </div>
+                    <p id="plugin-search-meta" class="plugin-search-meta">Loading modules…</p>
+                </div>
+                <div id="plugin-list">Loading modules...</div>
+            </section>
+
+            <section id="view-organizations" class="view-section">
+                <div class="header-bar">
+                    <div>
+                        <h1 style="margin: 0; font-size: 24px;">Workspace Hierarchy</h1>
+                        <p style="margin: 5px 0 0 0; opacity: 0.6; font-size: 14px;">Manage hierarchical teams and granular access control.</p>
+                    </div>
+                </div>
+                <div class="org-layout-grid">
+                    <div class="data-card org-tree-card">
+                        <h3 style="margin-top: 0;">Directory Tree</h3>
+                        <p style="font-size:0.7rem; opacity:0.6; margin-bottom:15px;">Select a group to manage members. Drag a sub-organization onto another to reparent it, or drop on the zone above the tree for top level.</p>
+                        <div id="organization-tree">Loading directory...</div>
+                    </div>
+                    <div class="data-card" id="org-management-panel" style="display: none;">
+                        <div class="org-panel-head">
+                            <div>
+                                <h2 id="org-selected-name" class="org-panel-title">Select a Group</h2>
+                                <p id="org-selected-id" class="page-subtitle" style="margin: 5px 0 0;">ID: -</p>
+                            </div>
+                            <div class="role-workspace org-actions">
+                                <button class="btn-primary" onclick="promptCreateSubGroup()">+ Sub-Group</button>
+                                <button type="button" class="btn-secondary btn-warn-outline" onclick="promptRenameGroup()">Rename</button>
+                                <button type="button" class="btn-secondary btn-danger-outline" onclick="promptDeleteGroup()">Delete Branch</button>
+                            </div>
+                        </div>
+                        <div class="role-workspace org-workspace">
+                            <h4 class="org-workspace__title">Assign Identity to Group</h4>
+                            <div class="flex-row-gap flex-row-gap--rel">
+                                <div class="flex-grow">
+                                    <input type="text" id="org-add-user-email" class="login-input" style="margin: 0;" placeholder="Search user (e.g. name or email)" autocomplete="off">
+                                    <div id="user-autocomplete-list" class="autocomplete-items" style="display:none;"></div>
+                                </div>
+                                <select id="org-add-user-role" class="login-input" style="margin: 0; width: 150px;">
+                                    <option value="team_viewer">Viewer</option>
+                                    <option value="team_operator">Operator</option>
+                                    <option value="team_admin">Team Admin</option>
+                                </select>
+                                <button class="btn-primary" onclick="assignUserToGroup()">Add Member</button>
+                            </div>
+                        </div>
+                        <h4 class="org-members-heading">Group Members</h4>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Identity</th>
+                                    <th>Local Role</th>
+                                    <th>Global Role</th>
+                                    <th class="data-table__actions">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="org-members-list">
+                                <tr>
+                                    <td colspan="4" class="table-empty">No members assigned to this group.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-management" class="view-section">
+                <div class="header-bar">
+                    <div>
+                        <h1 style="margin: 0; font-size: 24px;">Identity & Access Management</h1>
+                        <p style="margin: 5px 0 0 0; opacity: 0.6; font-size: 14px;">Provision and control global SRE accounts.</p>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <h3>Provision Global Identity</h3>
+                    <div style="display: flex; gap: 15px; margin-top: 15px;">
+                        <input type="text" id="new-user-fullname" class="login-input" placeholder="Full Name">
+                        <input type="text" id="new-user-name" class="login-input" placeholder="user@domain.com">
+                        <select id="new-user-role" class="login-input" style="width: 220px;">
+                            <option value="observer">Observer</option>
+                            <option value="lead">Lead</option>
+                            <option value="manager">Manager</option>
+                            <option value="admin">Platform Admin</option>
+                        </select>
+                        <button type="button" class="btn btn-primary" style="white-space: nowrap;" onclick="createUser()">Deploy Identity</button>
+                    </div>
+                </div>
+                <div class="data-card" style="margin-top: 20px;">
+                    <div style="display:flex; gap:10px; margin-bottom:15px;">
+                        <div class="ac-wrap" style="flex:1;">
+                        <input type="text" id="user-search" class="login-input" style="margin:0" placeholder="Search users..." autocomplete="off">
+                        <div id="user-search-ac" class="autocomplete-items" style="display:none;"></div>
+                        </div>
+                        <select id="role-filter" class="login-input" style="margin:0; width:200px" onchange="filterUsers()">
+                            <option value="all">All Roles</option>
+                            <option value="admin">Platform Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="lead">Lead</option>
+                            <option value="observer">Observer</option>
+                        </select>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Identity</th>
+                                <th>Role</th>
+                                <th class="data-table__actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-list-body">
+                            <tr>
+                                <td colspan="4" class="table-empty">Fetching Identities...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-ingestion" class="view-section">
+                <div class="header-bar">
+                    <div>
+                        <h1 style="margin: 0; font-size: 24px;">CI/CD Gateways (Multi-Tenant)</h1>
+                        <p style="margin: 5px 0 0 0; opacity: 0.6; font-size: 14px;">Provision dedicated Webhook endpoints to ingest telemetry from external pipelines.</p>
+                    </div>
+                </div>
+                <div class="ingestion-layout">
+                    <div class="gateway-sticky-panel">
+                        <h3 class="gateway-panel-heading">Provision New Endpoint</h3>
+
+                        <label class="form-label">1. Target Workspace (Ownership)</label>
+                        <select id="ci-team-id" class="login-input" style="margin-bottom: 20px;"></select>
+
+                        <label class="form-label">2. Source System</label>
+                        <div class="ci-grid" style="margin-bottom: 20px;">
+                            <div class="ci-card active" onclick="selectCI('gitlab', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ci-icon" style="color: #fc6d26;">
+                                    <path d="m22.65 14.39L12 22.13 1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 0 1 5.5 2a.43.43 0 0 1 .4.27l3.09 9.51h6.02l3.09-9.51a.43.43 0 0 1 .4-.27.42.42 0 0 1 .39.18l2.44 7.51 1.22 3.78a.84.84 0 0 1-.3.94Z"></path>
+                                </svg>
+                                GitLab CI
+                            </div>
+                            <div class="ci-card" onclick="selectCI('github', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ci-icon" style="color: #c9d1d9;">
+                                    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path>
+                                    <path d="M9 18c-4.51 2-5-2-7-2"></path>
+                                </svg>
+                                GitHub Actions
+                            </div>
+                            <div class="ci-card" onclick="selectCI('jenkins', this)">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="ci-icon" style="color: #d33833;">
+                                    <path d="M12.28 15.65h-.54c-2.45 0-3.35 1.58-3.44 2.82h7.42c-.09-1.24-.98-2.82-3.44-2.82zm-4.34-1.81c-.55-1.25-1.77-1.82-2.93-1.82v-1.63c.48 0 .97-.13 1.34-.35.9-.53 1.25-1.57 1.37-2.34h1.61c-.04 1.1-.34 2.65-1.66 3.65.62.61 1.05 1.47 1.05 2.68v.17h-1.64v-.17c0-.8-.32-1.76-.92-2.31c.36.4.58.98.58 1.63v.49h1.2zm8.79 0v-.49c0-.65.22-1.23.58-1.63-.6.55-.92 1.51-.92 2.31v.17h-1.64v-.17c0-1.21.43-2.07 1.05-2.68-1.32-1-1.62-2.55-1.66-3.65h1.61c.12.77.47 1.81 1.37 2.34.37.22.86.35 1.34.35v1.63c-1.16 0-2.38.57-2.93 1.82zm-4.46-4.57c1.39 0 2.5-1.12 2.5-2.5V3.8c0-1.38-1.11-2.5-2.5-2.5s-2.5 1.12-2.5 2.5v2.97c0 1.38 1.11 2.5 2.5 2.5z" />
+                                </svg>
+                                Jenkins
+                            </div>
+                        </div>
+
+                        <div id="ci-config-form" style="padding-top: 10px; border-top: 1px solid var(--border-main);">
+                            <label class="form-label" style="margin-top: 15px;">3. Pipeline Identifier</label>
+                            <input type="text" id="ci-project-name" class="login-input" placeholder="e.g. payment-api-core" style="margin-bottom: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div id="dynamic-ci-field" style="grid-column: span 2;">
+                                    <label class="form-label">GitLab Repository Path</label>
+                                    <input type="text" id="ci-specific" class="login-input" placeholder="group/project" style="margin-bottom: 10px;">
+                                </div>
+                            </div>
+
+                            <h4 class="form-section-title">SRE Routing Configuration (Optional)</h4>
+                            <p class="form-hint">Add routing only for integrations <strong>enabled for gateways</strong> by your Manager (Configure &amp; Save, or <strong>Enable for gateways</strong> in Plugin Engine). AUTO-RUN is separate and controls automatic webhook triggers.</p>
+                            <div id="ci-sre-routing-list" style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 12px;"></div>
+                            <button type="button" id="ci-add-routing-btn" class="btn-secondary" style="width: 100%; margin-bottom: 10px; font-size: 12px;">+ Add configuration</button>
+                            <p class="form-hint form-hint--subtle" style="margin-bottom: 16px;">Use <strong>WORKFLOW</strong> in the pipeline table to draw a visual DAG. Toggle <strong>Enable workflow</strong> in the editor to switch between legacy AUTO-RUN and the DAG.</p>
+
+                            <div class="gateway-credentials">
+                                <label class="form-label--accent">Generated Webhook URL (Read-Only)</label>
+                                <input type="text" id="ci-webhook-url" class="login-input login-input--url" value="http://localhost:9000/api/webhooks/gitlab" readonly>
+
+                                <label class="form-label--accent" style="margin-top: 10px; display: block;">Generated API Key (Secret)</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="text" id="ci-api-key" class="login-input login-input--secret" value="" readonly>
+                                    <button type="button" class="btn-secondary btn-danger-outline" style="padding: 0 15px; display: flex; align-items: center;" onclick="revealApiKey()" title="Reveal Secret">
+                                        <svg style="width:16px;height:16px;stroke:currentColor;fill:none;" viewBox="0 0 24 24" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button id="save-ci-btn" class="btn-primary" style="width: 100%; margin-top: 20px; font-size: 14px; padding: 12px;" onclick="saveCIConfig()">Provision Project Endpoint</button>
+                        </div>
+                    </div>
+
+                    <div class="ingestion-table-wrap">
+                        <div class="ingestion-table-shell">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Project Identifier</th>
+                                        <th>CI System</th>
+                                        <th>Secret Key Prefix</th>
+                                        <th>Workflow</th>
+                                        <th class="data-table__actions">Manage</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="projects-table-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="gateway-callout">
+                            <strong>Security Note:</strong> Each provisioned endpoint generates a unique, cryptographically secure Token.
+                            This token must be injected into your CI/CD runner environments as a secret and passed in the `X-API-Key` header during HTTP POST requests to the Webhook URL.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-healing" class="view-section hc-page">
+
+                <!-- ── Header ── -->
+                <div class="hc-header">
+                    <div class="hc-header__left">
+                        <h1 class="hc-header__title">Self-Healing Hub</h1>
+                        <p class="hc-header__sub">AI scans the live page HTML and proposes the correct locator — Robot Framework, Playwright, Cypress and more.</p>
+                    </div>
+                    <div class="hc-header__right">
+                        <span id="healing-ai-chip" class="hc-chip hc-chip--off">
+                            <span class="hc-dot"></span>AI loading…
+                        </span>
+                        <button class="hc-btn-configure" onclick="window.switchView && window.switchView('ai-usage', null)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            Configure AI &amp; MCP
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ── Stats strip ── -->
+                <div class="hc-stats">
+                    <div class="hc-stat hc-stat--danger">
+                        <span class="hc-stat__val" id="healing-stat-total">—</span>
+                        <span class="hc-stat__lbl">Open failures</span>
+                    </div>
+                    <div class="hc-stat-sep"></div>
+                    <div class="hc-stat hc-stat--warn">
+                        <span class="hc-stat__val" id="healing-stat-categorized">—</span>
+                        <span class="hc-stat__lbl">Categorized</span>
+                    </div>
+                    <div class="hc-stat-sep"></div>
+                    <div class="hc-stat hc-stat--info">
+                        <span class="hc-stat__val" id="healing-stat-mcp-ready">—</span>
+                        <span class="hc-stat__lbl">MCP-ready</span>
+                    </div>
+                    <div class="hc-stat-sep"></div>
+                    <div class="hc-stat hc-stat--pass">
+                        <span class="hc-stat__val" id="healing-stat-interventions">—</span>
+                        <span class="hc-stat__lbl">AI healed</span>
+                    </div>
+                </div>
+
+                <!-- ── Open Failures ── -->
+                <div class="hc-section">
+                    <div class="hc-section__head">
+                        <div class="hc-section__left">
+                            <span class="hc-section__dot hc-section__dot--fail"></span>
+                            <h2 class="hc-section__title">Open Failures</h2>
+                            <span class="hc-section__hint">Select failures and click <strong>Propose fix</strong> — AI fetches the live page and finds the correct locator</span>
+                        </div>
+                        <div class="hc-section__controls">
+                            <label class="hc-selall">
+                                <input type="checkbox" id="hc-select-all" onchange="window._selectAll && window._selectAll(this.checked)">
+                                Select all
+                            </label>
+                            <select id="healing-project-filter" class="hc-ctrl-select" title="Filter by gateway"></select>
+                            <button class="hc-ctrl-btn" onclick="window.loadHealingInsights && window.loadHealingInsights()">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.08-1.96"/></svg>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Bulk action bar -->
+                    <div id="hc-bulk-bar" class="hc-bulk-bar">
+                        <span id="hc-bulk-count">0 selected</span>
+                        <button class="hc-bulk-del" onclick="window.bulkDelete && window.bulkDelete()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+                            Delete selected
+                        </button>
+                    </div>
+                    <div id="healing-insights-body" role="list"></div>
+                </div>
+
+                <!-- ── Locator Interventions ── -->
+                <div class="hc-section">
+                    <div class="hc-section__head">
+                        <div class="hc-section__left">
+                            <span class="hc-section__dot hc-section__dot--heal"></span>
+                            <h2 class="hc-section__title">Locator Interventions</h2>
+                            <span class="hc-section__hint">Healed selectors recorded via MCP or Propose fix</span>
+                        </div>
+                        <button class="hc-ctrl-btn" onclick="window.loadLocatorInterventions && window.loadLocatorInterventions()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.08-1.96"/></svg>
+                            Refresh
+                        </button>
+                    </div>
+                    <div id="healing-interventions-body" role="list"></div>
+                </div>
+
+            </section>
+
+            <!-- AI & MCP GUIDE (all operations roles — read-only) -->
+            <section id="view-ai-usage" class="view-section intelligence-view">
+                <div class="aipage-header">
+                    <div class="aipage-header__text">
+                        <h1 class="intelligence-view__title">AI &amp; MCP Guide</h1>
+                        <p class="intelligence-view__subtitle">Use Self-Healing Hub and MCP agents. Provider credentials are configured by your Manager in <strong>AI Configuration</strong>.</p>
+                    </div>
+                    <span id="ai-usage-status-badge" class="intel-badge intel-badge--manual">Loading…</span>
+                </div>
+                <div class="aipage-status-strip">
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label">Provider</span>
+                        <span class="aipage-status-value" id="ai-usage-provider">—</span>
+                    </div>
+                    <div class="aipage-status-sep"></div>
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label">Model</span>
+                        <span class="aipage-status-value" id="ai-usage-model">—</span>
+                    </div>
+                    <div class="aipage-status-sep"></div>
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label">AI enabled</span>
+                        <span class="aipage-status-value" id="ai-usage-enabled">—</span>
+                    </div>
+                    <div class="aipage-status-sep"></div>
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label">MCP token</span>
+                        <span class="aipage-status-value" id="ai-usage-mcp">—</span>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <h3 class="aipage-row__title" style="margin:0 0 8px;">How to use AI healing</h3>
+                    <p class="aipage-row__desc" style="margin:0 0 12px;">Open <strong>Self-Healing Hub</strong>, select a failure, click <strong>Propose fix</strong>. AI analyzes error logs, captured page HTML, and test source comments to suggest the correct locator or code patch — for locators, timeouts, assertions, and script errors.</p>
+                    <button type="button" class="btn-secondary" onclick="switchView('healing', document.querySelector('.nav-item[onclick*=healing]'))">Open Self-Healing Hub</button>
+                </div>
+                <div class="data-card aipage-mcp-card">
+                    <div class="aipage-mcp-header">
+                        <div>
+                            <h3 class="aipage-row__title" style="margin:0 0 4px;">MCP Server (deploy on your infrastructure)</h3>
+                            <p class="aipage-row__desc" style="margin:0;">QA Capsule exposes MCP at <code id="ai-usage-mcp-url">…/mcp</code>. Deploy the server on a VM, Kubernetes cluster, or cloud host — IDE agents connect over HTTPS with a Bearer token.</p>
+                        </div>
+                    </div>
+                    <div class="aipage-mcp-grid">
+                        <div class="aipage-mcp-col">
+                            <p class="aipage-mcp-col__title">Connect an agent</p>
+                            <p class="aipage-mcp-col__desc">Use Cursor, Claude Desktop, or any MCP client. Set URL to your QA Capsule host + <code>/mcp</code> and header <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+                            <button type="button" class="btn-secondary" style="margin-top:12px;" onclick="window.copyMCPAgentConfig && window.copyMCPAgentConfig()">Copy MCP connection config</button>
+                        </div>
+                        <div class="aipage-mcp-col">
+                            <p class="aipage-mcp-col__title">Open-source MCP tools</p>
+                            <p class="aipage-mcp-col__desc">Built-in tools: <code>heal_incident</code>, <code>get_incident_context</code>, <code>record_healing_intervention</code>, <code>detect_locator_failures</code>. Compatible with the MCP spec — chain with community servers (filesystem, git, browser) in your agent.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <h3 class="aipage-row__title" style="margin:0 0 12px;">Available MCP tools</h3>
+                    <div class="ai-tools-grid">
+                        <div class="ai-tool-card"><div class="ai-tool-card__name">heal_incident</div><div class="ai-tool-card__desc">Full AI healing for one incident (locator or script).</div><div class="ai-tool-card__badge ai-tool-card__badge--write">HEAL</div></div>
+                        <div class="ai-tool-card"><div class="ai-tool-card__name">get_incident_context</div><div class="ai-tool-card__desc">Logs, framework, DOM snapshot, category.</div><div class="ai-tool-card__badge">READ</div></div>
+                        <div class="ai-tool-card"><div class="ai-tool-card__name">record_healing_intervention</div><div class="ai-tool-card__desc">Persist original → healed locator with confidence.</div><div class="ai-tool-card__badge ai-tool-card__badge--write">WRITE</div></div>
+                        <div class="ai-tool-card"><div class="ai-tool-card__name">detect_locator_failures</div><div class="ai-tool-card__desc">List broken selectors for a CI run.</div><div class="ai-tool-card__badge">READ</div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI CONFIGURATION (Manager only) -->
+            <section id="view-ai-config" class="view-section intelligence-view">
+
+                <!-- Page header -->
+                <div class="aipage-header">
+                    <div class="aipage-header__text">
+                        <h1 class="intelligence-view__title">AI Configuration</h1>
+                        <p class="intelligence-view__subtitle">Manager-only: LLM provider, API key, timeouts. Operators use <strong>AI &amp; MCP Guide</strong> and Self-Healing Hub.</p>
+                    </div>
+                    <span id="ai-status-badge" class="intel-badge intel-badge--manual">Loading…</span>
+                </div>
+
+                <!-- Status strip -->
+                <div class="aipage-status-strip">
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label">Provider</span>
+                        <span class="aipage-status-value" id="ai-kpi-provider">—</span>
+                    </div>
+                    <div class="aipage-status-sep"></div>
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label">Model</span>
+                        <span class="aipage-status-value" id="ai-kpi-model">—</span>
+                    </div>
+                    <div class="aipage-status-sep"></div>
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label">API Key</span>
+                        <span class="aipage-status-value" id="ai-kpi-apikey">—</span>
+                    </div>
+                    <div class="aipage-status-sep"></div>
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label">MCP Token</span>
+                        <span class="aipage-status-value" id="ai-kpi-mcp-token">—</span>
+                    </div>
+                </div>
+
+                <!-- ── Main configuration card ──────────────────── -->
+                <div class="data-card aipage-form-card">
+
+                    <!-- Provider -->
+                    <div class="aipage-row">
+                        <div class="aipage-row__meta">
+                            <h3 class="aipage-row__title">LLM Provider</h3>
+                            <p class="aipage-row__desc">Select the AI provider for RCA summaries and locator self-healing. Fields below are auto-filled on selection.</p>
+                        </div>
+                        <div class="aipage-row__body">
+                            <div id="ai-provider-picker" class="ai-provider-picker" role="group" aria-label="AI Provider"></div>
+                        </div>
+                    </div>
+
+                    <div class="aipage-divider"></div>
+
+                    <!-- Model & Endpoint -->
+                    <div class="aipage-row">
+                        <div class="aipage-row__meta">
+                            <h3 class="aipage-row__title">Model &amp; Endpoint</h3>
+                            <p class="aipage-row__desc">Pick a model from the list or enter a custom identifier. Set the base URL for self-hosted deployments (Ollama, Azure).</p>
+                        </div>
+                        <div class="aipage-row__body">
+                            <div class="aipage-fields-grid">
+                                <div class="form-field" style="margin:0;">
+                                    <label for="ai-model-select">Model</label>
+                                    <div class="ai-model-select-wrap">
+                                        <select id="ai-model-select" class="login-input" style="max-width:none;" onchange="window._onAIModelSelectChange && window._onAIModelSelectChange(this.value)"></select>
+                                        <div id="ai-model-custom-row" class="ai-model-custom-row">
+                                            <input type="text" id="ai-model" class="login-input" placeholder="Custom model identifier" style="max-width:none;">
+                                        </div>
+                                    </div>
+                                    <p class="form-field-hint">Exact model identifier as accepted by the provider API.</p>
+                                </div>
+                                <div class="form-field" style="margin:0;">
+                                    <label for="ai-base-url">Base URL</label>
+                                    <input type="text" id="ai-base-url" class="login-input" placeholder="https://api.openai.com/v1" style="max-width:none;">
+                                    <p class="form-field-hint">Leave blank for the provider default. Required for Azure and Ollama.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aipage-divider"></div>
+
+                    <!-- Authentication -->
+                    <div class="aipage-row">
+                        <div class="aipage-row__meta">
+                            <h3 class="aipage-row__title">Authentication</h3>
+                            <p class="aipage-row__desc">Enter your API key directly <strong>or</strong> set it as a server environment variable. The key is stored locally in the QA Capsule database and is never exposed through the API.</p>
+                        </div>
+                        <div class="aipage-row__body">
+                            <div class="form-field" style="margin:0 0 12px;">
+                                <label for="ai-api-key">API Key</label>
+                                <div style="position:relative;">
+                                    <input type="password" id="ai-api-key" class="login-input" placeholder="Paste your API key here…" autocomplete="new-password" style="max-width:none;padding-right:80px;">
+                                    <button type="button" id="ai-api-key-toggle" onclick="window._toggleAPIKeyVisibility()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:12px;color:var(--text-muted);padding:4px 6px;">Show</button>
+                                </div>
+                                <p id="ai-key-status" style="margin:6px 0 0;font-size:12px;font-weight:600;"></p>
+                                <p class="form-field-hint">Leave blank to keep the existing key. The key is never returned by the API.</p>
+                            </div>
+                            <div class="form-field" style="margin:0 0 0;">
+                                <label for="ai-key-env">Environment variable name <span style="font-weight:400;color:var(--text-muted)">(optional — overrides the key above)</span></label>
+                                <input type="text" id="ai-key-env" class="login-input" placeholder="GEMINI_API_KEY" style="max-width:none;">
+                                <p class="form-field-hint">If this env var is set on the server it takes priority over the key entered above.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aipage-divider"></div>
+
+                    <!-- Parameters -->
+                    <div class="aipage-row">
+                        <div class="aipage-row__meta">
+                            <h3 class="aipage-row__title">Parameters</h3>
+                            <p class="aipage-row__desc">Control the token budget and request timeout. Higher limits yield richer suggestions; lower values reduce cost.</p>
+                        </div>
+                        <div class="aipage-row__body">
+                            <div class="aipage-fields-grid">
+                                <div class="form-field" style="margin:0;">
+                                    <label for="ai-max-tokens">Max response tokens</label>
+                                    <input type="number" id="ai-max-tokens" class="login-input" value="1024" min="128" max="8192" style="max-width:none;">
+                                    <p class="form-field-hint">512–2048 for RCA · 1024–4096 for code suggestions.</p>
+                                </div>
+                                <div class="form-field" style="margin:0;">
+                                    <label for="ai-timeout">Request timeout (s)</label>
+                                    <input type="number" id="ai-timeout" class="login-input" value="45" min="10" max="300" style="max-width:none;">
+                                    <p class="form-field-hint">Max wait before the request is abandoned. 45 s recommended.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aipage-divider"></div>
+
+                    <!-- Enable & Save -->
+                    <div class="aipage-row aipage-row--actions">
+                        <div class="aipage-row__meta">
+                            <h3 class="aipage-row__title">Activation</h3>
+                            <p class="aipage-row__desc">Enable or disable the AI provider globally without losing your configuration.</p>
+                        </div>
+                        <div class="aipage-row__body">
+                            <label class="pref-toggle-card aipage-toggle" style="cursor:pointer;">
+                                <div>
+                                    <div style="font-weight:600;font-size:13px;">Enable AI provider</div>
+                                    <div style="font-size:12px;opacity:0.7;margin-top:3px;">Activates RCA and self-healing for all failure types.</div>
+                                </div>
+                                <input type="checkbox" id="ai-enabled" role="switch" style="margin-left:auto;">
+                            </label>
+                            <div class="aipage-actions">
+                                <button class="btn-primary" onclick="window.saveAIConfig && window.saveAIConfig()">Save Configuration</button>
+                                <button class="btn-secondary" id="ai-test-btn" onclick="window.testAIConnection && window.testAIConnection()">Test Connection</button>
+                                <button class="btn-secondary" onclick="window.loadAIConfig && window.loadAIConfig()">Discard Changes</button>
+                            </div>
+                            <div id="ai-test-result" class="ai-test-result" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- MCP server deployment & custom tools (Manager) -->
+                <div class="data-card aipage-mcp-card">
+                    <div class="aipage-mcp-header">
+                        <div>
+                            <h3 class="aipage-row__title" style="margin:0 0 4px;">MCP Server deployment</h3>
+                            <p class="aipage-row__desc" style="margin:0;">Run QA Capsule on a dedicated server (VM, Docker, K8s). MCP endpoint: <code id="mcp-server-url">…/mcp</code>. Set <code>QACAPSULE_MCP_TOKEN</code> on the server; agents connect via HTTPS Bearer auth.</p>
+                        </div>
+                    </div>
+                    <div class="aipage-mcp-grid">
+                        <div class="aipage-mcp-col">
+                            <p class="aipage-mcp-col__title">Server token</p>
+                            <p id="mcp-token-status" class="aipage-mcp-col__status"></p>
+                            <p class="aipage-mcp-col__desc" style="margin-top:8px;">Env: <code>QACAPSULE_MCP_TOKEN</code> or <code>telemetry.webhook_token</code> in config.yaml.</p>
+                        </div>
+                        <div class="aipage-mcp-col">
+                            <p class="aipage-mcp-col__title">Extend with custom MCP</p>
+                            <p class="aipage-mcp-col__desc">Register additional tools in your agent alongside QA Capsule MCP (e.g. filesystem, git, Playwright MCP). Use <code>heal_incident</code> as the primary self-healing entry point; community servers: <a href="https://github.com/modelcontextprotocol/servers" class="text-link" target="_blank" rel="noopener">modelcontextprotocol/servers</a>.</p>
+                            <button type="button" class="btn-secondary" style="margin-top:14px;" onclick="window.copyMCPAgentConfig && window.copyMCPAgentConfig()">Copy connection snippet</button>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <section id="view-dora" class="view-section executive-view">
+                <div class="header-bar">
+                    <h1 class="executive-view__title">DORA &amp; Executive Dashboard</h1>
+                    <p class="executive-view__subtitle">Deployment frequency, lead time, change failure rate, MTTR — correlated with Prometheus via <code>/api/webhooks/prometheus</code>.</p>
+                </div>
+                <div class="executive-toolbar">
+                    <select id="dora-project-filter" class="login-input" onchange="refreshDORAMetrics()"></select>
+                    <select id="dora-range-select" class="login-input" onchange="refreshDORAMetrics()">
+                        <option value="7d">Last 7 days</option>
+                        <option value="30d" selected>Last 30 days</option>
+                        <option value="90d">Last 90 days</option>
+                    </select>
+                    <button type="button" class="btn-secondary" onclick="refreshDORAMetrics()">Refresh</button>
+                </div>
+                <div class="kpi-card-grid executive-kpi-grid">
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">Deploy frequency / day</span>
+                        <span class="kpi-card-premium__value kpi-tone-neutral" id="dora-kpi-deploy-freq">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-up" id="dora-kpi-deploy-freq-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">Lead time (median)</span>
+                        <span class="kpi-card-premium__value kpi-tone-neutral" id="dora-kpi-lead-time">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-down" id="dora-kpi-lead-time-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">Change failure rate</span>
+                        <span class="kpi-card-premium__value kpi-tone-neutral" id="dora-kpi-cfr">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-down" id="dora-kpi-cfr-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">MTTR</span>
+                        <span class="kpi-card-premium__value kpi-tone-neutral" id="dora-kpi-mttr">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-down" id="dora-kpi-mttr-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">Pipeline runs</span>
+                        <span class="kpi-card-premium__value kpi-tone-neutral" id="dora-kpi-deployments">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-up" id="dora-kpi-deployments-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">External signals</span>
+                        <span class="kpi-card-premium__value kpi-tone-neutral" id="dora-kpi-signals">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-up" id="dora-kpi-signals-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">Correlated incidents</span>
+                        <span class="kpi-card-premium__value kpi-tone-neutral" id="dora-kpi-correlated">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-up" id="dora-kpi-correlated-trend" hidden></span>
+                    </article>
+                </div>
+                <div class="data-card" style="margin-bottom:16px;">
+                    <h3 class="form-section-title" style="border-top:none;padding-top:0;margin:0 0 12px;">Deployments vs failures (weekly)</h3>
+                    <div class="chart-canvas-box chart-canvas-box--sm"><canvas id="dora-trend-chart"></canvas></div>
+                </div>
+                <div class="data-card">
+                    <h3 class="form-section-title" style="border-top:none;padding-top:0;margin:0 0 12px;">Prometheus ↔ incident correlations (±15 min)</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Signal</th>
+                                <th>Incident</th>
+                                <th>Name</th>
+                                <th>Fired</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dora-correlations-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-finops" class="view-section finops-dashboard">
+                <div class="finops-page-head">
+                    <div class="finops-page-head__titles">
+                        <h1>FinOps Intelligence</h1>
+                        <p>Weekly cost evolution, flaky waste, and CI spend — executive view.</p>
+                        <p id="finops-range-hint" class="finops-range-hint"></p>
+                    </div>
+                    <button type="button" class="btn btn-secondary finops-refresh-btn" onclick="refreshFinOpsView()" title="Reload KPIs, charts, and weekly table">Refresh</button>
+                </div>
+
+                <div class="kpi-card-grid executive-kpi-grid finops-kpi-grid">
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">Total impact</span>
+                        <span class="kpi-card-premium__value kpi-tone-info" id="finops-kpi-total-cost">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-down" id="finops-kpi-total-cost-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">Flaky waste</span>
+                        <span class="kpi-card-premium__value kpi-tone-warn" id="finops-kpi-flaky-cost">—</span>
+                        <span class="kpi-card-premium__hint" id="finops-kpi-waste-pct">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-down" id="finops-kpi-flaky-cost-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">CI minutes lost</span>
+                        <span class="kpi-card-premium__value kpi-tone-danger" id="finops-kpi-ci-minutes">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-down" id="finops-kpi-ci-minutes-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">Average MTTR</span>
+                        <span class="kpi-card-premium__value kpi-tone-success" id="finops-kpi-mttr">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-up" id="finops-kpi-mttr-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">Total incidents</span>
+                        <span class="kpi-card-premium__value kpi-tone-neutral" id="finops-kpi-incidents">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-down" id="finops-kpi-incidents-trend" hidden></span>
+                    </article>
+                    <article class="kpi-card-premium">
+                        <span class="kpi-card-premium__label">Flaky tests</span>
+                        <span class="kpi-card-premium__value kpi-tone-warn" id="finops-kpi-flaky-count">—</span>
+                        <span class="kpi-card-premium__trend kpi-trend-down" id="finops-kpi-flaky-count-trend" hidden></span>
+                    </article>
+                </div>
+
+                                <div class="data-card" style="margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+                    <div>
+                        <label class="form-label">Export period</label>
+                        <select id="finops-export-period" class="login-input" style="min-width: 140px;">
+                            <option value="week">Week</option>
+                            <option value="month">Month</option>
+                            <option value="year">Year</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Gateway (project)</label>
+                        <select id="finops-export-project" class="login-input" style="min-width: 200px;">
+                            <option value="all">All gateways</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="exportFinOpsReport()">Export CSV</button>
+                </div>
+
+                <div class="finops-bento-grid">
+                    <div class="data-card">
+                        <h3 style="margin-top: 0; color: var(--accent);">12-week volume &amp; MTTR</h3>
+                        <div class="chart-canvas-box"><canvas id="finops-evolution-chart"></canvas></div>
+                    </div>
+                    <div class="data-card">
+                        <h3 style="margin-top: 0; color: var(--log-warn);">12-week FinOps cost evolution</h3>
+                        <div class="chart-canvas-box"><canvas id="finops-cost-evolution-chart"></canvas></div>
+                    </div>
+                </div>
+
+
+                <div class="finops-bento-wide">
+                    <div class="data-card">
+                        <h3 style="margin-top: 0;">Weekly pipeline health (last 7 days)</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Pipeline</th>
+                                    <th>Alerts</th>
+                                    <th>Resolved</th>
+                                    <th>Flaky</th>
+                                    <th>Health %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finops-weekly-body">
+                                <tr><td colspan="5" style="text-align:center;padding:20px;opacity:0.5;">Loading…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="data-card">
+                        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase;">FinOps baseline</h3>
+                        <label class="form-label">Engineer hourly rate (R<sub>dev</sub>)</label>
+                        <input type="number" step="0.01" id="finops-dev-rate" class="login-input">
+                        <label class="form-label">CI minute cost (C<sub>ci</sub>)</label>
+                        <input type="number" step="0.0001" id="finops-ci-cost" class="login-input">
+                        <label class="form-label">Avg. pipeline duration (min)</label>
+                        <input type="number" step="0.1" id="finops-duration" class="login-input">
+                        <label class="form-label">Avg. investigation time (min)</label>
+                        <input type="number" step="0.1" id="finops-investigation" class="login-input">
+                        <label class="form-label">Currency</label>
+                        <select id="finops-currency" class="login-input">
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                        </select>
+                        <button class="btn-primary" style="width: 100%; margin-top: 12px;" onclick="saveFinOpsBaselines()">Save baseline</button>
+                        <p class="form-hint" style="margin-top: 12px;">Formulas and theory: <a href="#" class="text-link" onclick="switchView('about', null); showAboutTopic('finops_metrics'); return false;">Help Center → FinOps metrics</a>.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-about" class="view-section">
+                <div class="header-bar">
+                    <div>
+                        <h1 style="margin: 0; font-size: 24px;">Help Center</h1>
+                        <p style="margin: 5px 0 0 0; opacity: 0.6; font-size: 14px;">Product documentation, workflows, Super-App features, roles, and FinOps — available to all users.</p>
+                    </div>
+                </div>
+                <div class="about-shell">
+                    <aside class="about-sidebar"><h2>Topics</h2><nav id="about-topic-nav" class="about-topic-nav"></nav></aside>
+                    <div id="about-topic-content"></div>
+                </div>
+            </section>
+
+            <section id="view-settings" class="view-section settings-view">
+                <div class="aipage-header">
+                    <div class="aipage-header__text">
+                        <h1 class="intelligence-view__title" data-i18n="settings.title">Platform Settings</h1>
+                        <p class="intelligence-view__subtitle" data-i18n="settings.subtitle">Core system configuration and external integrations.</p>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="settings-grid__col">
+                        <div class="data-card settings-card">
+                            <h3 class="settings-card__title">Security Policy (Domain Lock)</h3>
+                            <p class="settings-card__desc">Restrict identity provisioning to a specific corporate domain.</p>
+                            <input type="text" id="policy-domain" class="login-input" placeholder="e.g. @company.com" style="max-width:none;">
+                            <button class="btn-primary settings-card__action" onclick="saveSecurityPolicy()">Enforce Policy</button>
+                        </div>
+
+                        <div class="data-card settings-card">
+                            <h3 class="settings-card__title">SMTP Gateway</h3>
+                            <p class="settings-card__desc">Configure outbound email server for IAM provisioning.</p>
+                            <input type="text" id="smtp-host" class="login-input" placeholder="SMTP Host (e.g. smtp.mailtrap.io)" style="max-width:none;">
+                            <input type="number" id="smtp-port" class="login-input" placeholder="Port (e.g. 2525)" style="max-width:none;">
+                            <input type="text" id="smtp-user" class="login-input" placeholder="Username" style="max-width:none;">
+                            <input type="password" id="smtp-pass" class="login-input" placeholder="Password" style="max-width:none;">
+                            <input type="text" id="smtp-from" class="login-input" placeholder="Sender Email (e.g. no-reply@company.com)" style="max-width:none;">
+                            <button class="btn-primary settings-card__action" onclick="saveSMTPConfig()">Save Configuration</button>
+                        </div>
+                    </div>
+
+                    <div class="data-card config-state-panel settings-card">
+                        <h3 class="settings-card__title">Running Configuration State</h3>
+                        <div id="config-container"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-profile" class="view-section profile-view">
+                <div class="aipage-header account-header">
+                    <div class="aipage-header__text">
+                        <h1 class="intelligence-view__title" data-i18n="account.title">My Account</h1>
+                        <p class="intelligence-view__subtitle" data-i18n="account.subtitle">Identity, workspace profiles, appearance, dashboard behavior, notifications, and security.</p>
+                    </div>
+                    <div class="account-header__actions">
+                        <button type="button" class="btn-secondary" onclick="resetProfileFormDefaults()" data-i18n="common.reset">Reset section</button>
+                        <button type="button" class="btn-primary" onclick="saveProfile()" data-i18n="common.save">Save changes</button>
+                    </div>
+                </div>
+
+                <div class="aipage-status-strip account-status-strip">
+                    <div class="account-avatar" aria-hidden="true">
+                        <span id="profile-avatar-initials">?</span>
+                    </div>
+                    <div class="aipage-status-sep"></div>
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label" data-i18n="account.signedInAs">Signed in as</span>
+                        <span class="aipage-status-value" id="profile-display-name">—</span>
+                    </div>
+                    <div class="aipage-status-sep"></div>
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label" data-i18n="account.username">Username</span>
+                        <span class="aipage-status-value" id="profile-username">—</span>
+                    </div>
+                    <div class="aipage-status-sep"></div>
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label" data-i18n="account.role">Role</span>
+                        <span class="aipage-status-value"><span id="profile-role-badge" class="profile-role-badge role-observer">—</span></span>
+                    </div>
+                    <span id="profile-role" class="sr-only">—</span>
+                    <div class="aipage-status-sep"></div>
+                    <div class="aipage-status-item">
+                        <span class="aipage-status-label" data-i18n="account.activeProfile">Active profile</span>
+                        <span class="aipage-status-value" id="config-preset-active-label">SRE Default</span>
+                    </div>
+                </div>
+
+                <div class="profile-layout">
+                    <nav class="profile-nav data-card" aria-label="Account settings sections">
+                        <button type="button" class="profile-nav-btn active" data-profile-tab="identity" onclick="switchProfileTab('identity', this)" data-i18n="account.tab.profile">Profile</button>
+                        <button type="button" class="profile-nav-btn" data-profile-tab="configurations" onclick="switchProfileTab('configurations', this)" data-i18n="account.tab.profiles">Profiles</button>
+                        <button type="button" class="profile-nav-btn" data-profile-tab="appearance" onclick="switchProfileTab('appearance', this)" data-i18n="account.tab.appearance">Appearance</button>
+                        <button type="button" class="profile-nav-btn" data-profile-tab="dashboard" onclick="switchProfileTab('dashboard', this)" data-i18n="account.tab.dashboard">Dashboard</button>
+                        <button type="button" class="profile-nav-btn" data-profile-tab="operations" onclick="switchProfileTab('operations', this)" data-i18n="account.tab.operations">Operations</button>
+                        <button type="button" class="profile-nav-btn" data-profile-tab="notifications" onclick="switchProfileTab('notifications', this)" data-i18n="account.tab.notifications">Notifications</button>
+                        <button type="button" class="profile-nav-btn" data-profile-tab="security" onclick="switchProfileTab('security', this)" data-i18n="account.tab.security">Security</button>
+                        <button type="button" class="profile-nav-btn" data-profile-tab="data" onclick="switchProfileTab('data', this)" data-i18n="account.tab.data">Data &amp; privacy</button>
+                    </nav>
+
+                    <div class="profile-panels">
+                        <div class="profile-panel active" id="profile-panel-identity" data-profile-panel="identity">
+                            <div class="data-card account-panel-card">
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title">Identity</h3>
+                                        <p class="aipage-row__desc">How your name appears in the control plane and audit context.</p>
+                                    </div>
+                                    <div class="aipage-row__body">
+                                        <div class="form-field" style="margin:0 0 14px;">
+                                            <label for="profile-fullname">Display name</label>
+                                            <input type="text" id="profile-fullname" class="login-input" placeholder="Your full name" style="max-width:none;">
+                                        </div>
+                                        <div class="form-field" style="margin:0;">
+                                            <label for="pref-landing-view">Default home screen</label>
+                                            <select id="pref-landing-view" class="login-input" style="max-width:none;">
+                                                <option value="dashboard">Telemetry Stream (Dashboard)</option>
+                                                <option value="ingestion">CI/CD Gateways</option>
+                                                <option value="finops">FinOps Intelligence</option>
+                                                <option value="dora">DORA Metrics</option>
+                                                <option value="plugins">Plugin Engine</option>
+                                                <option value="healing">Self-Healing Hub</option>
+                                                <option value="ai-config">AI &amp; MCP Configuration</option>
+                                                <option value="about">Help Center</option>
+                                            </select>
+                                            <p class="form-field-hint">Opened after sign-in when your role allows access.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-panel" id="profile-panel-configurations" data-profile-panel="configurations" hidden>
+                            <div class="data-card account-panel-card">
+                                <div class="account-panel-head">
+                                    <div>
+                                        <h3 class="account-panel-head__title">Workspace profiles</h3>
+                                        <p class="account-panel-head__desc">Switch theme, refresh cadence, and ops density in one click.</p>
+                                    </div>
+                                </div>
+                                <div id="config-preset-list" class="config-preset-list"></div>
+                                <div class="aipage-divider"></div>
+                                <div class="config-preset-create">
+                                    <h4 class="config-preset-create-title">Save current settings as profile</h4>
+                                    <div class="profile-form-grid">
+                                        <div class="form-field">
+                                            <label for="config-preset-new-name">Name</label>
+                                            <input type="text" id="config-preset-new-name" class="login-input" placeholder="e.g. Platform On-Call EU" style="max-width:none;">
+                                        </div>
+                                        <div class="form-field">
+                                            <label for="config-preset-new-desc">Description</label>
+                                            <input type="text" id="config-preset-new-desc" class="login-input" placeholder="Optional context for your team" style="max-width:none;">
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn-secondary" id="config-preset-create-btn">Save profile</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-panel" id="profile-panel-appearance" data-profile-panel="appearance" hidden>
+                            <div class="data-card account-panel-card">
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title" data-i18n="account.appearance.colorMode">Color mode</h3>
+                                        <p class="aipage-row__desc" data-i18n="account.appearance.colorModeDesc">Dark, light, or follow your operating system preference.</p>
+                                    </div>
+                                    <div class="aipage-row__body">
+                                        <div class="theme-mode-grid" role="group" aria-label="Color mode">
+                                        <button type="button" class="theme-mode-chip" data-theme-mode="dark" data-i18n="account.theme.dark">Dark</button>
+                                        <button type="button" class="theme-mode-chip" data-theme-mode="light" data-i18n="account.theme.light">Light</button>
+                                        <button type="button" class="theme-mode-chip" data-theme-mode="system" data-i18n="account.theme.system">System</button>
+                                        </div>
+                                        <div class="pref-sync-fields" aria-hidden="true">
+                                            <select id="pref-theme-mode">
+                                                <option value="dark">Dark</option>
+                                                <option value="light">Light</option>
+                                                <option value="system">System</option>
+                                            </select>
+                                            <select id="pref-theme">
+                                                <option value="dark">Dark</option>
+                                                <option value="light">Light</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="aipage-divider"></div>
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title" data-i18n="account.appearance.palette">Color palette</h3>
+                                        <p class="aipage-row__desc" data-i18n="account.appearance.paletteDesc">Enterprise-grade palettes tuned for long on-call sessions.</p>
+                                    </div>
+                                    <div class="aipage-row__body">
+                                        <div class="theme-palette-grid" role="group" aria-label="Color palette">
+                                            <button type="button" class="theme-palette-chip" data-theme-palette="default" title="Enterprise Navy">
+                                                <span class="theme-palette-preview" style="--swatch-a:#1e3a5f;--swatch-b:#f4f5f7"></span>
+                                                <span class="theme-palette-label" data-i18n="account.palette.enterprise">Enterprise</span>
+                                            </button>
+                                            <button type="button" class="theme-palette-chip" data-theme-palette="ocean" title="Ocean SRE">
+                                                <span class="theme-palette-preview" style="--swatch-a:#0d9488;--swatch-b:#0f172a"></span>
+                                                <span class="theme-palette-label" data-i18n="account.palette.ocean">Ocean</span>
+                                            </button>
+                                            <button type="button" class="theme-palette-chip" data-theme-palette="graphite" title="Graphite Ops">
+                                                <span class="theme-palette-preview" style="--swatch-a:#52525b;--swatch-b:#18181b"></span>
+                                                <span class="theme-palette-label" data-i18n="account.palette.graphite">Graphite</span>
+                                            </button>
+                                            <button type="button" class="theme-palette-chip" data-theme-palette="ops" title="Incident Command">
+                                                <span class="theme-palette-preview" style="--swatch-a:#f59e0b;--swatch-b:#0c1222"></span>
+                                                <span class="theme-palette-label" data-i18n="account.palette.incident">Incident</span>
+                                            </button>
+                                            <button type="button" class="theme-palette-chip" data-theme-palette="terminal" title="Terminal">
+                                                <span class="theme-palette-preview" style="--swatch-a:#22c55e;--swatch-b:#0a0f0a"></span>
+                                                <span class="theme-palette-label" data-i18n="account.palette.terminal">Terminal</span>
+                                            </button>
+                                            <button type="button" class="theme-palette-chip" data-theme-palette="solarized" title="Solarized">
+                                                <span class="theme-palette-preview" style="--swatch-a:#268bd2;--swatch-b:#002b36"></span>
+                                                <span class="theme-palette-label" data-i18n="account.palette.solarized">Solarized</span>
+                                            </button>
+                                        </div>
+                                        <div class="pref-sync-fields" aria-hidden="true">
+                                            <select id="pref-theme-palette">
+                                                <option value="default">Enterprise Navy</option>
+                                                <option value="ocean">Ocean SRE</option>
+                                                <option value="graphite">Graphite Ops</option>
+                                                <option value="ops">Incident Command</option>
+                                                <option value="terminal">Terminal</option>
+                                                <option value="solarized">Solarized</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="aipage-divider"></div>
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title" data-i18n="account.appearance.languageTitle">Language</h3>
+                                        <p class="aipage-row__desc" data-i18n="account.appearance.languageDesc">Interface language for the entire application.</p>
+                                    </div>
+                                    <div class="aipage-row__body">
+                                        <div class="form-field" style="margin:0;">
+                                            <label for="pref-language" data-i18n="account.appearance.languageLabel">Display language</label>
+                                            <select id="pref-language" class="login-input" style="max-width:none;" onchange="onProfileLanguageChange()">
+                                                <option value="en">English</option>
+                                                <option value="fr">Français</option>
+                                                <option value="es">Español</option>
+                                                <option value="zh">中文</option>
+                                                <option value="de">Deutsch</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="aipage-divider"></div>
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title" data-i18n="account.appearance.localeTitle">Locale &amp; density</h3>
+                                        <p class="aipage-row__desc" data-i18n="account.appearance.localeDesc">Date formats, timezone, and interface spacing.</p>
+                                    </div>
+                                    <div class="aipage-row__body">
+                                        <div class="aipage-fields-grid">
+                                            <div class="form-field" style="margin:0;">
+                                                <label for="pref-date-format">Date &amp; time format</label>
+                                                <select id="pref-date-format" class="login-input" style="max-width:none;">
+                                                    <option value="locale">Browser locale</option>
+                                                    <option value="short">Short (24 Mar 2026, 14:30)</option>
+                                                    <option value="iso">ISO (2026-03-24 14:30)</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-field" style="margin:0;">
+                                                <label for="pref-timezone">Timezone</label>
+                                                <select id="pref-timezone" class="login-input" style="max-width:none;">
+                                                    <option value="auto">Automatic (browser)</option>
+                                                    <option value="UTC">UTC</option>
+                                                    <option value="Europe/Paris">Europe/Paris</option>
+                                                    <option value="Europe/London">Europe/London</option>
+                                                    <option value="America/New_York">America/New_York</option>
+                                                    <option value="America/Chicago">America/Chicago</option>
+                                                    <option value="America/Los_Angeles">America/Los_Angeles</option>
+                                                    <option value="Asia/Tokyo">Asia/Tokyo</option>
+                                                    <option value="Asia/Singapore">Asia/Singapore</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="aipage-divider"></div>
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title">Accessibility</h3>
+                                        <p class="aipage-row__desc">Layout and motion preferences for extended use.</p>
+                                    </div>
+                                    <div class="aipage-row__body account-toggle-stack">
+                                        <label class="pref-toggle-card" for="pref-compact-ui">
+                                            <input type="checkbox" id="pref-compact-ui">
+                                            <span class="pref-toggle-text">
+                                                <strong>Compact UI density</strong>
+                                                <small>Tighter spacing on cards, tables, and forms.</small>
+                                            </span>
+                                        </label>
+                                        <label class="pref-toggle-card" for="pref-sidebar-collapsed">
+                                            <input type="checkbox" id="pref-sidebar-collapsed">
+                                            <span class="pref-toggle-text">
+                                                <strong>Start with sidebar collapsed</strong>
+                                                <small>More horizontal space for telemetry and reports.</small>
+                                            </span>
+                                        </label>
+                                        <label class="pref-toggle-card" for="pref-reduced-motion">
+                                            <input type="checkbox" id="pref-reduced-motion">
+                                            <span class="pref-toggle-text">
+                                                <strong>Reduce motion</strong>
+                                                <small>Minimize transitions and animations.</small>
+                                            </span>
+                                        </label>
+                                        <label class="pref-toggle-card" for="pref-high-contrast">
+                                            <input type="checkbox" id="pref-high-contrast">
+                                            <span class="pref-toggle-text">
+                                                <strong>High contrast</strong>
+                                                <small>Stronger borders and text contrast for readability.</small>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-panel" id="profile-panel-dashboard" data-profile-panel="dashboard" hidden>
+                            <div class="data-card account-panel-card">
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title">Dashboard &amp; telemetry</h3>
+                                        <p class="aipage-row__desc">Defaults for the Telemetry Stream and incident list.</p>
+                                    </div>
+                                    <div class="aipage-row__body">
+                                        <div class="aipage-fields-grid">
+                                            <div class="form-field" style="margin:0;">
+                                                <label for="pref-default-range">Preferred time window</label>
+                                                <select id="pref-default-range" class="login-input" style="max-width:none;">
+                                            <option value="5m">Last 5 minutes</option>
+                                            <option value="15m">Last 15 minutes</option>
+                                            <option value="30m">Last 30 minutes</option>
+                                            <option value="1h">Last 1 hour</option>
+                                            <option value="6h">Last 6 hours</option>
+                                            <option value="24h">Last 24 hours</option>
+                                            <option value="7d">Last 7 days</option>
+                                            <option value="30d">Last 30 days</option>
+                                            <option value="today">Today</option>
+                                            <option value="yesterday">Yesterday</option>
+                                            <option value="all">All time (1 year)</option>
+                                        </select>
+                                        <p class="form-field-hint">Applied when no session range is stored yet.</p>
+                                    </div>
+                                    <div class="form-field" style="margin:0;">
+                                        <label for="pref-status-filter">Default incident filter</label>
+                                        <select id="pref-status-filter" class="login-input" style="max-width:none;">
+                                            <option value="all">All</option>
+                                            <option value="active">Active only</option>
+                                            <option value="resolved">Resolved only</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-field" style="margin:0;">
+                                        <label for="pref-refresh-interval">Auto-refresh interval</label>
+                                        <select id="pref-refresh-interval" class="login-input" style="max-width:none;">
+                                            <option value="15">Every 15 seconds</option>
+                                            <option value="30">Every 30 seconds</option>
+                                            <option value="60">Every 60 seconds</option>
+                                            <option value="120">Every 2 minutes</option>
+                                            <option value="300">Every 5 minutes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                    </div>
+                                </div>
+                                <div class="aipage-divider"></div>
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title">Behavior</h3>
+                                        <p class="aipage-row__desc">Automatic refresh and panel defaults.</p>
+                                    </div>
+                                    <div class="aipage-row__body account-toggle-stack">
+                                <label class="pref-toggle-card" for="pref-dashboard-auto-refresh">
+                                    <input type="checkbox" id="pref-dashboard-auto-refresh" checked>
+                                    <span class="pref-toggle-text">
+                                        <strong>Auto-refresh dashboard</strong>
+                                        <small>Periodically reload incidents while Telemetry Stream is open.</small>
+                                    </span>
+                                </label>
+                                <label class="pref-toggle-card" for="pref-analytics-expanded">
+                                    <input type="checkbox" id="pref-analytics-expanded">
+                                    <span class="pref-toggle-text">
+                                        <strong>Open analytics panel by default</strong>
+                                        <small>Expand charts when entering the dashboard.</small>
+                                    </span>
+                                </label>
+                                <label class="pref-toggle-card" for="pref-expand-incidents">
+                                    <input type="checkbox" id="pref-expand-incidents">
+                                    <span class="pref-toggle-text">
+                                        <strong>Expand new incident cards</strong>
+                                        <small>Show full error context on first paint when possible.</small>
+                                    </span>
+                                </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-panel" id="profile-panel-operations" data-profile-panel="operations" hidden>
+                            <div class="data-card account-panel-card">
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title">Operations &amp; FinOps</h3>
+                                        <p class="aipage-row__desc">Regional and display preferences for cost and pipeline views.</p>
+                                    </div>
+                                    <div class="aipage-row__body">
+                                        <div class="form-field" style="margin:0 0 14px;">
+                                            <label for="pref-currency">Application currency</label>
+                                            <select id="pref-currency" class="login-input" style="max-width:none;" onchange="onProfileCurrencyChange()">
+                                            <option value="USD">USD ($)</option>
+                                            <option value="EUR">EUR (€)</option>
+                                            <option value="GBP">GBP (£)</option>
+                                            <option value="JPY">JPY (¥)</option>
+                                            <option value="AUD">AUD (A$)</option>
+                                            <option value="CAD">CAD (C$)</option>
+                                            <option value="CHF">CHF (Fr)</option>
+                                            <option value="INR">INR (₹)</option>
+                                            <option value="CNY">CNY (¥)</option>
+                                            <option value="MXN">MXN ($)</option>
+                                            <option value="SGD">SGD (S$)</option>
+                                            <option value="NZD">NZD (NZ$)</option>
+                                        </select>
+                                    </div>
+                                        <label class="pref-toggle-card" for="pref-dense-tables">
+                                    <input type="checkbox" id="pref-dense-tables">
+                                    <span class="pref-toggle-text">
+                                        <strong>Dense tables</strong>
+                                        <small>Compact rows in gateways, FinOps, and IAM lists.</small>
+                                    </span>
+                                </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-panel" id="profile-panel-notifications" data-profile-panel="notifications" hidden>
+                            <div class="data-card account-panel-card">
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title">Notifications</h3>
+                                        <p class="aipage-row__desc">In-browser alerts when new failures arrive (Slack/Jira remain in Plugin Engine).</p>
+                                    </div>
+                                    <div class="aipage-row__body account-toggle-stack">
+                                <label class="pref-toggle-card" for="pref-alert-sounds">
+                                    <input type="checkbox" id="pref-alert-sounds">
+                                    <span class="pref-toggle-text">
+                                        <strong>In-app alert sound</strong>
+                                        <small>Short tone when a new active incident appears on the dashboard.</small>
+                                    </span>
+                                </label>
+                                <label class="pref-toggle-card" for="pref-browser-notifications">
+                                    <input type="checkbox" id="pref-browser-notifications">
+                                    <span class="pref-toggle-text">
+                                        <strong>Desktop notifications</strong>
+                                        <small>Requires browser permission. Shows test name when polling detects new incidents.</small>
+                                    </span>
+                                </label>
+                                <button type="button" class="btn-secondary profile-inline-btn" onclick="requestBrowserNotificationPermission()">Request notification permission</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-panel" id="profile-panel-security" data-profile-panel="security" hidden>
+                            <div class="data-card account-panel-card">
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title">Security</h3>
+                                        <p class="aipage-row__desc">Update your sign-in password. Minimum 8 characters.</p>
+                                    </div>
+                                    <div class="aipage-row__body">
+                                <div class="password-fields-stack" style="max-width:none;">
+                                    <div class="form-field">
+                                        <label for="profile-current-password">Current password</label>
+                                        <input type="password" id="profile-current-password" class="login-input" placeholder="Current password" autocomplete="current-password">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="profile-new-password">New password</label>
+                                        <input type="password" id="profile-new-password" class="login-input" placeholder="Min. 8 characters" autocomplete="new-password">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="profile-confirm-password">Confirm password</label>
+                                        <input type="password" id="profile-confirm-password" class="login-input" placeholder="Confirm new password" autocomplete="new-password">
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-secondary profile-password-btn" onclick="changeOwnPassword()">Update password</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-panel" id="profile-panel-data" data-profile-panel="data" hidden>
+                            <div class="data-card account-panel-card">
+                                <div class="aipage-row">
+                                    <div class="aipage-row__meta">
+                                        <h3 class="aipage-row__title">Data &amp; privacy</h3>
+                                        <p class="aipage-row__desc">Local preferences stored in this browser. Server-side prefs sync when you save.</p>
+                                    </div>
+                                    <div class="aipage-row__body">
+                                <ul class="profile-data-list">
+                                    <li>Theme, filters, layouts &amp; configurations → account record on QA Capsule</li>
+                                    <li>Currency &amp; alert sounds → synced with account when you save</li>
+                                    <li>Sidebar collapse → browser cache until appearance prefs sync</li>
+                                </ul>
+                                <div class="profile-data-actions">
+                                    <button type="button" class="btn-secondary" onclick="exportProfilePreferences()">Export preferences (JSON)</button>
+                                    <button type="button" class="btn-secondary profile-danger-btn" onclick="clearLocalProfileData()">Clear local browser data</button>
+                                </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        </div>
+    </div>
+
+    <div id="workflow-editor-modal" role="dialog" aria-modal="true" aria-labelledby="workflow-editor-title">
+        <div class="workflow-editor-shell">
+            <div class="workflow-editor-toolbar">
+                <h2 id="workflow-editor-title" style="margin:0;font-size:16px;flex:1;color:#c9d1d9;">Visual Workflow</h2>
+                <span id="workflow-status-pill" class="workflow-status-pill state-legacy" title="Remediation mode">Legacy</span>
+                <label id="workflow-enable-wrap" class="wf-enable-wrap wf-edit-only" for="workflow-enabled-toggle">
+                    <input type="checkbox" id="workflow-enabled-toggle" checked>
+                    <span>Enable workflow</span>
+                </label>
+                <span id="workflow-readonly-badge">Read-only (Observer)</span>
+                <button type="button" class="btn-secondary" onclick="openWorkflowHelpTopic()" title="Open Help Center — Visual Workflows">?</button>
+                <button type="button" class="btn-secondary wf-edit-only" onclick="loadFlakyExampleWorkflow()">Example</button>
+                <button type="button" class="btn-secondary wf-edit-only" onclick="addWorkflowNode('trigger')">+ Trigger</button>
+                <button type="button" class="btn-secondary wf-edit-only" onclick="addWorkflowNode('condition')">+ Condition</button>
+                <button type="button" class="btn-secondary wf-edit-only" onclick="addWorkflowNode('action')">+ Action</button>
+                <button type="button" class="btn-secondary wf-edit-only" onclick="simulateWorkflow()">Simulate</button>
+                <button type="button" class="btn-secondary" onclick="fitWorkflowCanvas()">Fit</button>                <button type="button" class="btn-secondary wf-edit-only" onclick="clearWorkflow()">Reset</button>
+                <button type="button" class="btn-primary wf-edit-only" onclick="saveWorkflow()">Save</button>
+                <button type="button" class="btn-secondary" onclick="closeWorkflowEditor()">Close</button>
+            </div>
+            <div class="workflow-editor-body">
+                <div class="workflow-canvas-wrap">
+                    <div id="drawflow"></div>
+                    <div id="workflow-canvas-empty">
+                        <div>
+                            <p style="margin:0 0 8px;color:#c9d1d9;">Empty canvas</p>
+                            <p style="margin:0;">Click <strong>+ Trigger</strong> to start, or load a saved workflow.</p>                        </div>
+                    </div>
+                </div>
+                <aside id="workflow-help-panel" class="open">
+                    <h3 class="plugin-config-panel__title" style="margin:0 0 10px;">Simulate incident</h3>
+                    <label style="font-size:11px;display:block;margin-bottom:4px;">Test name</label>
+                    <input type="text" id="wf-sim-name" class="login-input" value="[FLAKY] checkout payment" style="margin-bottom:8px;font-size:11px;">
+                    <label style="font-size:11px;display:block;margin-bottom:4px;">Status</label>
+                    <input type="text" id="wf-sim-status" class="login-input" value="CRITICAL" style="margin-bottom:8px;font-size:11px;">
+                    <label style="font-size:11px;display:block;margin-bottom:4px;">Error</label>
+                    <input type="text" id="wf-sim-error" class="login-input" value="timeout waiting for upstream" style="margin-bottom:8px;font-size:11px;">
+                    <button type="button" class="btn-secondary wf-edit-only" style="width:100%;margin-bottom:10px;" onclick="simulateWorkflow()">Run simulation</button>
+                    <pre id="workflow-simulate-result" class="workflow-simulate-result"></pre>
+                    <h3 style="margin:16px 0 10px;color:#58a6ff;font-size:13px;">Workflow quick guide</h3>
+                    <p><strong>Trigger</strong> — One entry node per graph when a CI alert is ingested.</p>
+                    <p><strong>Condition</strong> — Branch on <code>[FLAKY]</code>, <code>[PERF]</code>, status, or error text. <span style="color:#3fb950">Top</span> output = true, <span style="color:#f85149">bottom</span> = false.</p>
+                    <p><strong>Action</strong> — Native plugin (Slack, Jira, K8s…). Must be in gateway routing matrix + routing-enabled in Plugin Engine.</p>
+                    <p style="margin-top:10px;"><strong>Example</strong> — Trigger → [FLAKY]? → Slack (yes) / Jira (no).</p>
+                    <p><strong>Enable workflow</strong> + Save = DAG live. Unchecked = draft (legacy AUTO-RUN still runs).</p>
+                    <p><strong>Simulate</strong> — Dry-run without calling vendors. <strong>Reset</strong> — delete DAG.</p>
+                    <p class="form-hint" style="margin-top:12px;"><a href="#" class="text-link" onclick="openWorkflowHelpTopic();return false;">Full guide in Help Center →</a></p>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
+    <script type="module" src="app.js?v=1.0.23-demo"></script>
+</body>
+</html>

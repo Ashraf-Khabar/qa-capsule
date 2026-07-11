@@ -1,0 +1,51 @@
+name: API Tests | Newman (Postman)
+
+# Manual workflow — live reqres.in collection with intentional contract failures.
+on:
+  workflow_dispatch:
+
+jobs:
+  run-newman:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Newman
+        run: npm install -g newman newman-reporter-junitfull
+
+      - name: Run Newman tests (reqres.in)
+        id: newman_run
+        run: |
+          newman run tests/newman/collection.json \
+            --reporters cli,junitfull \
+            --reporter-junitfull-export newman-results.xml
+        continue-on-error: true
+
+      - name: Upload results to QA Capsule
+        if: always()
+        env:
+          QA_CAPSULE_URL: ${{ secrets.QA_CAPSULE_URL }}
+          API_KEY: ${{ secrets.QA_CAPSULE_API_NEWMAN_KEY }}
+        run: |
+          chmod +x .github/scripts/upload-junit-to-qacapsule.sh
+          .github/scripts/upload-junit-to-qacapsule.sh newman-results.xml Postman "${{ github.run_id }}-${{ github.run_attempt }}"
+
+      - name: Fail pipeline on test failures
+        if: steps.newman_run.outcome == 'failure'
+        run: |
+          echo "FAILED: Newman reported failures (expected for API contract drift demos)."
+          exit 1
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-results-${{ github.run_id }}
+          path: newman-results.xml
+          if-no-files-found: ignore

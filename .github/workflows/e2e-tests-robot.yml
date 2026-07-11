@@ -1,0 +1,68 @@
+name: E2E Tests | Robot Framework
+
+# Manual workflow — Swag Labs + Reqres API demos with intentional failures for MCP self-healing.
+on:
+  workflow_dispatch:
+
+jobs:
+  robot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Robot Framework and Browser library
+        run: |
+          pip install --upgrade pip
+          pip install robotframework robotframework-browser robotframework-requests
+
+      - name: Install Playwright browsers for Robot
+        run: rfbrowser init chromium
+
+      - name: Run Robot Framework tests
+        id: robot_run
+        run: |
+          robot \
+            --outputdir tests/results \
+            --xunit     robot-junit.xml \
+            --log       robot-log.html \
+            --report    robot-report.html \
+            --listener  tests/robotframework/resources/dom_capture_listener.py \
+            tests/robotframework/saucedemo_checkout.robot \
+            tests/robotframework/api_health.robot
+        continue-on-error: true
+
+      - name: Upload results to QA Capsule
+        if: always()
+        env:
+          QA_CAPSULE_URL: ${{ secrets.QA_CAPSULE_URL }}
+          API_KEY: ${{ secrets.QA_CAPSULE_API_ROBOT_KEY }}
+        run: |
+          chmod +x .github/scripts/upload-junit-to-qacapsule.sh
+          .github/scripts/upload-junit-to-qacapsule.sh \
+            tests/results/robot-junit.xml \
+            RobotFramework \
+            "${{ github.run_id }}-${{ github.run_attempt }}"
+
+      - name: Fail pipeline on test failures
+        if: steps.robot_run.outcome == 'failure'
+        run: |
+          echo "FAILED: Robot suites reported failures (expected for self-healing / MCP demos)."
+          exit 1
+
+      - name: Upload Robot artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-results-${{ github.run_id }}
+          path: |
+            tests/results/robot-junit.xml
+            tests/results/robot-log.html
+            tests/results/robot-report.html
+          if-no-files-found: ignore

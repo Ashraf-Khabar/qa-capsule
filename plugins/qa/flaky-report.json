@@ -1,0 +1,16 @@
+{
+  "auto_run": false,
+  "config": {
+    "QA_WEBHOOK_URL": ""
+  },
+  "description": "Sends a lightweight flaky/regression summary to your QA channel or test-management webhook.",
+  "integration": "webhook",
+  "name": "QA Flaky Summary Webhook",
+  "status": "Active",
+  "trigger_on": [
+    "FLAKY",
+    "flaky",
+    "unstable"
+  ],
+  "version": "1.0.0"
+}

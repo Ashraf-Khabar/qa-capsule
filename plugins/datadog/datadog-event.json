@@ -1,0 +1,16 @@
+{
+  "auto_run": false,
+  "config": {
+    "DD_API_KEY": "",
+    "DD_SITE": "datadoghq.com"
+  },
+  "description": "Creates a Datadog event for SRE dashboards and monitors when QA Capsule detects a critical failure.",
+  "integration": "datadog",
+  "name": "Datadog Event",
+  "status": "Active",
+  "trigger_on": [
+    "CRITICAL",
+    "FATAL"
+  ],
+  "version": "1.0.0"
+}

@@ -1,0 +1,56 @@
+name: E2E Tests | Cypress
+
+# Manual workflow — Swag Labs checkout demo with intentional locator failure for MCP self-healing.
+on:
+  workflow_dispatch:
+
+jobs:
+  cypress:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tests/cypress/package.json
+
+      - name: Install npm dependencies
+        run: npm install
+        working-directory: tests/cypress
+
+      - name: Run Cypress tests (saucedemo.com)
+        id: cypress_run
+        run: npm run test:ci
+        working-directory: tests/cypress
+        continue-on-error: true
+
+      - name: Upload results to QA Capsule
+        if: always()
+        env:
+          QA_CAPSULE_URL: ${{ secrets.QA_CAPSULE_URL }}
+          API_KEY: ${{ secrets.QA_CAPSULE_API_CYPRESS_KEY }}
+        run: |
+          chmod +x .github/scripts/upload-junit-to-qacapsule.sh
+          .github/scripts/upload-junit-to-qacapsule.sh \
+            tests/cypress/cypress-results.xml \
+            Cypress \
+            "${{ github.run_id }}-${{ github.run_attempt }}"
+
+      - name: Fail pipeline on test failures
+        if: steps.cypress_run.outcome == 'failure'
+        run: |
+          echo "FAILED: Cypress reported failures (expected for MCP self-healing demo on saucedemo.com)."
+          exit 1
+
+      - name: Upload Cypress artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-results-${{ github.run_id }}
+          path: tests/cypress/cypress-results.xml
+          if-no-files-found: ignore

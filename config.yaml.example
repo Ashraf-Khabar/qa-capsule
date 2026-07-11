@@ -1,0 +1,32 @@
+# Copy to config.yaml and set secrets via env vars in production (never commit real credentials).
+
+server:
+    port: "9000"
+    log_level: info
+
+smtp:
+    host: "smtp.example.com"
+    port: 587
+    user: "${SMTP_USER}"
+    password: "${SMTP_PASSWORD}"
+    from: "sre-bot@example.com"
+
+security:
+    enabled: true
+    jwt_secret: ""   # prefer QACAPSULE_JWT_SECRET env
+    allowed_domain: "@example.com"
+
+telemetry:
+    report_path: ./reports/cypress-crash.json
+    websocket_timeout_sec: 60
+    # webhook_token = token MCP (POST /mcp).
+    # Prefer QACAPSULE_MCP_TOKEN env var — keep this empty and inject via CI/Docker secret.
+    # If empty, the /mcp endpoint accepts all requests (dev only).
+    webhook_token: ""
+
+storage:
+    local_path: ./data/artifacts
+
+plugins:
+    directory: ./plugins
+    auto_reload: true

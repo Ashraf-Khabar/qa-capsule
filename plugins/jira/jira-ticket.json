@@ -1,0 +1,20 @@
+{
+  "auto_run": false,
+  "config": {
+    "JIRA_API_TOKEN": "",
+    "JIRA_EMAIL": "",
+    "JIRA_ISSUE_TYPE": "Task",
+    "JIRA_PROJECT_KEY": "",
+    "JIRA_URL": ""
+  },
+  "description": "Creates a Jira issue (Bug/Task). Set credentials via environment variables (JIRA_API_TOKEN, JIRA_EMAIL, JIRA_URL, JIRA_PROJECT_KEY) or in Configure — never commit secrets to this file.",
+  "integration": "jira",
+  "name": "Jira Auto-Ticketing",
+  "routing_enabled": false,
+  "status": "Active",
+  "trigger_on": [
+    "CRITICAL",
+    "Timeout"
+  ],
+  "version": "1.1"
+}

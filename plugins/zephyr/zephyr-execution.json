@@ -1,0 +1,19 @@
+{
+  "auto_run": false,
+  "config": {
+    "ZEPHYR_API_TOKEN": "",
+    "ZEPHYR_API_URL": "https://api.zephyrscale.smartbear.com/v2",
+    "ZEPHYR_PROJECT_KEY": "",
+    "ZEPHYR_TEST_CASE_KEY": ""
+  },
+  "description": "Creates a failed test execution in Zephyr Scale (SmartBear) for the linked test case key.",
+  "integration": "zephyr",
+  "name": "Zephyr Scale — Fail test execution",
+  "status": "Active",
+  "trigger_on": [
+    "CRITICAL",
+    "FAILED",
+    "FLAKY"
+  ],
+  "version": "1.0.0"
+}

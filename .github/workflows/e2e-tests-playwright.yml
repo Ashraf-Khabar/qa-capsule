@@ -1,0 +1,60 @@
+name: E2E Tests | Playwright
+
+# Manual workflow — Swag Labs checkout demo with intentional locator failure for MCP self-healing.
+on:
+  workflow_dispatch:
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tests/playwright/package.json
+
+      - name: Install npm dependencies
+        run: npm install
+        working-directory: tests/playwright
+
+      - name: Install Playwright Chromium browser
+        run: npx playwright install --with-deps chromium
+        working-directory: tests/playwright
+
+      - name: Run Playwright tests (saucedemo.com)
+        id: playwright_run
+        run: npx playwright test
+        working-directory: tests/playwright
+        continue-on-error: true
+
+      - name: Upload results to QA Capsule
+        if: always()
+        env:
+          QA_CAPSULE_URL: ${{ secrets.QA_CAPSULE_URL }}
+          API_KEY: ${{ secrets.QA_CAPSULE_API_PLAYWRIGHT_KEY }}
+        run: |
+          chmod +x .github/scripts/upload-junit-to-qacapsule.sh
+          .github/scripts/upload-junit-to-qacapsule.sh \
+            tests/playwright/playwright-results.xml \
+            Playwright \
+            "${{ github.run_id }}-${{ github.run_attempt }}"
+
+      - name: Fail pipeline on test failures
+        if: steps.playwright_run.outcome == 'failure'
+        run: |
+          echo "FAILED: Playwright reported failures (expected for MCP self-healing demo on saucedemo.com)."
+          exit 1
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-${{ github.run_id }}
+          path: tests/playwright/playwright-results.xml
+          if-no-files-found: ignore

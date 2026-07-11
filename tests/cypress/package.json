@@ -1,0 +1,13 @@
+{
+  "name": "qa-capsule-cypress-demo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cypress Swag Labs checkout demo — TC-04 fails with a broken checkout locator for MCP self-healing.",
+  "scripts": {
+    "test:ci": "cypress run --reporter mocha-junit-reporter --reporter-options mochaFile=cypress-results.xml,toConsole=true"
+  },
+  "devDependencies": {
+    "cypress": "^13.0.0",
+    "mocha-junit-reporter": "^2.2.0"
+  }
+}
