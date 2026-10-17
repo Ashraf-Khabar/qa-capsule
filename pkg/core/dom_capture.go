@@ -8,9 +8,9 @@ func DOMCaptureHint(framework string) string {
 	case "robotframework", "robot":
 		return "Robot: add --listener tests/robotframework/resources/dom_capture_listener.py to your robot command (already wired in e2e-tests-robot.yml)."
 	case "cypress":
-		return "Cypress: keep supportFile cypress/support/qa-capsule.js in cypress.config.js — it embeds the DOM snapshot in the JUnit failure output on each failed test."
+		return "Cypress: keep supportFile cypress/support/sre-capsule.js in cypress.config.js — it embeds the DOM snapshot in the JUnit failure output on each failed test."
 	case "playwright":
-		return "Playwright: import { test, expect } from fixtures/qa-capsule-fixture.js (not @playwright/test) so the DOM is captured on failure."
+		return "Playwright: import { test, expect } from fixtures/sre-capsule-fixture.js (not @playwright/test) so the DOM is captured on failure."
 	case "selenium", "pytest":
 		return "Selenium: tests/selenium-pytest/conftest.py captures driver.page_source on failure and writes it into the JUnit report."
 	case "postman", "newman", "junit", "java":

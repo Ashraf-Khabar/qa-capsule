@@ -1,4 +1,4 @@
-// Package core is the central domain layer of QA Capsule. It owns the SQLite
+// Package core is the central domain layer of SRE Capsule. It owns the SQLite
 // database handle, all cross-cutting repository functions, the ingest
 // pipeline, locator healing, DORA metrics, pipeline execution records,
 // external-signal ingestion, gitops remediation, and the super-app bootstrap
@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/ai"
-	"github.com/QA-Capsule/qa-capsule-community/pkg/healing"
-	"github.com/QA-Capsule/qa-capsule-community/pkg/quarantine"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/ai"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/healing"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/quarantine"
 )
 
 var (

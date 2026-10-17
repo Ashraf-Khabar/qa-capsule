@@ -4,15 +4,15 @@ icon: material/robot-industrial
 
 # The SRE Agent Architecture
 
-To seamlessly connect your CI/CD infrastructure to the QA Capsule Control Plane, you need to understand the concept of the **SRE Agent**. 
+To seamlessly connect your CI/CD infrastructure to the SRE Capsule Control Plane, you need to understand the concept of the **SRE Agent**. 
 
-Unlike legacy monitoring systems that require you to install heavy, resource-intensive daemons on your build servers, QA Capsule relies on a modern, event-driven **Push Architecture**.
+Unlike legacy monitoring systems that require you to install heavy, resource-intensive daemons on your build servers, SRE Capsule relies on a modern, event-driven **Push Architecture**.
 
 ---
 
 ## 1. The "No-Daemon" Philosophy
 
-QA Capsule is entirely passive. It does not constantly poll your GitHub or GitLab repositories looking for failures. Instead, it waits securely behind its Webhook API.
+SRE Capsule is entirely passive. It does not constantly poll your GitHub or GitLab repositories looking for failures. Instead, it waits securely behind its Webhook API.
 
 **What is the SRE Agent?**
 
@@ -20,7 +20,7 @@ The SRE Agent is simply a lightweight script (often just a few lines of Bash or 
 
 1. Detect if the preceding test steps failed.
 2. Read the generated test report (usually a JUnit XML file).
-3. Send an authenticated HTTP POST request to QA Capsule.
+3. Send an authenticated HTTP POST request to SRE Capsule.
 
 Because it relies on standard Unix tools like `curl`, the Agent has zero dependencies, making it compatible with any CI/CD runner in the world (Alpine Linux, Ubuntu, Windows Server, etc.).
 
@@ -28,15 +28,15 @@ Because it relies on standard Unix tools like `curl`, the Agent has zero depende
 
 ## 2. The Universal Language: JUnit XML
 
-To build a truly agnostic system, QA Capsule needs to understand errors regardless of the language or framework your engineers are using. Whether your team writes tests in JavaScript (Playwright, Cypress), Python (PyTest, Robot Framework), or Java (Selenium, JUnit), QA Capsule understands them all.
+To build a truly agnostic system, SRE Capsule needs to understand errors regardless of the language or framework your engineers are using. Whether your team writes tests in JavaScript (Playwright, Cypress), Python (PyTest, Robot Framework), or Java (Selenium, JUnit), SRE Capsule understands them all.
 
 How? By relying on the **JUnit XML Standard**.
 
-When a test fails, your framework generates an XML file. The SRE Agent pushes this XML (or parsed components of it) to the QA Capsule parser.
+When a test fails, your framework generates an XML file. The SRE Agent pushes this XML (or parsed components of it) to the SRE Capsule parser.
 
 ### What the Parser Extracts:
 
-When the QA Capsule backend receives the payload, it looks for specific XML tags to build a rich Incident Card on your dashboard:
+When the SRE Capsule backend receives the payload, it looks for specific XML tags to build a rich Incident Card on your dashboard:
 
 * `<testcase name="...">`: Identifies the exact test that failed.
 * `<failure message="...">`: The human-readable reason for the crash (e.g., "Timeout 5000ms exceeded").
@@ -48,7 +48,7 @@ When the QA Capsule backend receives the payload, it looks for specific XML tags
 
 ## 3. Authentication & Security (X-API-Key)
 
-Because QA Capsule can trigger external plugins (like posting to Jira or Slack), the ingestion endpoints are heavily secured. The SRE Agent must authenticate every payload it sends.
+Because SRE Capsule can trigger external plugins (like posting to Jira or Slack), the ingestion endpoints are heavily secured. The SRE Agent must authenticate every payload it sends.
 
 When you provision a project in the **CI/CD Gateways** UI, the system generates a unique API Key (e.g., `sre_pk_github_8f92a1b`). 
 
@@ -56,7 +56,7 @@ When you provision a project in the **CI/CD Gateways** UI, the system generates 
 
 1. The SRE Agent must include this key in the HTTP Headers: `-H "X-API-Key: <YOUR_KEY>"`.
 2. **Never hardcode this key in your repository.** You must inject it securely using your CI/CD provider's secret management system (e.g., GitHub Secrets, GitLab CI/CD Variables, Jenkins Credentials).
-3. If the key is missing or invalid, QA Capsule drops the payload immediately and returns a `401 Unauthorized` error to prevent abuse.
+3. If the key is missing or invalid, SRE Capsule drops the payload immediately and returns a `401 Unauthorized` error to prevent abuse.
 
 ---
 
@@ -69,20 +69,20 @@ Below is a robust, production-ready reference script. You can save this as `sre-
 ```bash
 #!/bin/bash
 # ==============================================================================
-# QA Capsule - SRE Telemetry Agent
-# Description: Pushes CI/CD test failures to the QA Capsule Control Plane.
+# SRE Capsule - SRE Telemetry Agent
+# Description: Pushes CI/CD test failures to the SRE Capsule Control Plane.
 # ==============================================================================
 
 set -e
 
 # 1. Validate required environment variables
-if [ -z "$QA_CAPSULE_URL" ]; then
-  echo "[QA-Agent] ERROR: QA_CAPSULE_URL is not set."
+if [ -z "$SRE_CAPSULE_URL" ]; then
+  echo "[SRE-Agent] ERROR: SRE_CAPSULE_URL is not set."
   exit 1
 fi
 
-if [ -z "$QA_CAPSULE_API_KEY" ]; then
-  echo "[QA-Agent] ERROR: QA_CAPSULE_API_KEY is not set."
+if [ -z "$SRE_CAPSULE_API_KEY" ]; then
+  echo "[SRE-Agent] ERROR: SRE_CAPSULE_API_KEY is not set."
   exit 1
 fi
 
@@ -93,7 +93,7 @@ JOB_NAME="${CI_JOB_NAME:-"Automated Test Suite"}"
 PIPELINE_URL="${CI_PIPELINE_URL:-"N/A"}"
 BRANCH_NAME="${CI_COMMIT_REF_NAME:-"main"}"
 
-echo "[QA-Agent] Initializing telemetry for project: $PROJECT_NAME"
+echo "[SRE-Agent] Initializing telemetry for project: $PROJECT_NAME"
 
 # 3. Build the JSON Payload
 # We use standard Bash heredocs to construct the Unified Alert Schema
@@ -109,12 +109,12 @@ EOF
 )
 
 # 4. Dispatch the Telemetry via cURL
-echo "[QA-Agent] Dispatching telemetry to $QA_CAPSULE_URL..."
+echo "[SRE-Agent] Dispatching telemetry to $SRE_CAPSULE_URL..."
 
 HTTP_RESPONSE=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" \
-  -X POST "$QA_CAPSULE_URL" \
+  -X POST "$SRE_CAPSULE_URL" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: $QA_CAPSULE_API_KEY" \
+  -H "X-API-Key: $SRE_CAPSULE_API_KEY" \
   -d "$PAYLOAD")
 
 # 5. Handle the Response
@@ -122,13 +122,13 @@ HTTP_BODY=$(echo $HTTP_RESPONSE | sed -e 's/HTTPSTATUS\:.*//g')
 HTTP_STATUS=$(echo $HTTP_RESPONSE | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
 
 if [ "$HTTP_STATUS" -eq 202 ]; then
-  echo "[QA-Agent] SUCCESS: Incident recorded by QA Capsule."
+  echo "[SRE-Agent] SUCCESS: Incident recorded by SRE Capsule."
   exit 0
 elif [ "$HTTP_STATUS" -eq 401 ]; then
-  echo "[QA-Agent] FATAL: Authentication failed (401). Check your X-API-Key."
+  echo "[SRE-Agent] FATAL: Authentication failed (401). Check your X-API-Key."
   exit 1
 else
-  echo "[QA-Agent] ERROR: Failed to reach QA Capsule. HTTP $HTTP_STATUS"
+  echo "[SRE-Agent] ERROR: Failed to reach SRE Capsule. HTTP $HTTP_STATUS"
   echo "Response: $HTTP_BODY"
   exit 1
 fi
@@ -145,12 +145,12 @@ chmod +x sre-agent.sh
 
 ## 5. Troubleshooting the Agent
 
-If your **CI/CD pipeline** is running but incidents are not appearing on your QA Capsule Dashboard, check the logs of your CI runner for the Agent's HTTP response code :
+If your **CI/CD pipeline** is running but incidents are not appearing on your SRE Capsule Dashboard, check the logs of your CI runner for the Agent's HTTP response code :
 
 1. **202 Accepted** : The connection is perfect. The incident was saved, and background plugins are executing. If you don't see it on the dashboard, refresh the page.
 
-2. **401 Unauthorized** : The connection works, but QA Capsule rejected the request. Ensure that the API Key in your CI Secrets perfectly matches the one generated in the UI. Ensure you haven't deleted and re-created the SQLite database without generating a new key.
+2. **401 Unauthorized** : The connection works, but SRE Capsule rejected the request. Ensure that the API Key in your CI Secrets perfectly matches the one generated in the UI. Ensure you haven't deleted and re-created the SQLite database without generating a new key.
 
 3. **400 Bad Request** : The JSON payload sent by the agent is malformed (e.g., missing a comma, or unescaped quotes in the console logs).
 
-4. **Connection Refused / Timeout** : Your `CI/CD` runner cannot reach your QA Capsule instance. If QA Capsule is hosted internally, ensure your firewall rules allow inbound traffic from your `CI/CD` provider's IP addresses.
+4. **Connection Refused / Timeout** : Your `CI/CD` runner cannot reach your SRE Capsule instance. If SRE Capsule is hosted internally, ensure your firewall rules allow inbound traffic from your `CI/CD` provider's IP addresses.

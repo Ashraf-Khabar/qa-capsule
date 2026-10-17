@@ -377,7 +377,7 @@ export function downloadWeeklyReportCSV() {
             a.href = url;
             const dateStr = new Date().toISOString().split('T')[0];
             let suffix = projectFilter === 'all' ? 'Global' : projectFilter;
-            a.download = `QA_Capsule_Weekly_Report_${suffix}_${dateStr}.csv`;
+            a.download = `SRE_Capsule_Weekly_Report_${suffix}_${dateStr}.csv`;
 
             document.body.appendChild(a);
             a.click();
@@ -418,7 +418,7 @@ function pdfDrawHeader(doc, { logoData, titleScope, rangeLabel }) {
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('QA Capsule — Flight Recorder', textX, 14);
+    doc.text('SRE Capsule — Flight Recorder', textX, 14);
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
@@ -651,7 +651,7 @@ export async function downloadWeeklyReportPDF() {
             doc.setFontSize(7);
             doc.setTextColor(148, 163, 184);
             doc.text(
-                `QA Capsule · Confidential · Page ${p} / ${pageCount}`,
+                `SRE Capsule · Confidential · Page ${p} / ${pageCount}`,
                 PDF_PAGE.w / 2,
                 PDF_PAGE.h - 8,
                 { align: 'center' }
@@ -660,7 +660,7 @@ export async function downloadWeeklyReportPDF() {
 
         const dateStr = new Date().toISOString().split('T')[0];
         const suffix = projectFilter === 'all' ? 'Global' : projectFilter;
-        doc.save(`QA_Capsule_Executive_Report_${suffix}_${dateStr}.pdf`);
+        doc.save(`SRE_Capsule_Executive_Report_${suffix}_${dateStr}.pdf`);
         notify('PDF report generated successfully.', 'success');
     } catch (err) {
         console.error('PDF Gen Error:', err);
@@ -1179,7 +1179,7 @@ export function loadPlugins() {
         .then(({ ok, data, status, offline }) => {
             if (!ok) {
                 const msg = offline
-                    ? 'Cannot reach server. Start: go run ./cmd/qacapsule'
+                    ? 'Cannot reach server. Start: go run ./cmd/srecapsule'
                     : (data?.error || describeApiFailure(status, offline));
                 if (listEl) {
                     listEl.innerHTML = `<div class="empty-state--lg"><p>Failed to load plugins.</p><p>${escapePluginHtml(msg)}</p></div>`;
@@ -1385,7 +1385,7 @@ export function triggerSSO() {
     fetch('/api/sso/login')
         .then(res => {
             if (res.status === 402) {
-                notify("QA Capsule PRO License is missing or expired.", "error");
+                notify("SRE Capsule PRO License is missing or expired.", "error");
                 return null;
             }
             return res.json();
@@ -1594,7 +1594,7 @@ function _updateMCPSection(data) {
         if (data?.mcp_token_set) {
             tokenEl.innerHTML = '<span style="color:var(--success-text);font-weight:600;">Token configured</span> &mdash; the MCP endpoint is protected.';
         } else {
-            tokenEl.innerHTML = '<span style="color:var(--text-subtle);font-weight:600;">Not set</span> &mdash; optional for local demo. Set <code>QACAPSULE_MCP_TOKEN</code> or <code>telemetry.webhook_token</code> in production.';
+            tokenEl.innerHTML = '<span style="color:var(--text-subtle);font-weight:600;">Not set</span> &mdash; optional for local demo. Set <code>SRECAPSULE_MCP_TOKEN</code> or <code>telemetry.webhook_token</code> in production.';
         }
     }
 
@@ -1610,9 +1610,9 @@ window.copyMCPAgentConfig = function() {
     const origin = window.location.origin;
     const config = JSON.stringify({
         mcpServers: {
-            'qa-capsule': {
+            'sre-capsule': {
                 url: `${origin}/mcp`,
-                headers: { Authorization: 'Bearer <QACAPSULE_MCP_TOKEN>' },
+                headers: { Authorization: 'Bearer <SRECAPSULE_MCP_TOKEN>' },
             },
         },
     }, null, 2);

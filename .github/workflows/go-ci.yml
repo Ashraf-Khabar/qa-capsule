@@ -39,7 +39,7 @@ jobs:
         run: govulncheck ./...
 
       - name: Verify build
-        run: go build -o /tmp/qacapsule ./cmd/qacapsule
+        run: go build -o /tmp/srecapsule ./cmd/srecapsule
 
   sonarqube:
     name: SonarQube analysis

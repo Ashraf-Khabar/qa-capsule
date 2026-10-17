@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# QA Capsule CI quarantine gate — fetch deny-list and match Robot test names.
+# SRE Capsule CI quarantine gate — fetch deny-list and match Robot test names.
 #
 # Env (same aliases as run-tests.sh):
-#   QA_CAPSULE_URL / WEBHOOK_URL
-#   QA_CAPSULE_API_KEY / API_KEY
+#   SRE_CAPSULE_URL / WEBHOOK_URL
+#   SRE_CAPSULE_API_KEY / API_KEY
 #
 # Usage:
 #   quarantine-ci-gate.sh list              # print quarantined test names (one per line)
@@ -13,13 +13,13 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CACHE_FILE="${TMPDIR:-/tmp}/qacapsule-quarantine-$$.json"
+CACHE_FILE="${TMPDIR:-/tmp}/srecapsule-quarantine-$$.json"
 
-QA_CAPSULE_URL="${QA_CAPSULE_URL:-${WEBHOOK_URL:-}}"
-QA_CAPSULE_API_KEY="${QA_CAPSULE_API_KEY:-${API_KEY:-}}"
+SRE_CAPSULE_URL="${SRE_CAPSULE_URL:-${WEBHOOK_URL:-}}"
+SRE_CAPSULE_API_KEY="${SRE_CAPSULE_API_KEY:-${API_KEY:-}}"
 
 quarantine_enabled() {
-  [[ -n "${QA_CAPSULE_URL}" && -n "${QA_CAPSULE_API_KEY}" ]]
+  [[ -n "${SRE_CAPSULE_URL}" && -n "${SRE_CAPSULE_API_KEY}" ]]
 }
 
 quarantine_fetch() {
@@ -27,9 +27,9 @@ quarantine_fetch() {
     echo '{}' >"${CACHE_FILE}"
     return 0
   fi
-  local url="${QA_CAPSULE_URL%/}/api/ci/quarantine"
+  local url="${SRE_CAPSULE_URL%/}/api/ci/quarantine"
   echo "==> Fetching CI quarantine deny-list: ${url}"
-  curl -fsS -H "X-API-Key: ${QA_CAPSULE_API_KEY}" "${url}" -o "${CACHE_FILE}"
+  curl -fsS -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" "${url}" -o "${CACHE_FILE}"
 }
 
 quarantine_python() {
@@ -38,7 +38,7 @@ import json
 import os
 import sys
 
-path = os.environ.get("QACAPSULE_QUARANTINE_CACHE", "")
+path = os.environ.get("SRECAPSULE_QUARANTINE_CACHE", "")
 try:
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
@@ -103,7 +103,7 @@ else:
 PY
 }
 
-export QACAPSULE_QUARANTINE_CACHE="${CACHE_FILE}"
+export SRECAPSULE_QUARANTINE_CACHE="${CACHE_FILE}"
 
 main() {
   local cmd="${1:-list}"

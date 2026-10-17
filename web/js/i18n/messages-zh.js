@@ -1,6 +1,6 @@
 /** Simplified Chinese — keys used via data-i18n and t('key') */
 export default {
-    'app.title': 'QA Capsule — SRE 控制平面',
+    'app.title': 'SRE Capsule — SRE 控制平面',
     'common.save': '保存更改',
     'common.reset': '重置本节',
     'common.cancel': '取消',
@@ -57,7 +57,7 @@ export default {
     'login.ssoGoogle': '使用 Google Workspace 登录',
     'login.ssoEnterprise': '使用 SSO 登录 (Enterprise)',
     'login.ssoLocked': '请在设置中安装 Enterprise 许可证以启用 SSO。',
-    'login.offline': '无法连接 QA Capsule 服务器。请启动应用后端，然后刷新此页面。',
+    'login.offline': '无法连接 SRE Capsule 服务器。请启动应用后端，然后刷新此页面。',
 
     'account.title': '我的账户',
     'account.subtitle': '身份、工作区配置文件、外观、仪表盘行为、通知与安全。',
@@ -150,7 +150,7 @@ export default {
     'account.security.confirm': '确认密码',
     'account.data.title': '数据与隐私',
     'account.data.desc': '存储在此浏览器中的本地偏好设置。保存时同步服务器端偏好。',
-    'account.data.item1': '主题、筛选、布局和配置文件 → QA Capsule 账户记录',
+    'account.data.item1': '主题、筛选、布局和配置文件 → SRE Capsule 账户记录',
     'account.data.item2': '货币和提醒音 → 保存时与账户同步',
     'account.data.item3': '侧边栏收起状态 → 浏览器缓存，直至外观偏好同步',
     'account.landing.dashboard': '遥测流 (仪表盘)',

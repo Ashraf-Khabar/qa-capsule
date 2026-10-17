@@ -53,7 +53,7 @@ type JUnitFailure struct {
 // BACKEND API STRUCTURE
 // ==========================================
 
-// UnifiedAlert is the payload expected by the QA Capsule Webhook
+// UnifiedAlert is the payload expected by the SRE Capsule Webhook
 type UnifiedAlert struct {
 	Name        string `json:"name"`
 	Status      string `json:"status"`
@@ -68,8 +68,8 @@ type UnifiedAlert struct {
 func main() {
 	// 1. Define command-line arguments for CI integration
 	reportPath := flag.String("file", "", "Path to the JUnit XML report file")
-	apiKey := flag.String("token", "", "Project API Key from QA Capsule")
-	serverURL := flag.String("url", "http://localhost:8080/api/webhooks/", "QA Capsule Webhook URL")
+	apiKey := flag.String("token", "", "Project API Key from SRE Capsule")
+	serverURL := flag.String("url", "http://localhost:8080/api/webhooks/", "SRE Capsule Webhook URL")
 	framework := flag.String("framework", "CI/CD", "Name of the testing framework (e.g., Cypress, Playwright)")
 
 	flag.Parse()
@@ -115,7 +115,7 @@ func main() {
 		processSuite(suite, *framework, *serverURL, *apiKey, &failedTestsCount)
 	}
 
-	log.Printf("[AGENT SUCCESS] Analysis complete. Sent %d failed tests to QA Capsule Dashboard.", failedTestsCount)
+	log.Printf("[AGENT SUCCESS] Analysis complete. Sent %d failed tests to SRE Capsule Dashboard.", failedTestsCount)
 }
 
 // processSuite recursively searches for failed test cases within a suite
@@ -177,7 +177,7 @@ func sendIncident(suiteName string, test JUnitTestCase, framework string, url st
 		return
 	}
 
-	// Execute HTTP POST Request to QA Capsule
+	// Execute HTTP POST Request to SRE Capsule
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		log.Printf("[AGENT WARNING] Failed to create HTTP request: %v", err)
@@ -190,7 +190,7 @@ func sendIncident(suiteName string, test JUnitTestCase, framework string, url st
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("[AGENT WARNING] Network error while sending alert to QA Capsule: %v", err)
+		log.Printf("[AGENT WARNING] Network error while sending alert to SRE Capsule: %v", err)
 		return
 	}
 	defer resp.Body.Close()

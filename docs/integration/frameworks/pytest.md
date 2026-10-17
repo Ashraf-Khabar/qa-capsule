@@ -10,7 +10,7 @@ icon: material/language-python
 | **Report** | `pytest-results.xml` |
 | **Repo workflow** | `.github/workflows/api-tests-pytest.yml` |
 | **Test folder** | `tests/pytest/` |
-| **Secret** | `QA_CAPSULE_API_PYTEST_KEY` |
+| **Secret** | `SRE_CAPSULE_API_PYTEST_KEY` |
 
 ## Test suites in this repository
 
@@ -34,11 +34,11 @@ pytest tests/pytest/ -v --junitxml=pytest-results.xml
 junit_family = xunit2
 ```
 
-## 2. Upload to QA Capsule
+## 2. Upload to SRE Capsule
 
 ```bash
-curl -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
-  -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+curl -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
+  -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
   -H "X-Run-Id: ${CI_PIPELINE_ID}" \
   -H "X-Execution-Env: STAGING" \
   -H "X-Execution-Type: TEST-RUN" \
@@ -55,11 +55,11 @@ curl -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
   run: pytest tests/pytest/ -v --junitxml=pytest-results.xml
   continue-on-error: true
 
-- name: Send Alert to QA Capsule
+- name: Send Alert to SRE Capsule
   if: always()
   env:
-    WEBHOOK_URL: ${{ secrets.QA_CAPSULE_URL }}
-    API_KEY: ${{ secrets.QA_CAPSULE_API_PYTEST_KEY }}
+    WEBHOOK_URL: ${{ secrets.SRE_CAPSULE_URL }}
+    API_KEY: ${{ secrets.SRE_CAPSULE_API_PYTEST_KEY }}
   run: |
     curl -X POST "$WEBHOOK_URL/api/webhooks/upload?framework=Pytest" \
       -H "X-API-Key: $API_KEY" \

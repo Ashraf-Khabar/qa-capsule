@@ -49,5 +49,5 @@ func incidentSummary(inc IncidentContext) string {
 	if inc.Name != "" {
 		return inc.Name
 	}
-	return "QA Capsule incident"
+	return "SRE Capsule incident"
 }

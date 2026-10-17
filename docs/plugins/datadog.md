@@ -17,7 +17,7 @@ Publishes a Datadog **Event** (`alert_type: error`) to the Events API v1.
 
 ---
 
-=== "QA Capsule Side"
+=== "SRE Capsule Side"
 
     | Variable | Required | Description |
     |----------|-------------|-------------|
@@ -33,7 +33,7 @@ Publishes a Datadog **Event** (`alert_type: error`) to the Events API v1.
     ## 1. API key
 
     1. Datadog → **Organization Settings** → **API Keys**
-    2. Create a dedicated key `qa-capsule-integration`
+    2. Create a dedicated key `sre-capsule-integration`
 
     ## 2. Site / region
 
@@ -44,14 +44,14 @@ Publishes a Datadog **Event** (`alert_type: error`) to the Events API v1.
 
     ## 3. Dashboards & monitors
 
-    Events appear in **Event Stream**; optional: create a monitor on `source:qa-capsule`.
+    Events appear in **Event Stream**; optional: create a monitor on `source:sre-capsule`.
 
     ## 4. Test
 
     ```bash
     curl -X POST "https://api.datadoghq.com/api/v1/events" \
       -H "DD-API-KEY: VOTRE_CLE" -H "Content-Type: application/json" \
-      -d '{"title":"QA Capsule test","text":"hello","alert_type":"error"}'
+      -d '{"title":"SRE Capsule test","text":"hello","alert_type":"error"}'
     ```
 
 ---

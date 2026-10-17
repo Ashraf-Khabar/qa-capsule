@@ -20,7 +20,7 @@ class PaymentServiceTest {
     @Test
     @DisplayName("POST /users creates resource with 201")
     void createUserReturns201() throws Exception {
-        String body = "{\"name\":\"QA Capsule\",\"job\":\"FinOps\"}";
+        String body = "{\"name\":\"SRE Capsule\",\"job\":\"FinOps\"}";
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/users"))
                 .timeout(Duration.ofSeconds(15))
@@ -30,7 +30,7 @@ class PaymentServiceTest {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println("[STDOUT] POST /users → " + response.statusCode());
         assertEquals(201, response.statusCode());
-        assertTrue(response.body().contains("QA Capsule"));
+        assertTrue(response.body().contains("SRE Capsule"));
     }
 
     @Test

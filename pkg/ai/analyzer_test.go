@@ -257,7 +257,7 @@ func TestChatCompletionsURL_CustomBaseURL_NoDuplication(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestAPIKeyFromEnv_ExplicitEnvVar(t *testing.T) {
-	const envName = "TEST_QAC_API_KEY_ENV"
+	const envName = "TEST_SRE_API_KEY_ENV"
 	t.Setenv(envName, "my-secret-key")
 	cfg := ProviderConfig{APIKeyEnv: envName, Provider: ProviderOpenAI}
 	key := apiKeyFromEnv(cfg)

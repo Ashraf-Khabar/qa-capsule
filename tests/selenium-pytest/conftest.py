@@ -1,4 +1,4 @@
-"""Pytest hooks — capture Selenium page HTML on failure for QA Capsule MCP healing."""
+"""Pytest hooks — capture Selenium page HTML on failure for SRE Capsule MCP healing."""
 
 import pytest
 
@@ -8,9 +8,9 @@ MAX_HTML_CHARS = 24_000
 def _build_snapshot(html: str) -> str:
     trimmed = (html or "")[:MAX_HTML_CHARS]
     return (
-        f"[QA_CAPSULE_DOM_SNAPSHOT_START]\n"
+        f"[SRE_CAPSULE_DOM_SNAPSHOT_START]\n"
         f"{trimmed}\n"
-        f"[QA_CAPSULE_DOM_SNAPSHOT_END]"
+        f"[SRE_CAPSULE_DOM_SNAPSHOT_END]"
     )
 
 

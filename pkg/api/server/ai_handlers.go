@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	aiPkg "github.com/QA-Capsule/qa-capsule-community/pkg/ai"
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	aiPkg "github.com/SRE-Capsule/sre-capsule-community/pkg/ai"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 )
 
 // aiManagerOnly wraps a handler so that only users with the exact "manager" role
@@ -38,7 +38,7 @@ func registerAIRoutes(config *core.Config) {
 }
 
 // handleAIConfig handles GET (load) and PUT (save) of the AI provider config.
-// The API key itself is never stored in QA Capsule — only the env var name.
+// The API key itself is never stored in SRE Capsule — only the env var name.
 func handleAIConfig(w http.ResponseWriter, r *http.Request) {
 	if core.AIService == nil {
 		writeJSONError(w, "AI service not initialized", http.StatusServiceUnavailable)
@@ -150,7 +150,7 @@ func handleAITest(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	start := time.Now()
 	result, callErr := aiPkg.HTTPAnalyzer{}.Analyze(ctx, cfg, aiPkg.AnalysisInput{
-		ProjectName:  "qa-capsule",
+		ProjectName:  "sre-capsule",
 		TestName:     "connection-test",
 		Status:       "FAILED",
 		ErrorMessage: `This is a connectivity probe. Respond with exactly this JSON: {"summary":"Connection OK","root_cause":"probe","suggested_fix":"none","confidence":1.0}`,
@@ -205,7 +205,7 @@ func handleAIStatus(w http.ResponseWriter, r *http.Request, config *core.Config)
 }
 
 func mcpTokenConfigured(config *core.Config) bool {
-	if strings.TrimSpace(os.Getenv("QACAPSULE_MCP_TOKEN")) != "" {
+	if strings.TrimSpace(os.Getenv("SRECAPSULE_MCP_TOKEN")) != "" {
 		return true
 	}
 	if config != nil && strings.TrimSpace(config.Telemetry.WebhookToken) != "" {

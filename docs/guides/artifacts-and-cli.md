@@ -64,26 +64,26 @@ data/artifacts/incident_42/trace.zip
 
 ---
 
-## Developer CLI (`qacapsule`)
+## Developer CLI (`srecapsule`)
 
 Binary: `cmd/cli` (Cobra)
 
 ### Build
 
 ```bash
-go build -o bin/qacapsule-cli ./cmd/cli
+go build -o bin/srecapsule-cli ./cmd/cli
 ```
 
 ### Usage
 
 ```bash
-qacapsule run --test-name "Login test" --test-error "assert 1==2" npx playwright test
+srecapsule run --test-name "Login test" --test-error "assert 1==2" npx playwright test
 ```
 
 | Flag / env | Description |
 |---|---|
-| `--api` / `QACAPSULE_API_URL` | Server base URL (default `http://localhost:9000`) |
-| `--api-key` / `QACAPSULE_API_KEY` | Project API key |
+| `--api` / `SRECAPSULE_API_URL` | Server base URL (default `http://localhost:9000`) |
+| `--api-key` / `SRECAPSULE_API_KEY` | Project API key |
 | `--test-name` | Test name for fingerprint (should match CI) |
 | `--test-error` | Error text for fingerprint |
 
@@ -132,7 +132,7 @@ Real-time reporter: [Playwright Reporter](../integration/playwright-reporter.md)
 
 | Step | Action |
 |---|---|
-| 1 | Start server: `go run ./cmd/qacapsule/main.go` |
+| 1 | Start server: `go run ./cmd/srecapsule/main.go` |
 | 2 | Copy project `api_key` from UI |
 | 3 | POST webhook → note `last_incident_id` |
 | 4 | POST artifact zip to `/api/incidents/{id}/artifacts` |

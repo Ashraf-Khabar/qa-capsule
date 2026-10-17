@@ -19,7 +19,7 @@ Also used for **QA flaky report**, **TestRail**, **Zephyr**, **Xray** (same HTTP
 
 ---
 
-=== "QA Capsule Side"
+=== "SRE Capsule Side"
 
     | Variable | Required | Description |
     |----------|-------------|-------------|
@@ -32,7 +32,7 @@ Also used for **QA flaky report**, **TestRail**, **Zephyr**, **Xray** (same HTTP
 
     ```json
     {
-      "source": "qa-capsule",
+      "source": "sre-capsule",
       "event": "incident.detected",
       "incident": "test name",
       "error": "message",
@@ -49,7 +49,7 @@ Also used for **QA flaky report**, **TestRail**, **Zephyr**, **Xray** (same HTTP
 
     - Method **POST**, `Content-Type: application/json`
     - TLS recommended (HTTPS)
-    - Auth: API key, mTLS, or IP allowlist for the QA Capsule server
+    - Auth: API key, mTLS, or IP allowlist for the SRE Capsule server
 
     ## 2. Idempotence
 
@@ -58,9 +58,9 @@ Also used for **QA flaky report**, **TestRail**, **Zephyr**, **Xray** (same HTTP
     ## 3. Test
 
     ```bash
-    curl -X POST https://votre-api.internal/hooks/qa-capsule \
+    curl -X POST https://votre-api.internal/hooks/sre-capsule \
       -H "Content-Type: application/json" \
-      -d '{"source":"qa-capsule","event":"test"}'
+      -d '{"source":"sre-capsule","event":"test"}'
     ```
 
 ---

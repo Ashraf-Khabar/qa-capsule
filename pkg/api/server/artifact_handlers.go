@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
-	"github.com/QA-Capsule/qa-capsule-community/pkg/service"
-	"github.com/QA-Capsule/qa-capsule-community/pkg/storage"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/service"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/storage"
 )
 
 var artifactSvc *service.ArtifactService

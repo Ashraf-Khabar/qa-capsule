@@ -1,4 +1,4 @@
-// Package server wires all HTTP handlers for the QA Capsule REST API. Each
+// Package server wires all HTTP handlers for the SRE Capsule REST API. Each
 // handler file covers one domain: authentication, incidents, self-healing,
 // AI configuration, MCP, integrations, RBAC, and telemetry ingestion.
 // All routes are registered in server.go via RegisterRoutes.
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -152,7 +152,7 @@ func registerAuthRoutes(config *core.Config) {
 				// Send temporary credentials via email
 				htmlBody := fmt.Sprintf(`
 				<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0d1117; color: #c9d1d9; padding: 30px; border-radius: 8px; border: 1px solid #30363d; max-width: 600px; margin: 0 auto;">
-					<h2 style="color: #58a6ff;">QA Flight Recorder</h2>
+					<h2 style="color: #58a6ff;">SRE Flight Recorder</h2>
 					<p>Hello <strong>%s</strong>,</p>
 					<p>Your SRE Control Plane identity has been successfully provisioned. Please find your temporary access credentials below:</p>
 					<div style="background-color: #161b22; padding: 20px; border-radius: 6px; border: 1px solid #30363d; margin: 25px 0;">
@@ -162,7 +162,7 @@ func registerAuthRoutes(config *core.Config) {
 					<p style="color: #ff7b72;"><strong>Warning:</strong> You will be required to change this temporary password upon your first login.</p>
 				</div>`, newUser.Fullname, newUser.Username, tempPwd)
 
-				go sendEmail(config, newUser.Username, "QA Flight Recorder - Your Access Credentials", htmlBody)
+				go sendEmail(config, newUser.Username, "SRE Flight Recorder - Your Access Credentials", htmlBody)
 				w.WriteHeader(http.StatusCreated)
 			} else {
 				http.Error(w, "Database error", http.StatusInternalServerError)
@@ -188,7 +188,7 @@ func registerAuthRoutes(config *core.Config) {
 		if err == nil {
 			htmlBody := fmt.Sprintf(`
 			<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0d1117; color: #c9d1d9; padding: 30px; border-radius: 8px; border: 1px solid #30363d; max-width: 600px; margin: 0 auto;">
-				<h2 style="color: #58a6ff;">QA Flight Recorder</h2>
+				<h2 style="color: #58a6ff;">SRE Flight Recorder</h2>
 				<p>Password Reset Requested.</p>
 				<p>Your SRE Control Plane identity has been reset. Please use your new temporary passphrase:</p>
 				<div style="background-color: #161b22; padding: 20px; border-radius: 6px; border: 1px solid #30363d; margin: 25px 0;">
@@ -198,7 +198,7 @@ func registerAuthRoutes(config *core.Config) {
 				<p style="color: #ff7b72;"><strong>Warning:</strong> You will be required to change this temporary password upon your next login.</p>
 			</div>`, req.Username, tempPwd)
 
-			go sendEmail(config, req.Username, "QA Flight Recorder - Password Reset", htmlBody)
+			go sendEmail(config, req.Username, "SRE Flight Recorder - Password Reset", htmlBody)
 			w.WriteHeader(http.StatusOK)
 		} else {
 			log.Println("[DB ERROR] Failed to reset password:", err)

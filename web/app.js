@@ -1,6 +1,6 @@
 /**
 * web/app.js
-* Main controller for QA Capsule Control Plane
+* Main controller for SRE Capsule Control Plane
 */
 
 // IMPORT MODULES
@@ -83,7 +83,7 @@ window.selectedCurrency = "USD";
 // ==========================================
 function loadPendingResolvedFromStorage() {
     try {
-        const raw = sessionStorage.getItem('qacapsule-pending-resolved');
+        const raw = sessionStorage.getItem('srecapsule-pending-resolved');
         if (!raw) return;
         window.pendingResolvedIds = new Map(JSON.parse(raw));
     } catch (_) {
@@ -93,7 +93,7 @@ function loadPendingResolvedFromStorage() {
 
 function savePendingResolvedToStorage() {
     try {
-        sessionStorage.setItem('qacapsule-pending-resolved', JSON.stringify([...window.pendingResolvedIds]));
+        sessionStorage.setItem('srecapsule-pending-resolved', JSON.stringify([...window.pendingResolvedIds]));
     } catch (_) { }
 }
 
@@ -387,7 +387,7 @@ window.downloadGroupLog = function (groupId, type, event) {
         group.incidents.forEach(inc => { fileContent += `=======================================\nTEST: ${inc.name}\n=======================================\n[ERROR LOGS]\n${inc.error_logs || inc.error_message || "N/A"}\n\n[STDOUT]\n${inc.console_logs || "N/A"}\n\n`; });
     } else if (type === 'xml') {
         fileName = `execution_${groupId}_results.xml`; blobType = "application/xml";
-        fileContent = `<?xml version="1.0" encoding="UTF-8"?>\n<testsuites>\n  <testsuite name="QA_Capsule_Reconstructed_Suite" tests="${group.incidents.length}" failures="${group.incidents.length}">\n`;
+        fileContent = `<?xml version="1.0" encoding="UTF-8"?>\n<testsuites>\n  <testsuite name="SRE_Capsule_Reconstructed_Suite" tests="${group.incidents.length}" failures="${group.incidents.length}">\n`;
         group.incidents.forEach(inc => {
             const safeName = (inc.name || "").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             const safeErr = (inc.error_message || "").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1271,7 +1271,7 @@ window.performLogin = function () {
             const text = isAbort
                 ? 'Login timed out. The server may be overloaded — wait and try again.'
                 : isNetwork
-                ? 'Cannot reach the server. Open http://localhost:9000 and start the backend (go run ./cmd/qacapsule).'
+                ? 'Cannot reach the server. Open http://localhost:9000 and start the backend (go run ./cmd/srecapsule).'
                 : (err.message || 'Invalid username or password.');
             if (errEl) { errEl.textContent = text.toUpperCase(); errEl.style.display = 'block'; }
             notify(text, "error");
@@ -1289,7 +1289,7 @@ window.probeLoginServer = function () {
         if (ok) hint.style.display = 'none';
         else {
             hint.style.display = 'block';
-            hint.textContent = 'Backend not reachable at this URL. Start with: docker compose up -d --build (or go run ./cmd/qacapsule).';
+            hint.textContent = 'Backend not reachable at this URL. Start with: docker compose up -d --build (or go run ./cmd/srecapsule).';
         }
     });
 }
@@ -1519,7 +1519,7 @@ window.initSmartSearchFields = function () {
 // STARTUP
 // ==========================================
 window.addEventListener('unhandledrejection', (e) => {
-    console.error('[QA Capsule] unhandled promise rejection', e.reason);
+    console.error('[SRE Capsule] unhandled promise rejection', e.reason);
 });
 
 window.onload = function () {

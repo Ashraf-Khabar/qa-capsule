@@ -4,7 +4,7 @@ icon: material/test-tube
 
 # All test frameworks — catalog
 
-QA Capsule ingests **any runner that produces JUnit XML** (recommended) or **JSON** via webhooks.
+SRE Capsule ingests **any runner that produces JUnit XML** (recommended) or **JSON** via webhooks.
 
 | Method | Endpoint | When to use |
 |--------|----------|-------------|
@@ -61,8 +61,8 @@ QA Capsule ingests **any runner that produces JUnit XML** (recommended) or **JSO
 ## Universal upload pattern (all JUnit-based frameworks)
 
 ```bash
-curl -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Playwright" \
-  -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+curl -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Playwright" \
+  -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
   -H "X-Run-Id: ${CI_PIPELINE_ID}" \
   -H "X-Execution-Env: STAGING" \
   -H "X-Execution-Type: TEST-RUN" \
@@ -85,14 +85,14 @@ curl -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Playwright" \
 
 | Secret | Used by |
 |--------|---------|
-| `QA_CAPSULE_URL` | All pipelines (base URL, no trailing slash) |
-| `QA_CAPSULE_API_PYTEST_KEY` | `api-tests-pytest.yml` |
-| `QA_CAPSULE_API_NEWMAN_KEY` | `api-tests-newman.yml` |
-| `QA_CAPSULE_API_JUNIT_JAVA_KEY` | `api-tests-junit-java.yml` |
-| `QA_CAPSULE_API_CYPRESS_KEY` | `e2e-tests-cypress.yml` |
-| `QA_CAPSULE_API_PLAYWRIGHT_KEY` | `e2e-tests-playwright.yml` |
-| `QA_CAPSULE_API_ROBOT_KEY` | `e2e-tests-robot.yml` |
-| `QA_CAPSULE_API_SELENIUM_KEY` | `e2e-tests-selenium-pytest.yml` |
+| `SRE_CAPSULE_URL` | All pipelines (base URL, no trailing slash) |
+| `SRE_CAPSULE_API_PYTEST_KEY` | `api-tests-pytest.yml` |
+| `SRE_CAPSULE_API_NEWMAN_KEY` | `api-tests-newman.yml` |
+| `SRE_CAPSULE_API_JUNIT_JAVA_KEY` | `api-tests-junit-java.yml` |
+| `SRE_CAPSULE_API_CYPRESS_KEY` | `e2e-tests-cypress.yml` |
+| `SRE_CAPSULE_API_PLAYWRIGHT_KEY` | `e2e-tests-playwright.yml` |
+| `SRE_CAPSULE_API_ROBOT_KEY` | `e2e-tests-robot.yml` |
+| `SRE_CAPSULE_API_SELENIUM_KEY` | `e2e-tests-selenium-pytest.yml` |
 
 ---
 

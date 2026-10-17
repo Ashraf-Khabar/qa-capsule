@@ -16,7 +16,7 @@ icon: material/kubernetes
 
 ---
 
-=== "QA Capsule Side"
+=== "SRE Capsule Side"
 
     The `k8s` integration returns an explicit message directing you to use a **webhook** to GitOps / an operator.
 
@@ -24,7 +24,7 @@ icon: material/kubernetes
 
     1. Enable the **Custom Webhook** or **GitHub Actions** integration
     2. Gateway: URL to your controller (e.g. restart deployment, Argo CD sync)
-    3. Standard QA Capsule payload (see [webhook.md](webhook.md))
+    3. Standard SRE Capsule payload (see [webhook.md](webhook.md))
 
     ## k8s gateway (optional)
 
@@ -32,7 +32,7 @@ icon: material/kubernetes
 
 === "Provider Side (Kubernetes / GitOps)"
 
-    ## 1. Do not expose kubeconfig to QA Capsule
+    ## 1. Do not expose kubeconfig to SRE Capsule
 
     Prefer an intermediary service that:
 

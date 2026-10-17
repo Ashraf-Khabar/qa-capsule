@@ -2,7 +2,7 @@
 Live API tests against reqres.in (public REST demo).
 
 Most tests perform real HTTP calls. Failures in the last class are intentional
-so QA Capsule ingest + MCP healing gate receive realistic API incidents.
+so SRE Capsule ingest + MCP healing gate receive realistic API incidents.
 """
 
 import sys
@@ -30,7 +30,7 @@ class TestReqresUsers:
         assert "@" in response.json()["data"]["email"]
 
     def test_create_user_returns_201(self):
-        payload = {"name": "QA Capsule", "job": "SRE Control Plane"}
+        payload = {"name": "SRE Capsule", "job": "SRE Control Plane"}
         response = requests.post(f"{BASE_URL}/users", json=payload, timeout=TIMEOUT)
         print(f"[STDOUT] POST /users → {response.status_code}")
         assert response.status_code == 201

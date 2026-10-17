@@ -7,7 +7,7 @@ OUT_DIR="${OUT_DIR:-${TESTS_DIR}/results/robotframework}"
 mkdir -p "${OUT_DIR}"
 
 export OUTPUT_DIR="${OUT_DIR}"
-export QA_CAPSULE_SKIP_UPLOAD="${QA_CAPSULE_SKIP_UPLOAD:-true}"
+export SRE_CAPSULE_SKIP_UPLOAD="${SRE_CAPSULE_SKIP_UPLOAD:-true}"
 
 chmod +x "${ROOT_DIR}/scripts/run-tests.sh"
 "${ROOT_DIR}/scripts/run-tests.sh" || true

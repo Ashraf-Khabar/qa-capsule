@@ -1,4 +1,4 @@
-// Package healing implements the self-healing engine for QA Capsule. It
+// Package healing implements the self-healing engine for SRE Capsule. It
 // classifies test failures into error categories, produces rule-based fix
 // suggestions and remediation hints, persists healing records, and exposes
 // the data needed by the REST layer to drive the Self-Healing Hub UI.

@@ -17,7 +17,7 @@ Triggers an **Events API v2** event (`event_action: trigger`) to PagerDuty.
 
 ---
 
-=== "QA Capsule Side"
+=== "SRE Capsule Side"
 
     | Variable | Required | Description |
     |----------|-------------|-------------|
@@ -38,14 +38,14 @@ Triggers an **Events API v2** event (`event_action: trigger`) to PagerDuty.
 
     ## 2. Escalation
 
-    Configure escalation policies, schedules, and service filters to reduce noise (QA Capsule sends `severity: critical`).
+    Configure escalation policies, schedules, and service filters to reduce noise (SRE Capsule sends `severity: critical`).
 
     ## 3. Test
 
     ```bash
     curl -X POST https://events.pagerduty.com/v2/enqueue \
       -H "Content-Type: application/json" \
-      -d '{"routing_key":"VOTRE_CLE","event_action":"trigger","payload":{"summary":"QA Capsule test","source":"qa-capsule","severity":"critical"}}'
+      -d '{"routing_key":"VOTRE_CLE","event_action":"trigger","payload":{"summary":"SRE Capsule test","source":"sre-capsule","severity":"critical"}}'
     ```
 
 ---

@@ -11,8 +11,8 @@
 # Output of the go coverage tool
 *.out
 
-qacapsule.db
-qacapsule.db-*
+srecapsule.db
+srecapsule.db-*
 data/*.db
 data/*.db-*
 data/artifacts/

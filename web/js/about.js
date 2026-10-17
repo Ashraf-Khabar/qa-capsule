@@ -24,9 +24,9 @@ const ABOUT_TOPICS = {
         breadcrumb: 'Help Center / Overview',
         html: `
         <article class="about-doc about-doc-wide">
-          <h2>QA Capsule — SRE control plane</h2>
+          <h2>SRE Capsule — SRE control plane</h2>
           <p class="about-lead">
-            QA Capsule is a <strong>flight recorder for CI quality</strong>: signed gateways ingest failures,
+            SRE Capsule is a <strong>flight recorder for CI quality</strong>: signed gateways ingest failures,
             fingerprints deduplicate noise, flaky tests are tagged, and remediation runs through
             <strong>visual workflows</strong> or legacy plugins — plus AI summaries, self-healing, and DORA.
           </p>
@@ -98,7 +98,7 @@ const ABOUT_TOPICS = {
         html: `
         <article class="about-doc about-doc-wide">
           <h2>SRE &amp; quality engineering glossary</h2>
-          <p class="about-lead">Definitions as used in QA Capsule UI, APIs, and documentation.</p>
+          <p class="about-lead">Definitions as used in SRE Capsule UI, APIs, and documentation.</p>
           <dl class="about-dl">
             <dt>MTTR (Mean Time To Resolution)</dt>
             <dd>Average minutes from <code>created_at</code> to <code>resolved_at</code> for resolved incidents.</dd>

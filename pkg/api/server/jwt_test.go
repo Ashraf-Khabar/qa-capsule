@@ -3,7 +3,7 @@ package server
 import (
 	"testing"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 )
 
 func TestIsDevelopmentEnv(t *testing.T) {
@@ -19,7 +19,7 @@ func TestIsDevelopmentEnv(t *testing.T) {
 
 func TestInitJWT_allowsDevelopmentFallback(t *testing.T) {
 	t.Setenv("APP_ENV", "development")
-	t.Setenv("QACAPSULE_JWT_SECRET", "")
+	t.Setenv("SRECAPSULE_JWT_SECRET", "")
 	InitJWT(&core.Config{})
 	if len(jwtKey) == 0 {
 		t.Fatal("expected dev fallback JWT key")

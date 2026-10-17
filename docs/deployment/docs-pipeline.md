@@ -94,7 +94,7 @@ mkdocs.yml                      # Site configuration & navigation
 To use a custom domain (e.g. `docs.yourcompany.com`):
 
 1. Add a `CNAME` file in `docs/` with your domain.
-2. Configure DNS `CNAME` record pointing to `qa-capsule.github.io`.
+2. Configure DNS `CNAME` record pointing to `sre-capsule.github.io`.
 3. Enable **Enforce HTTPS** in GitHub Pages settings.
 
 ---
@@ -103,7 +103,7 @@ To use a custom domain (e.g. `docs.yourcompany.com`):
 
 ### Site shows the README instead of MkDocs
 
-**Symptom:** https://qa-capsule.github.io/qa-capsule-community/ looks like the GitHub README (no navigation tabs, no search bar).
+**Symptom:** https://sre-capsule.github.io/sre-capsule-community/ looks like the GitHub README (no navigation tabs, no search bar).
 
 **Cause:** Pages is publishing from **`main`**, which has no built `index.html` — GitHub falls back to rendering `README.md`.
 

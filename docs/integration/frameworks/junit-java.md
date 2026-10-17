@@ -10,7 +10,7 @@ icon: material/language-java
 | **Report** | `reports/TEST-junit-jupiter.xml` |
 | **Repo workflow** | `.github/workflows/api-tests-junit-java.yml` |
 | **Test folder** | `tests/junit-java/src/` |
-| **Secret** | `QA_CAPSULE_API_JUNIT_JAVA_KEY` |
+| **Secret** | `SRE_CAPSULE_API_JUNIT_JAVA_KEY` |
 
 ## Test suites in this repository
 
@@ -55,11 +55,11 @@ mvn clean test
 
 Report: `target/surefire-reports/TEST-*.xml`
 
-## 3. Upload to QA Capsule
+## 3. Upload to SRE Capsule
 
 ```bash
-curl -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=JUnit" \
-  -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+curl -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=JUnit" \
+  -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
   -H "X-Run-Id: ${CI_PIPELINE_ID}" \
   -H "X-Execution-Env: STAGING" \
   -H "X-Execution-Type: TEST-RUN" \
@@ -85,11 +85,11 @@ curl -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=JUnit" \
       --reports-dir reports/
   continue-on-error: true
 
-- name: Send Alert to QA Capsule
+- name: Send Alert to SRE Capsule
   if: always()
   env:
-    WEBHOOK_URL: ${{ secrets.QA_CAPSULE_URL }}
-    API_KEY: ${{ secrets.QA_CAPSULE_API_JUNIT_JAVA_KEY }}
+    WEBHOOK_URL: ${{ secrets.SRE_CAPSULE_URL }}
+    API_KEY: ${{ secrets.SRE_CAPSULE_API_JUNIT_JAVA_KEY }}
   run: |
     curl -X POST "$WEBHOOK_URL/api/webhooks/upload?framework=JUnit" \
       -H "X-API-Key: $API_KEY" \

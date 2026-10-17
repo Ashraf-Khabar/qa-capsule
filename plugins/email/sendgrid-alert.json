@@ -2,7 +2,7 @@
   "auto_run": false,
   "config": {
     "SENDGRID_API_KEY": "",
-    "SENDGRID_FROM": "qa-capsule@yourcompany.com",
+    "SENDGRID_FROM": "sre-capsule@yourcompany.com",
     "SENDGRID_TO": ""
   },
   "description": "Sends an HTML alert email via SendGrid v3 Mail Send API.",

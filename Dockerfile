@@ -5,7 +5,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 # OPTIMIZATION: Use ldflags -s and -w to strip debug information and reduce binary size.
-RUN go build -ldflags="-s -w" -o qacapsule ./cmd/qacapsule/main.go
+RUN go build -ldflags="-s -w" -o srecapsule ./cmd/srecapsule/main.go
 
 FROM alpine:latest
 RUN apk add --no-cache bash curl jq ca-certificates
@@ -17,7 +17,7 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
-COPY --from=builder /app/qacapsule .
+COPY --from=builder /app/srecapsule .
 COPY config.yaml .
 COPY web/ ./web/
 
@@ -28,4 +28,4 @@ RUN mkdir -p ./data && chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 9000
-CMD ["./qacapsule"]
+CMD ["./srecapsule"]

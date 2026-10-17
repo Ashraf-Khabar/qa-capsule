@@ -4,7 +4,7 @@ icon: material/xml
 
 # JUnit XML Upload API
 
-The **JUnit XML Upload** endpoint is the recommended way to send test results to QA Capsule. It parses standard JUnit XML reports and creates one **sub-alert per failed test case**.
+The **JUnit XML Upload** endpoint is the recommended way to send test results to SRE Capsule. It parses standard JUnit XML reports and creates one **sub-alert per failed test case**.
 
 ---
 
@@ -40,7 +40,7 @@ No JWT is required for this endpoint — only the project API key.
 
 ## What Gets Parsed
 
-For each `<testcase>` that contains a `<failure>` or `<error>` child, QA Capsule extracts:
+For each `<testcase>` that contains a `<failure>` or `<error>` child, SRE Capsule extracts:
 
 | Field | XML source | Stored as |
 |---|---|---|
@@ -52,10 +52,10 @@ For each `<testcase>` that contains a `<failure>` or `<error>` child, QA Capsule
 
 The full report stores **all** test cases (pass, fail, skip) for the unified matrix view. Failed `<testcase>` nodes also create **incidents** (unless quarantined or deduplicated by fingerprint).
 
-QA Capsule also deduplicates identical JUnit testcase entries (same normalized testcase identity + same failure payload) to protect against duplicated exporter output across frameworks.
+SRE Capsule also deduplicates identical JUnit testcase entries (same normalized testcase identity + same failure payload) to protect against duplicated exporter output across frameworks.
 
 !!! note "Robot Framework nested suites"
-    rebot xUnit may nest `<testsuite>` elements. QA Capsule flattens nested suites when building the execution report. Use `rebot --xunit robot-junit.xml --outputdir tests/results` (basename only for `--xunit`).
+    rebot xUnit may nest `<testsuite>` elements. SRE Capsule flattens nested suites when building the execution report. Use `rebot --xunit robot-junit.xml --outputdir tests/results` (basename only for `--xunit`).
 
 See [All test frameworks](test-frameworks.md) (Playwright, Cypress, Pytest, Robot, Newman, JUnit, …).
 
@@ -89,7 +89,7 @@ This creates **one incident** for `payment button visible` and skips the passing
 
 ```bash
 curl -f -X POST "https://sre.yourcompany.com/api/webhooks/upload?framework=Playwright" \
-  -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+  -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
   -F "file=@playwright-results.xml"
 ```
 
@@ -102,14 +102,14 @@ curl -f -X POST "https://sre.yourcompany.com/api/webhooks/upload?framework=Playw
   run: npx playwright test
   continue-on-error: true
 
-- name: Upload results to QA Capsule
+- name: Upload results to SRE Capsule
   if: always()
   env:
-    QA_CAPSULE_URL: ${{ secrets.QA_CAPSULE_URL }}
-    QA_CAPSULE_API_KEY: ${{ secrets.QA_CAPSULE_API_KEY }}
+    SRE_CAPSULE_URL: ${{ secrets.SRE_CAPSULE_URL }}
+    SRE_CAPSULE_API_KEY: ${{ secrets.SRE_CAPSULE_API_KEY }}
   run: |
-    curl -f -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Playwright" \
-      -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+    curl -f -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Playwright" \
+      -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
       -F "file=@playwright-results.xml"
 ```
 
@@ -123,12 +123,12 @@ e2e_tests:
     - npx playwright test
   after_script:
     - |
-      curl -f -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Playwright" \
-        -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+      curl -f -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Playwright" \
+        -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
         -F "file=@playwright-results.xml"
   variables:
-    QA_CAPSULE_URL: $QA_CAPSULE_URL
-    QA_CAPSULE_API_KEY: $QA_CAPSULE_API_KEY
+    SRE_CAPSULE_URL: $SRE_CAPSULE_URL
+    SRE_CAPSULE_API_KEY: $SRE_CAPSULE_API_KEY
 ```
 
 ---
@@ -182,7 +182,7 @@ After parsing, each failure goes through correlation:
 ## Best Practices
 
 1. **Always use `if: always()`** so the upload runs when tests fail.
-2. **Use `-f` on curl** so CI fails visibly if QA Capsule is unreachable.
+2. **Use `-f` on curl** so CI fails visibly if SRE Capsule is unreachable.
 3. **One canonical XML file per job** — merge reports first, then upload only that file.
-4. **Keep XML on disk** as a CI artifact for debugging alongside QA Capsule incidents.
+4. **Keep XML on disk** as a CI artifact for debugging alongside SRE Capsule incidents.
 5. **Match `framework` query param** to your actual test runner for easier filtering in logs.

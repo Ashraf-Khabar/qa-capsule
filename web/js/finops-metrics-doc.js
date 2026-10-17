@@ -7,7 +7,7 @@ export const FINOPS_METRICS_DOC_HTML = `
 <article class="about-doc about-doc-wide">
   <h2>FinOps &amp; SRE metrics — theory and implementation</h2>
   <p class="about-lead">
-    QA Capsule models quality engineering as a <strong>stochastic cost process</strong>: every CI failure consumes runner minutes,
+    SRE Capsule models quality engineering as a <strong>stochastic cost process</strong>: every CI failure consumes runner minutes,
     every triage event consumes engineer attention (loaded hourly rate), and flaky tests amplify both through
     <em>re-execution entropy</em>. The control plane materializes these signals into operational KPIs
     (<code>/api/metrics</code>) and managerial FinOps aggregates (<code>/api/finops</code>, <code>/api/finops/evolution</code>).

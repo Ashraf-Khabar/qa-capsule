@@ -22,7 +22,7 @@ See [Design Schemas & Diagrams](design-diagrams.md) §16, §18.
 
 ### Concept
 
-A **runbook** in QA Capsule is a **pre-validated workflow document** (DAG JSON) shipped in code (`pkg/integrations/runbooks.go`). Applying a runbook:
+A **runbook** in SRE Capsule is a **pre-validated workflow document** (DAG JSON) shipped in code (`pkg/integrations/runbooks.go`). Applying a runbook:
 
 1. Loads the template workflow.
 2. Validates every action `file_path` against the live plugin registry.
@@ -79,7 +79,7 @@ Requires **Lead**, **Manager**, or **Admin**.
 
 ### Four keys
 
-| Metric | Definition in QA Capsule |
+| Metric | Definition in SRE Capsule |
 |--------|-------------------------|
 | **Deployment frequency** | `COUNT(pipeline_runs)` / days in range |
 | **Lead time for changes** | **Median** minutes from `pipeline_runs.started_at` to first related `incidents.created_at` |

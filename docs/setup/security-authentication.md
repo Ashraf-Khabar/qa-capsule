@@ -4,7 +4,7 @@ icon: material/shield-lock
 
 # Security & authentication
 
-How QA Capsule protects the control plane, CI ingestion, and optional MCP access.
+How SRE Capsule protects the control plane, CI ingestion, and optional MCP access.
 
 ---
 
@@ -17,7 +17,7 @@ How QA Capsule protects the control plane, CI ingestion, and optional MCP access
 | SQLite DB | Tampering / theft | Filesystem permissions, Docker named volumes, backups |
 | Plugins | RCE | **No shell execution** — Go HTTP integrations only |
 | Artifacts | Malware upload | Extension allow-list, 50 MB cap, async scan hook point |
-| MCP | Unauthorized reads | Optional `QACAPSULE_MCP_TOKEN` bearer |
+| MCP | Unauthorized reads | Optional `SRECAPSULE_MCP_TOKEN` bearer |
 
 ---
 
@@ -35,11 +35,11 @@ How QA Capsule protects the control plane, CI ingestion, and optional MCP access
 | Source | Priority |
 |---|---|
 | `security.jwt_secret` in `config.yaml` | 1 |
-| `QACAPSULE_JWT_SECRET` environment variable | 2 |
+| `SRECAPSULE_JWT_SECRET` environment variable | 2 |
 | Built-in dev secret | Only if `APP_ENV=development` (or `dev` / `local`) |
 
 ```bash
-export QACAPSULE_JWT_SECRET="$(openssl rand -hex 32)"
+export SRECAPSULE_JWT_SECRET="$(openssl rand -hex 32)"
 export APP_ENV=production
 ```
 
@@ -54,7 +54,7 @@ If neither secret nor development env is set, the server **exits at startup** (`
 | `require_password_change` | Forces password screen before dashboard |
 | `exp` | 24 hours from issue |
 
-Algorithm: **HS256**. Rotate `QACAPSULE_JWT_SECRET` to invalidate all sessions.
+Algorithm: **HS256**. Rotate `SRECAPSULE_JWT_SECRET` to invalidate all sessions.
 
 ### Password policy
 
@@ -80,7 +80,7 @@ Used for:
 - `GET /api/incidents/check-flaky/{hash}` (CLI)
 - Artifact upload without JWT
 
-**Never commit API keys** — use CI secrets (`QACAPSULE_API_KEY`).
+**Never commit API keys** — use CI secrets (`SRECAPSULE_API_KEY`).
 
 ---
 
@@ -99,7 +99,7 @@ JSON-RPC style tools for IDE agents (Cursor, etc.):
 | `get_incident_context` | Incident + CI tags for debugging |
 | `get_flaky_tests` | Flaky/quarantine snapshot |
 
-When `QACAPSULE_MCP_TOKEN` is set on the server:
+When `SRECAPSULE_MCP_TOKEN` is set on the server:
 
 ```http
 Authorization: Bearer <token>
@@ -135,8 +135,8 @@ Details: [RBAC & teams](rbac-teams.md).
 ## Secrets checklist (production)
 
 ```bash
-QACAPSULE_JWT_SECRET=<random 32+ bytes>
-QACAPSULE_MCP_TOKEN=<optional>
+SRECAPSULE_JWT_SECRET=<random 32+ bytes>
+SRECAPSULE_MCP_TOKEN=<optional>
 SMTP_USER / SMTP_PASSWORD via UI or env
 SLACK_WEBHOOK_URL, JIRA_API_TOKEN, ... per integration
 ```

@@ -32,7 +32,7 @@ No provider configuration is required in community flow for phase 1/2. Guidance 
 ```mermaid
 sequenceDiagram
     participant USER as Engineer / MCP agent
-    participant API as QA Capsule API
+    participant API as SRE Capsule API
     participant H as HealingService
     participant DB as SQLite
 
@@ -172,12 +172,12 @@ When not quarantined, `quarantined` and `skip` are `false` — run the test norm
 ```yaml
 - name: Skip if quarantined
   env:
-    QACAPSULE_URL: https://qa-capsule.example.com
-    QACAPSULE_API_KEY: ${{ secrets.QACAPSULE_API_KEY }}
+    SRECAPSULE_URL: https://sre-capsule.example.com
+    SRECAPSULE_API_KEY: ${{ secrets.SRECAPSULE_API_KEY }}
     TEST_NAME: "Checkout.Payment"
   run: |
-    resp=$(curl -fsS -H "X-API-Key: $QACAPSULE_API_KEY" \
-      "$QACAPSULE_URL/api/ci/quarantine/status?test=$(python -c "import urllib.parse; print(urllib.parse.quote('$TEST_NAME'))")")
+    resp=$(curl -fsS -H "X-API-Key: $SRECAPSULE_API_KEY" \
+      "$SRECAPSULE_URL/api/ci/quarantine/status?test=$(python -c "import urllib.parse; print(urllib.parse.quote('$TEST_NAME'))")")
     if echo "$resp" | grep -q '"skip":true'; then
       echo "Skipping quarantined test: $TEST_NAME"
       exit 0
@@ -197,7 +197,7 @@ This repository wires the gate automatically:
 | `scripts/run-tests.sh` | Skips quarantined Robot test cases before `robot` runs |
 | `.github/workflows/e2e-tests-robot.yml` | Prints deny-list, passes secrets into `run-tests.sh` |
 
-Set GitHub secrets `QA_CAPSULE_URL` and `QA_CAPSULE_API_ROBOT_KEY`. To skip a demo failure in CI, quarantine test name **`Simulated Payment Gateway Rejection`** (from `demo_failure.robot`) in the QA Capsule UI or via auto-quarantine after flaky detection.
+Set GitHub secrets `SRE_CAPSULE_URL` and `SRE_CAPSULE_API_ROBOT_KEY`. To skip a demo failure in CI, quarantine test name **`Simulated Payment Gateway Rejection`** (from `demo_failure.robot`) in the SRE Capsule UI or via auto-quarantine after flaky detection.
 
 ### Auto-lift
 

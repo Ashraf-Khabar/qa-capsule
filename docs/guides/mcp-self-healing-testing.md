@@ -4,7 +4,7 @@ icon: material/robot
 
 # MCP, self-healing, UI & CLI testing guide
 
-End-to-end validation of **Self-Healing**, **MCP**, the **web UI**, **REST API**, and **qacapsule CLI**.
+End-to-end validation of **Self-Healing**, **MCP**, the **web UI**, **REST API**, and **srecapsule CLI**.
 
 ---
 
@@ -15,7 +15,7 @@ End-to-end validation of **Self-Healing**, **MCP**, the **web UI**, **REST API**
 | Ingest failures | Refresh after webhook | Webhook | — | Agent / curl |
 | Dashboard / KPIs | Yes | `GET /api/metrics` | — | — |
 | Self-healing insights | Self-Healing Hub | `GET /api/healing/insights` | `list_failed_incidents` + `get_incident_context` | — |
-| Flaky / quarantine | Quarantine page | Quarantine API | `get_flaky_tests` | `qacapsule run` warning |
+| Flaky / quarantine | Quarantine page | Quarantine API | `get_flaky_tests` | `srecapsule run` warning |
 | Self-healing patch | Not yet (button) | `POST .../healing/propose` | — | — |
 | Health | — | `GET /healthz` | — | curl |
 
@@ -27,7 +27,7 @@ End-to-end validation of **Self-Healing**, **MCP**, the **web UI**, **REST API**
 
 ```bash
 docker compose up -d --build
-# or: go run ./cmd/qacapsule/main.go
+# or: go run ./cmd/srecapsule/main.go
 ```
 
 Open `http://localhost:9000` — sign in **`admin`** / **`admin`**, then set a new password.
@@ -35,7 +35,7 @@ Open `http://localhost:9000` — sign in **`admin`** / **`admin`**, then set a n
 Optional MCP protection:
 
 ```bash
-export QACAPSULE_MCP_TOKEN=dev-mcp-secret
+export SRECAPSULE_MCP_TOKEN=dev-mcp-secret
 ```
 
 ### Create a gateway
@@ -77,28 +77,28 @@ Expect `{"status":"queued"}`. Wait 2–3 seconds, refresh the **Dashboard**.
 
 ---
 
-## Part B — qacapsule CLI
+## Part B — srecapsule CLI
 
 ### Build
 
 ```bash
-go build -o bin/qacapsule ./cmd/cli
+go build -o bin/srecapsule ./cmd/cli
 ```
 
 ### Commands
 
 ```bash
-qacapsule run --api http://localhost:9000 --api-key YOUR_KEY \
+srecapsule run --api http://localhost:9000 --api-key YOUR_KEY \
   --test-name "checkout payment" --test-error "timeout" \
   npx playwright test
 ```
 
 | Flag / env | Description |
 |---|---|
-| `--api` / `QACAPSULE_API_URL` | Control plane URL |
-| `--api-key` / `QACAPSULE_API_KEY` | Project API key |
-| `--test-name` / `QACAPSULE_TEST_NAME` | Fingerprint name |
-| `--test-error` / `QACAPSULE_TEST_ERROR` | Fingerprint error text |
+| `--api` / `SRECAPSULE_API_URL` | Control plane URL |
+| `--api-key` / `SRECAPSULE_API_KEY` | Project API key |
+| `--test-name` / `SRECAPSULE_TEST_NAME` | Fingerprint name |
+| `--test-error` / `SRECAPSULE_TEST_ERROR` | Fingerprint error text |
 
 On failure, CLI calls `GET /api/incidents/check-flaky/{sha256}` and prints a **yellow `[FLAKY]` warning** when applicable.
 
@@ -129,7 +129,7 @@ GitHub PR creation (when integration configured).
 ## Part D — MCP (Cursor)
 
 1. Add server URL `http://localhost:9000/mcp`.
-2. If `QACAPSULE_MCP_TOKEN` is set, add header `Authorization: Bearer <token>`.
+2. If `SRECAPSULE_MCP_TOKEN` is set, add header `Authorization: Bearer <token>`.
 3. Verify tools:
    - `list_failed_incidents`
    - `get_incident_context`
@@ -176,6 +176,6 @@ curl -s http://localhost:9000/metrics
 | 3 | Webhook → incident | Refresh | curl / agent |
 | 4 | Self-healing context | Yes | GET/POST healing endpoints |
 | 5 | Flaky tag | Yes | Same webhook twice |
-| 6 | CLI flaky warn | — | `qacapsule run` |
+| 6 | CLI flaky warn | — | `srecapsule run` |
 | 7 | MCP tools | — | Cursor |
 | 8 | healthz/readyz | — | curl |

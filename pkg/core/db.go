@@ -13,7 +13,7 @@ import (
 // Global database connection pool
 var DB *sql.DB
 
-// InitDB initializes the SQLite database under DataDir() (see QACAPSULE_DATA_DIR).
+// InitDB initializes the SQLite database under DataDir() (see SRECAPSULE_DATA_DIR).
 func InitDB(ignoredPath string) {
 	dbPath := DBFilePath()
 

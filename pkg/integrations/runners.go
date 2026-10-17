@@ -78,8 +78,8 @@ func runSlack(ctx context.Context, m *Manifest, inc IncidentContext, routing Pro
 		"attachments": []map[string]any{{
 			"color":  "#ff4444",
 			"title":  fmt.Sprintf("SRE Alert: %s", incidentSummary(inc)),
-			"text":   fmt.Sprintf("Error detected by QA Capsule.\n\n%s", inc.Error),
-			"footer": "QA Capsule Remediation Engine",
+			"text":   fmt.Sprintf("Error detected by SRE Capsule.\n\n%s", inc.Error),
+			"footer": "SRE Capsule Remediation Engine",
 		}},
 	}
 	code, body, err := httpPostJSON(ctx, webhook, payload, nil)
@@ -111,8 +111,8 @@ func runJira(ctx context.Context, m *Manifest, inc IncidentContext, routing Proj
 	payload := map[string]any{
 		"fields": map[string]any{
 			"project":     map[string]string{"key": projectKey},
-			"summary":   fmt.Sprintf("[QA Capsule] %s", incidentSummary(inc)),
-			"description": fmt.Sprintf("Incident from QA Capsule.\n\n%s", inc.Error),
+			"summary":   fmt.Sprintf("[SRE Capsule] %s", incidentSummary(inc)),
+			"description": fmt.Sprintf("Incident from SRE Capsule.\n\n%s", inc.Error),
 			"issuetype": map[string]string{"name": issueType},
 		},
 	}
@@ -148,7 +148,7 @@ func runTeams(ctx context.Context, m *Manifest, inc IncidentContext, routing Pro
 		"@type":    "MessageCard",
 		"@context": "http://schema.org/extensions",
 		"themeColor": "E81123",
-		"summary":  "QA Capsule alert",
+		"summary":  "SRE Capsule alert",
 		"sections": []map[string]any{{
 			"activityTitle":    fmt.Sprintf("SRE incident: %s", incidentSummary(inc)),
 			"activitySubtitle": fmt.Sprintf("Status: %s", inc.Status),
@@ -180,8 +180,8 @@ func runPagerDuty(ctx context.Context, m *Manifest, inc IncidentContext, _ Proje
 		"routing_key": key,
 		"event_action": "trigger",
 		"payload": map[string]any{
-			"summary":  fmt.Sprintf("[QA Capsule] %s", incidentSummary(inc)),
-			"source":   "qa-capsule",
+			"summary":  fmt.Sprintf("[SRE Capsule] %s", incidentSummary(inc)),
+			"source":   "sre-capsule",
 			"severity": "critical",
 		},
 	}
@@ -207,10 +207,10 @@ func runOpsgenie(ctx context.Context, m *Manifest, inc IncidentContext, _ Projec
 	}
 	u := strings.TrimSuffix(apiURL, "/") + "/v2/alerts"
 	payload := map[string]any{
-		"message":     fmt.Sprintf("[QA Capsule] %s", incidentSummary(inc)),
+		"message":     fmt.Sprintf("[SRE Capsule] %s", incidentSummary(inc)),
 		"description": inc.Error,
 		"priority":    "P1",
-		"source":      "qa-capsule",
+		"source":      "sre-capsule",
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, mustJSON(payload))
 	if err != nil {
@@ -238,8 +238,8 @@ func runVictorOps(ctx context.Context, m *Manifest, inc IncidentContext, _ Proje
 	}
 	payload := map[string]any{
 		"message_type":        "CRITICAL",
-		"entity_display_name": "QA Capsule",
-		"state_message":       fmt.Sprintf("[QA Capsule] %s", incidentSummary(inc)),
+		"entity_display_name": "SRE Capsule",
+		"state_message":       fmt.Sprintf("[SRE Capsule] %s", incidentSummary(inc)),
 	}
 	code, body, err := httpPostJSON(ctx, u, payload, nil)
 	if err != nil {
@@ -261,7 +261,7 @@ func runWebhook(ctx context.Context, m *Manifest, inc IncidentContext, _ Project
 		return Result{Success: false, Logs: "[ERROR] WEBHOOK_URL not configured."}
 	}
 	payload := map[string]any{
-		"source":   "qa-capsule",
+		"source":   "sre-capsule",
 		"event":    "incident.detected",
 		"incident": incidentSummary(inc),
 		"error":    inc.Error,
@@ -293,10 +293,10 @@ func runDatadog(ctx context.Context, m *Manifest, inc IncidentContext, _ Project
 		site = "datadoghq.com"
 	}
 	payload := map[string]any{
-		"title": fmt.Sprintf("QA Capsule: %s", incidentSummary(inc)),
+		"title": fmt.Sprintf("SRE Capsule: %s", incidentSummary(inc)),
 		"text":  inc.Error,
 		"alert_type": "error",
-		"source_type_name": "qa-capsule",
+		"source_type_name": "sre-capsule",
 	}
 	url := fmt.Sprintf("https://api.%s/api/v1/events", site)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, mustJSON(payload))
@@ -333,7 +333,7 @@ func runSendGrid(ctx context.Context, m *Manifest, inc IncidentContext, _ Projec
 	payload := map[string]any{
 		"personalizations": []map[string]any{{"to": []map[string]string{{"email": to}}}},
 		"from":             map[string]string{"email": from},
-		"subject":          fmt.Sprintf("[QA Capsule] %s", incidentSummary(inc)),
+		"subject":          fmt.Sprintf("[SRE Capsule] %s", incidentSummary(inc)),
 		"content":          []map[string]string{{"type": "text/plain", "value": inc.Error}},
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.sendgrid.com/v3/mail/send", mustJSON(payload))
@@ -371,7 +371,7 @@ func runGitHub(ctx context.Context, m *Manifest, inc IncidentContext, _ ProjectR
 	payload := map[string]any{
 		"ref": ref,
 		"inputs": map[string]string{
-			"triggered_by": "qa-capsule",
+			"triggered_by": "sre-capsule",
 			"incident":     incidentSummary(inc),
 		},
 	}
@@ -408,7 +408,7 @@ func runSMTP(ctx context.Context, m *Manifest, inc IncidentContext, _ ProjectRou
 	if host == "" || from == "" || to == "" {
 		return Result{Success: false, Logs: "[ERROR] SMTP_HOST, SMTP_FROM, SMTP_TO required."}
 	}
-	subject := fmt.Sprintf("[QA Capsule] %s", incidentSummary(inc))
+	subject := fmt.Sprintf("[SRE Capsule] %s", incidentSummary(inc))
 	body := fmt.Sprintf("Incident: %s\n\n%s", incidentSummary(inc), inc.Error)
 	msg := []byte(fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", from, to, subject, body))
 	addr := host + ":" + port

@@ -22,7 +22,7 @@ The community engine uses the **webhook runner**: configure a receiver URL per t
 
 === "TestRail"
 
-    === "QA Capsule Side"
+    === "SRE Capsule Side"
 
         | Variable | Usage |
         |----------|--------|
@@ -43,11 +43,11 @@ The community engine uses the **webhook runner**: configure a receiver URL per t
 
         1. TestRail → user profile → **API Key**
         2. Create a test run; note **Run ID** and **Case ID**
-        3. Option: middleware (Azure Function, small service) that receives the QA Capsule JSON and calls the TestRail `add_result_for_case` API
+        3. Option: middleware (Azure Function, small service) that receives the SRE Capsule JSON and calls the TestRail `add_result_for_case` API
 
 === "Zephyr Scale"
 
-    === "QA Capsule Side"
+    === "SRE Capsule Side"
 
         Gateway: **Zephyr Webhook URL** → effective `WEBHOOK_URL`.
 
@@ -61,7 +61,7 @@ The community engine uses the **webhook runner**: configure a receiver URL per t
 
 === "Xray Cloud"
 
-    === "QA Capsule Side"
+    === "SRE Capsule Side"
 
         Gateway: **Xray Webhook URL**.
 
@@ -75,11 +75,11 @@ The community engine uses the **webhook runner**: configure a receiver URL per t
 
 ---
 
-## QA Capsule payload received by your webhook
+## SRE Capsule payload received by your webhook
 
 ```json
 {
-  "source": "qa-capsule",
+  "source": "sre-capsule",
   "event": "incident.detected",
   "incident": "[Playwright] login",
   "error": "assertion failed",

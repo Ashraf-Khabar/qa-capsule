@@ -1,6 +1,6 @@
 /** German — keys used via data-i18n and t('key') */
 export default {
-    'app.title': 'QA Capsule — SRE Control Plane',
+    'app.title': 'SRE Capsule — SRE Control Plane',
     'common.save': 'Änderungen speichern',
     'common.reset': 'Abschnitt zurücksetzen',
     'common.cancel': 'Abbrechen',
@@ -57,7 +57,7 @@ export default {
     'login.ssoGoogle': 'Mit Google Workspace anmelden',
     'login.ssoEnterprise': 'Mit SSO anmelden (Enterprise)',
     'login.ssoLocked': 'Installieren Sie eine Enterprise-Lizenz in den Einstellungen, um SSO zu aktivieren.',
-    'login.offline': 'Der QA-Capsule-Server ist nicht erreichbar. Starten Sie das Anwendungs-Backend und aktualisieren Sie diese Seite.',
+    'login.offline': 'Der SRE-Capsule-Server ist nicht erreichbar. Starten Sie das Anwendungs-Backend und aktualisieren Sie diese Seite.',
 
     'account.title': 'Mein Konto',
     'account.subtitle': 'Identität, Arbeitsbereichsprofile, Erscheinungsbild, Dashboard-Verhalten, Benachrichtigungen und Sicherheit.',
@@ -150,7 +150,7 @@ export default {
     'account.security.confirm': 'Passwort bestätigen',
     'account.data.title': 'Daten & Datenschutz',
     'account.data.desc': 'Lokale Einstellungen in diesem Browser gespeichert. Server-Einstellungen werden beim Speichern synchronisiert.',
-    'account.data.item1': 'Thema, Filter, Layouts & Profile → Kontodatensatz auf QA Capsule',
+    'account.data.item1': 'Thema, Filter, Layouts & Profile → Kontodatensatz auf SRE Capsule',
     'account.data.item2': 'Währung & Alert-Töne → beim Speichern mit dem Konto synchronisiert',
     'account.data.item3': 'Seitenleisten-Zustand → Browser-Cache bis Erscheinungsbild-Einstellungen synchronisiert sind',
     'account.landing.dashboard': 'Telemetrie-Stream (Dashboard)',

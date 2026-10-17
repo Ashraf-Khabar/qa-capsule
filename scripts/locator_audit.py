@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 """
-QA Capsule — Proactive Locator Audit
+SRE Capsule — Proactive Locator Audit
 =====================================
 Reads ALL test files in the repo, extracts every locator/selector,
 opens the target app URL in a headless browser and checks which ones
 no longer exist on the page.
 
-Broken locators are sent to QA Capsule as incidents so Groq/Gemini
+Broken locators are sent to SRE Capsule as incidents so Groq/Gemini
 can propose fixes BEFORE a test fails in CI.
 
 Usage:
   python scripts/locator_audit.py \
       --app-url  https://your-app.com \
       --tests-dir tests/ \
-      --qac-url  https://your-qacapsule.com \
+      --sre-url  https://your-srecapsule.com \
       --api-key  sre_pk_your_project_key
 
 Environment variables (alternative to CLI args):
   APP_URL          Target application URL
   TESTS_DIR        Root folder of test files (default: tests/)
-  QA_CAPSULE_URL   QA Capsule base URL
-  QA_CAPSULE_API_KEY  Project API key
+  SRE_CAPSULE_URL   SRE Capsule base URL
+  SRE_CAPSULE_API_KEY  Project API key
 
 Dependencies:
   pip install playwright beautifulsoup4 requests
@@ -151,10 +151,10 @@ def get_page_html(page) -> str:
         return ""
 
 
-# ── QA Capsule reporting ──────────────────────────────────────────────────────
+# ── SRE Capsule reporting ──────────────────────────────────────────────────────
 
-def report_broken_locator(qac_url: str, api_key: str, check: LocatorCheck, page_html: str):
-    """Creates an incident in QA Capsule for a broken locator."""
+def report_broken_locator(sre_url: str, api_key: str, check: LocatorCheck, page_html: str):
+    """Creates an incident in SRE Capsule for a broken locator."""
     payload = {
         "results": [{
             "test_name":      f"[LocatorAudit] {Path(check.source_file).name}:{check.source_line}",
@@ -163,16 +163,16 @@ def report_broken_locator(qac_url: str, api_key: str, check: LocatorCheck, page_
                 f"Locator '{check.locator}' not found on {check.page_url}.\n"
                 f"Framework: {check.framework}\n"
                 f"Source: {check.source_file} line {check.source_line}\n"
-                f"[QA_CAPSULE_DOM_SNAPSHOT_START]\n{page_html}\n[QA_CAPSULE_DOM_SNAPSHOT_END]"
+                f"[SRE_CAPSULE_DOM_SNAPSHOT_START]\n{page_html}\n[SRE_CAPSULE_DOM_SNAPSHOT_END]"
             ),
-            "console_logs":   f"[QA_CAPSULE_DOM_SNAPSHOT_START]\n{page_html}\n[QA_CAPSULE_DOM_SNAPSHOT_END]",
+            "console_logs":   f"[SRE_CAPSULE_DOM_SNAPSHOT_START]\n{page_html}\n[SRE_CAPSULE_DOM_SNAPSHOT_END]",
             "browser":        "chromium",
             "pipeline_run_id": f"locator-audit-{os.environ.get('GITHUB_RUN_ID', 'local')}",
         }]
     }
     try:
         r = requests.post(
-            f"{qac_url.rstrip('/')}/api/webhooks/",
+            f"{sre_url.rstrip('/')}/api/webhooks/",
             json=payload,
             headers={"X-API-Key": api_key, "Content-Type": "application/json"},
             timeout=10,
@@ -180,19 +180,19 @@ def report_broken_locator(qac_url: str, api_key: str, check: LocatorCheck, page_
         r.raise_for_status()
         return True
     except Exception as e:
-        print(f"  [WARN] Failed to report to QA Capsule: {e}", file=sys.stderr)
+        print(f"  [WARN] Failed to report to SRE Capsule: {e}", file=sys.stderr)
         return False
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="QA Capsule Proactive Locator Audit")
+    parser = argparse.ArgumentParser(description="SRE Capsule Proactive Locator Audit")
     parser.add_argument("--app-url",   default=os.environ.get("APP_URL", ""))
     parser.add_argument("--tests-dir", default=os.environ.get("TESTS_DIR", "tests/"))
-    parser.add_argument("--qac-url",   default=os.environ.get("QA_CAPSULE_URL", ""))
-    parser.add_argument("--api-key",   default=os.environ.get("QA_CAPSULE_API_KEY", ""))
-    parser.add_argument("--dry-run",   action="store_true", help="Print results, don't send to QA Capsule")
+    parser.add_argument("--sre-url",   default=os.environ.get("SRE_CAPSULE_URL", ""))
+    parser.add_argument("--api-key",   default=os.environ.get("SRE_CAPSULE_API_KEY", ""))
+    parser.add_argument("--dry-run",   action="store_true", help="Print results, don't send to SRE Capsule")
     args = parser.parse_args()
 
     if not args.app_url:
@@ -238,20 +238,20 @@ def main():
         print("All locators are healthy.")
         sys.exit(0)
 
-    if args.dry_run or not args.qac_url or not args.api_key:
-        print("--dry-run or missing QA Capsule credentials - not reporting incidents.")
+    if args.dry_run or not args.sre_url or not args.api_key:
+        print("--dry-run or missing SRE Capsule credentials - not reporting incidents.")
         for check, _ in broken:
             print(f"  - {check.locator}  [{check.source_file}:{check.source_line}]")
         sys.exit(1)
 
-    print(f"Reporting {len(broken)} broken locators to QA Capsule...")
+    print(f"Reporting {len(broken)} broken locators to SRE Capsule...")
     reported = 0
     for check, html in broken:
-        if report_broken_locator(args.qac_url, args.api_key, check, html):
+        if report_broken_locator(args.sre_url, args.api_key, check, html):
             reported += 1
             print(f"  Reported: {check.locator}")
 
-    print(f"\n{reported}/{len(broken)} incidents created in QA Capsule.")
+    print(f"\n{reported}/{len(broken)} incidents created in SRE Capsule.")
     print("Open Self-Healing Hub -> AI will propose fixes automatically.")
     sys.exit(1 if broken else 0)
 

@@ -100,7 +100,7 @@ GET /api/incidents/check-flaky/{fingerprint}
 === "Go"
 
 ```go
-import "github.com/QA-Capsule/qa-capsule-community/pkg/core"
+import "github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 
 hash := core.IncidentFingerprint("Login test", "assert 1==2")
 ```

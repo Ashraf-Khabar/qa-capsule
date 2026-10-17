@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/integrations"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/integrations"
 )
 
 // SRERoutingEntry is one plugin routing block on a CI/CD gateway project.

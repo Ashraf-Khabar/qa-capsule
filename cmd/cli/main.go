@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 	"github.com/spf13/cobra"
 )
 
@@ -21,11 +21,11 @@ var (
 
 func main() {
 	root := &cobra.Command{
-		Use:   "qacapsule",
-		Short: "QA Capsule local test wrapper for developers",
+		Use:   "srecapsule",
+		Short: "SRE Capsule local test wrapper for developers",
 	}
-	root.PersistentFlags().StringVar(&apiBaseURL, "api", envOr("QACAPSULE_API_URL", "http://localhost:9000"), "QA Capsule API base URL")
-	root.PersistentFlags().StringVar(&apiKey, "api-key", os.Getenv("QACAPSULE_API_KEY"), "Project API key (X-API-Key)")
+	root.PersistentFlags().StringVar(&apiBaseURL, "api", envOr("SRECAPSULE_API_URL", "http://localhost:9000"), "SRE Capsule API base URL")
+	root.PersistentFlags().StringVar(&apiKey, "api-key", os.Getenv("SRECAPSULE_API_KEY"), "Project API key (X-API-Key)")
 
 	root.AddCommand(runCmd())
 	if err := root.Execute(); err != nil {
@@ -61,14 +61,14 @@ func runCmd() *cobra.Command {
 
 			name := testName
 			if name == "" {
-				name = os.Getenv("QACAPSULE_TEST_NAME")
+				name = os.Getenv("SRECAPSULE_TEST_NAME")
 			}
 			if name == "" {
 				name = args[0]
 			}
 			errText := testError
 			if errText == "" {
-				errText = os.Getenv("QACAPSULE_TEST_ERROR")
+				errText = os.Getenv("SRECAPSULE_TEST_ERROR")
 			}
 			if errText == "" {
 				errText = err.Error()

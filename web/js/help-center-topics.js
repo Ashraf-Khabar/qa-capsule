@@ -126,7 +126,7 @@ X-Commit-Sha: abcdef</pre>
         breadcrumb: 'Help Center / Architecture',
         html: `
         <article class="about-doc about-doc-wide">
-          <h2>How QA Capsule works</h2>
+          <h2>How SRE Capsule works</h2>
           <ol class="about-detail-list">
             <li><strong>Ingest</strong> — Webhook validates API key → dedup by fingerprint + run → optional flaky/perf tags → SQLite insert.</li>
             <li><strong>Remediate</strong> — Visual workflow DAG <em>or</em> legacy AUTO-RUN plugins (async, max 32 concurrent).</li>
@@ -134,7 +134,7 @@ X-Commit-Sha: abcdef</pre>
             <li><strong>Observe</strong> — Dashboard, DORA, FinOps, artifacts.</li>
           </ol>
           <h3>Storage</h3>
-          <p>SQLite (<code>data/qacapsule.db</code>), plugin manifests in <code>plugins/</code>, artifacts on disk. Single Go process serves API + static UI.</p>
+          <p>SQLite (<code>data/srecapsule.db</code>), plugin manifests in <code>plugins/</code>, artifacts on disk. Single Go process serves API + static UI.</p>
           <h3>Security</h3>
           <ul class="about-detail-list">
             <li>UI: JWT after login (role in claims).</li>

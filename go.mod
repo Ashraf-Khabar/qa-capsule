@@ -1,4 +1,4 @@
-module github.com/QA-Capsule/qa-capsule-community
+module github.com/SRE-Capsule/sre-capsule-community
 
 go 1.25.0
 

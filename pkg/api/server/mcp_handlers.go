@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 )
 
 const mcpProtocolVersion = "2024-11-05"
@@ -23,7 +23,7 @@ func registerMCPRoutes(config *core.Config) {
 func mcpAuthMiddleware(config *core.Config, next http.HandlerFunc) http.HandlerFunc {
 	limited := rateLimitMiddleware("mcp", 120, time.Minute, next)
 	return func(w http.ResponseWriter, r *http.Request) {
-		expected := strings.TrimSpace(os.Getenv("QACAPSULE_MCP_TOKEN"))
+		expected := strings.TrimSpace(os.Getenv("SRECAPSULE_MCP_TOKEN"))
 		if expected == "" && config != nil {
 			expected = strings.TrimSpace(config.Telemetry.WebhookToken)
 		}
@@ -71,7 +71,7 @@ func handleMCP(w http.ResponseWriter, r *http.Request) {
 				"tools": map[string]interface{}{},
 			},
 			"serverInfo": map[string]string{
-				"name":    "qa-capsule",
+				"name":    "sre-capsule",
 				"version": core.Version,
 			},
 		})

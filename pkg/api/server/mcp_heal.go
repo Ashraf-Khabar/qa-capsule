@@ -25,8 +25,8 @@ import (
 	"strings"
 	"time"
 
-	aiPkg "github.com/QA-Capsule/qa-capsule-community/pkg/ai"
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	aiPkg "github.com/SRE-Capsule/sre-capsule-community/pkg/ai"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 )
 
 // HealResult is the structured payload returned by the heal_incident tool.

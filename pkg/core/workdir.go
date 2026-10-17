@@ -7,7 +7,7 @@ import (
 )
 
 // EnsureProjectRoot changes the process working directory to the folder that contains config.yaml.
-// Avoids an empty ./data/qacapsule.db when the server is started from another directory (common on Windows).
+// Avoids an empty ./data/srecapsule.db when the server is started from another directory (common on Windows).
 func EnsureProjectRoot() {
 	if _, err := os.Stat("config.yaml"); err == nil {
 		return

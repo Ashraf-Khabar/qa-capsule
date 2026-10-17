@@ -136,9 +136,9 @@ export function notifyNewIncidentsIfEnabled(count, sampleTitle) {
     }
     if (lastIncidentCountForNotify !== null && count > lastIncidentCountForNotify) {
         try {
-            new Notification('QA Capsule — new incident', {
+            new Notification('SRE Capsule — new incident', {
                 body: sampleTitle || 'New failure detected on Telemetry Stream',
-                tag: 'qa-capsule-incident'
+                tag: 'sre-capsule-incident'
             });
         } catch (_) { /* blocked */ }
     }
@@ -510,7 +510,7 @@ export function exportProfilePreferences() {
     const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'qa-capsule-preferences.json';
+    a.download = 'sre-capsule-preferences.json';
     a.click();
     URL.revokeObjectURL(a.href);
     notify('Preferences exported', 'success');

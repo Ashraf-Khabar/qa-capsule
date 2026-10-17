@@ -18,9 +18,9 @@ The remediation engine executes **native HTTP** calls (Slack, Jira, PagerDuty, �
 
 ## Recommended Documentation
 
-1. **[Configuration Guide — two sides](configuration-guide.md)** — QA Capsule vs provider
+1. **[Configuration Guide — two sides](configuration-guide.md)** — SRE Capsule vs provider
 2. **[Catalog with logos](integrations-catalog.md)** — table of all integrations
-3. Per-tool pages (Slack, Jira, …) — **QA Capsule side** / **Provider side** tabs
+3. Per-tool pages (Slack, Jira, …) — **SRE Capsule side** / **Provider side** tabs
 
 ---
 
@@ -33,7 +33,7 @@ The remediation engine executes **native HTTP** calls (Slack, Jira, PagerDuty, �
 | Plugin Engine UI | Configure, AUTO-RUN, Execute |
 | CI/CD Gateway | Pipeline routing (**Add configuration**) |
 
-Loaded **once at server startup**. After modifying a manifest → restart QA Capsule.
+Loaded **once at server startup**. After modifying a manifest → restart SRE Capsule.
 
 ```mermaid
 sequenceDiagram

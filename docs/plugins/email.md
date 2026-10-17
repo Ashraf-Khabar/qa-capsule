@@ -19,7 +19,7 @@ Two separate manifests under `plugins/email/`:
 
 === "SendGrid"
 
-    === "QA Capsule Side"
+    === "SRE Capsule Side"
 
         | Variable | Required |
         |----------|-------------|
@@ -37,7 +37,7 @@ Two separate manifests under `plugins/email/`:
 
 === "SMTP"
 
-    === "QA Capsule Side"
+    === "SRE Capsule Side"
 
         | Variable | Default | Description |
         |----------|--------|-------------|
@@ -50,7 +50,7 @@ Two separate manifests under `plugins/email/`:
     === "Provider Side (SMTP)"
 
         1. Obtain corporate relay (Exchange, Postfix, Mailtrap for dev)
-        2. Allow QA Capsule server IP as relay if required
+        2. Allow SRE Capsule server IP as relay if required
         3. SPF/DKIM aligned with `SMTP_FROM`
 
 ---

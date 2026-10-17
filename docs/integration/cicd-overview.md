@@ -4,13 +4,13 @@ icon: material/sitemap-outline
 
 # CI/CD Integration — Complete Guide
 
-This page is the **master reference** for connecting any CI/CD platform to QA Capsule. Read this first, then follow the provider-specific guide for your stack.
+This page is the **master reference** for connecting any CI/CD platform to SRE Capsule. Read this first, then follow the provider-specific guide for your stack.
 
 ---
 
 ## Two Ingestion Methods
 
-QA Capsule supports two complementary ingestion paths:
+SRE Capsule supports two complementary ingestion paths:
 
 | Method | Endpoint | Best for |
 |---|---|---|
@@ -27,7 +27,7 @@ QA Capsule supports two complementary ingestion paths:
 
 Use this checklist for **every** new project:
 
-- [ ] **1. Provision a project** in QA Capsule → **CI/CD Gateways** (Ingestion module).
+- [ ] **1. Provision a project** in SRE Capsule → **CI/CD Gateways** (Ingestion module).
 - [ ] **2. Copy** the generated **Webhook URL** and **API Key** immediately (the key is shown only once).
 - [ ] **3. Store secrets** in your CI platform (GitHub Secrets, GitLab CI Variables, Jenkins Credentials).
 - [ ] **4. Configure your test framework** to output JUnit XML (see [JUnit XML Upload](junit-xml-upload.md)).
@@ -47,13 +47,13 @@ Regardless of platform, you need exactly two secrets:
 
 | Secret name (example) | Value |
 |---|---|
-| `QA_CAPSULE_URL` | Base URL of your instance, e.g. `https://sre.yourcompany.com` — **no trailing slash** |
-| `QA_CAPSULE_API_KEY` | Project API key from the provisioning screen, e.g. `sre_pk_github_abc123` |
+| `SRE_CAPSULE_URL` | Base URL of your instance, e.g. `https://sre.yourcompany.com` — **no trailing slash** |
+| `SRE_CAPSULE_API_KEY` | Project API key from the provisioning screen, e.g. `sre_pk_github_abc123` |
 
 The upload URL is always:
 
 ```
-${QA_CAPSULE_URL}/api/webhooks/upload?framework=Playwright
+${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Playwright
 ```
 
 ---
@@ -63,8 +63,8 @@ ${QA_CAPSULE_URL}/api/webhooks/upload?framework=Playwright
 This `curl` command works on GitHub Actions, GitLab CI, Jenkins, Azure DevOps, CircleCI, and any Linux runner:
 
 ```bash
-curl -f -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Playwright" \
-  -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+curl -f -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Playwright" \
+  -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
   -F "file=@test-results.xml"
 ```
 
@@ -114,7 +114,7 @@ curl -f -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Playwright" \
 
 ## How Correlation Protects Your Dashboard
 
-After you resolve an incident, QA Capsule **will not create a duplicate** if the same test fails again with the same fingerprint:
+After you resolve an incident, SRE Capsule **will not create a duplicate** if the same test fails again with the same fingerprint:
 
 1. **Open duplicate** — same fingerprint + `is_resolved = 0` → skipped (no spam).
 2. **Resolved duplicate** — same fingerprint + `is_resolved = 1` → skipped (your manual resolution is respected).

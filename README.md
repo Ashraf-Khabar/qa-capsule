@@ -1,9 +1,9 @@
-# QA Flight Recorder (QA Capsule) — Community
+# SRE Flight Recorder (SRE Capsule) — Community
 
-[![Version](https://img.shields.io/badge/version-v1.0.17-blue.svg)](https://qa-capsule.github.io/qa-capsule-community/)
+[![Version](https://img.shields.io/badge/version-v1.0.17-blue.svg)](https://sre-capsule.github.io/sre-capsule-community/)
 ![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)
 
-**QA Capsule** is an SRE control plane for CI/CD and E2E test failures: ingest, correlate, quarantine flaky tests, run native integrations (no shell plugins), AI RCA, FinOps, DORA, and a full web dashboard.
+**SRE Capsule** is an SRE control plane for CI/CD and E2E test failures: ingest, correlate, quarantine flaky tests, run native integrations (no shell plugins), AI RCA, FinOps, DORA, and a full web dashboard.
 
 <p align="center">
   <img src="./images/ui-1.png" width="800" alt="Dashboard">
@@ -27,9 +27,9 @@
 
 ---
 
-## Why QA Capsule?
+## Why SRE Capsule?
 
-When a shared dependency fails, hundreds of tests can fail at once. QA Capsule **deduplicates** by fingerprint and pipeline run, tags **flaky** and **performance** regressions, stores **artifacts**, and routes alerts through **Slack, Jira, Teams**, and more — without bash remotes on the server.
+When a shared dependency fails, hundreds of tests can fail at once. SRE Capsule **deduplicates** by fingerprint and pipeline run, tags **flaky** and **performance** regressions, stores **artifacts**, and routes alerts through **Slack, Jira, Teams**, and more — without bash remotes on the server.
 
 ---
 
@@ -42,7 +42,7 @@ When a shared dependency fails, hundreds of tests can fail at once. QA Capsule *
 | **Integrations** | Go HTTP engine + visual workflow DAG (Slack, Jira, PagerDuty, GitHub …) |
 | **Operations** | Dashboard, Execution Hub, runbooks, FinOps, DORA metrics |
 | **Security** | JWT sessions, RBAC, per-project API keys, rate limiting, SSRF guards, MCP token enforcement |
-| **Developer tools** | `qacapsule run` CLI, Playwright reporter, JUnit agent, MCP endpoint |
+| **Developer tools** | `srecapsule run` CLI, Playwright reporter, JUnit agent, MCP endpoint |
 
 **Full list:** [docs/reference/feature-catalog.md](docs/reference/feature-catalog.md)
 
@@ -53,8 +53,8 @@ When a shared dependency fails, hundreds of tests can fail at once. QA Capsule *
 Works on **Linux, macOS, and Windows** (Docker Desktop or Engine).
 
 ```bash
-git clone https://github.com/QA-Capsule/qa-capsule-community.git
-cd qa-capsule-community
+git clone https://github.com/SRE-Capsule/sre-capsule-community.git
+cd sre-capsule-community
 docker compose up -d --build
 docker compose ps   # wait until healthy
 ```
@@ -70,9 +70,9 @@ docker compose up -d --build --force-recreate
 
 | Variable | Compose default | Purpose |
 |----------|-----------------|--------|
-| `QACAPSULE_DATA_DIR` | `/app/data` | SQLite + artifacts (volume `qacapsule_data`) |
-| `QACAPSULE_JWT_SECRET` | `dev-compose-change-me` | JWT signing — change in `.env` for real deployments |
-| `QACAPSULE_MCP_TOKEN` | *(unset in dev)* | Required in production (`APP_ENV` ≠ development) |
+| `SRECAPSULE_DATA_DIR` | `/app/data` | SQLite + artifacts (volume `srecapsule_data`) |
+| `SRECAPSULE_JWT_SECRET` | `dev-compose-change-me` | JWT signing — change in `.env` for real deployments |
+| `SRECAPSULE_MCP_TOKEN` | *(unset in dev)* | Required in production (`APP_ENV` ≠ development) |
 | `APP_ENV` | `development` | Dev JWT fallback when `jwt_secret` is empty |
 
 Host bind mount for DB inspection:
@@ -87,18 +87,18 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ## Local development (`go run`)
 
 ```bash
-go run ./cmd/qacapsule/main.go
-go build -o bin/qacapsule ./cmd/cli
+go run ./cmd/srecapsule/main.go
+go build -o bin/srecapsule ./cmd/cli
 ```
 
 | Issue | Fix |
 |-------|-----|
-| `readonly database` | `chmod -R u+w data` or use Docker; or fallback to `~/.qa-capsule/data` |
-| JWT fatal on start | `export APP_ENV=development` or set `QACAPSULE_JWT_SECRET` |
+| `readonly database` | `chmod -R u+w data` or use Docker; or fallback to `~/.sre-capsule/data` |
+| JWT fatal on start | `export APP_ENV=development` or set `SRECAPSULE_JWT_SECRET` |
 
 ```bash
-export QACAPSULE_DATA_DIR=./data
-export QACAPSULE_JWT_SECRET="$(openssl rand -hex 32)"   # production
+export SRECAPSULE_DATA_DIR=./data
+export SRECAPSULE_JWT_SECRET="$(openssl rand -hex 32)"   # production
 ```
 
 ---
@@ -106,10 +106,10 @@ export QACAPSULE_JWT_SECRET="$(openssl rand -hex 32)"   # production
 ## CLI example
 
 ```bash
-export QACAPSULE_API_URL=http://localhost:9000
-export QACAPSULE_API_KEY=your_project_key
+export SRECAPSULE_API_URL=http://localhost:9000
+export SRECAPSULE_API_KEY=your_project_key
 
-bin/qacapsule run --test-name "Login" --test-error "assert failed" -- npx playwright test
+bin/srecapsule run --test-name "Login" --test-error "assert failed" -- npx playwright test
 ```
 
 On failure, the CLI warns if the fingerprint is already marked **flaky** in the control plane.
@@ -120,7 +120,7 @@ On failure, the CLI warns if the fingerprint is already marked **flaky** in the 
 
 | Topic | Link |
 |-------|------|
-| **Published docs** | https://qa-capsule.github.io/qa-capsule-community/ |
+| **Published docs** | https://sre-capsule.github.io/sre-capsule-community/ |
 | Home / map | [docs/index.md](docs/index.md) |
 | Security & JWT | [docs/setup/security-authentication.md](docs/setup/security-authentication.md) |
 | RBAC & Teams | [docs/setup/rbac-teams.md](docs/setup/rbac-teams.md) |
@@ -178,8 +178,8 @@ Set `SLACK_WEBHOOK_URL` on the server host.
 ## Security
 
 - Shell-based plugin execution was **removed** (no RCE via `.sh` plugins).
-- Use HTTPS and strong `QACAPSULE_JWT_SECRET` in production.
-- Set `QACAPSULE_MCP_TOKEN` in production — MCP endpoints reject unauthenticated calls.
+- Use HTTPS and strong `SRECAPSULE_JWT_SECRET` in production.
+- Set `SRECAPSULE_MCP_TOKEN` in production — MCP endpoints reject unauthenticated calls.
 - Restrict `/metrics` and `/mcp` at the network edge.
 - Integration secrets (Jira, Slack, …) belong in **environment variables**, never in committed JSON manifests.
 - Report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
@@ -195,14 +195,14 @@ See [Security & authentication](docs/setup/security-authentication.md) for the f
 | **Go CI** | Push / PR to `main` | `go test`, coverage, `govulncheck`, build verify |
 | **SonarQube** | Push / PR (when enabled) | Code quality & coverage upload |
 | **Docs** | Push to `main` (docs paths) | MkDocs → GitHub Pages |
-| **E2E / API samples** | Manual (`workflow_dispatch`) | Framework demos + optional QA Capsule upload |
+| **E2E / API samples** | Manual (`workflow_dispatch`) | Framework demos + optional SRE Capsule upload |
 
 ### Required secrets (framework pipelines)
 
 | Secret | Used by |
 |--------|---------|
-| `QA_CAPSULE_URL` | All sample test workflows |
-| `QA_CAPSULE_API_*_KEY` | Per-framework project API keys |
+| `SRE_CAPSULE_URL` | All sample test workflows |
+| `SRE_CAPSULE_API_*_KEY` | Per-framework project API keys |
 
 Upload steps **skip gracefully** when secrets are missing — tests still run and artifacts are saved.
 

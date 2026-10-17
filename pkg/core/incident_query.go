@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/quarantine"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/quarantine"
 )
 
 // IncidentTelemetry is the canonical incident view for MCP and self-healing (framework-agnostic).
@@ -41,7 +41,7 @@ type FlakyTestTelemetry struct {
 	LastSeen           string  `json:"last_seen,omitempty"`
 }
 
-// LoadIncidentTelemetry loads everything QA Capsule knows about one incident.
+// LoadIncidentTelemetry loads everything SRE Capsule knows about one incident.
 func LoadIncidentTelemetry(incidentID int64) (*IncidentTelemetry, error) {
 	if DB == nil {
 		return nil, fmt.Errorf("database not initialized")

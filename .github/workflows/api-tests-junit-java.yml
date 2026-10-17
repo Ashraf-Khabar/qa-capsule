@@ -34,15 +34,15 @@ jobs:
             --reports-dir reports/
         continue-on-error: true
 
-      - name: Upload results to QA Capsule
+      - name: Upload results to SRE Capsule
         if: always()
         env:
-          QA_CAPSULE_URL: ${{ secrets.QA_CAPSULE_URL }}
-          API_KEY: ${{ secrets.QA_CAPSULE_API_JUNIT_JAVA_KEY }}
+          SRE_CAPSULE_URL: ${{ secrets.SRE_CAPSULE_URL }}
+          API_KEY: ${{ secrets.SRE_CAPSULE_API_JUNIT_JAVA_KEY }}
         run: |
           REPORT=$(find reports -name 'TEST-*.xml' -type f | head -1)
-          chmod +x .github/scripts/upload-junit-to-qacapsule.sh
-          .github/scripts/upload-junit-to-qacapsule.sh "$REPORT" JUnit "${{ github.run_id }}-${{ github.run_attempt }}"
+          chmod +x .github/scripts/upload-junit-to-srecapsule.sh
+          .github/scripts/upload-junit-to-srecapsule.sh "$REPORT" JUnit "${{ github.run_id }}-${{ github.run_attempt }}"
 
       - name: Fail pipeline on test failures
         if: steps.junit_run.outcome == 'failure'

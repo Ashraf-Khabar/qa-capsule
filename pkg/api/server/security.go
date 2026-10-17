@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -55,12 +55,12 @@ func EnforceProductionSecurity(config *core.Config) {
 	if isDevelopmentEnv() {
 		return
 	}
-	mcpToken := strings.TrimSpace(os.Getenv("QACAPSULE_MCP_TOKEN"))
+	mcpToken := strings.TrimSpace(os.Getenv("SRECAPSULE_MCP_TOKEN"))
 	if mcpToken == "" && config != nil {
 		mcpToken = strings.TrimSpace(config.Telemetry.WebhookToken)
 	}
 	if mcpToken == "" {
-		log.Fatal("[FATAL] QACAPSULE_MCP_TOKEN (or telemetry.webhook_token) is required in production — MCP endpoints must not be open")
+		log.Fatal("[FATAL] SRECAPSULE_MCP_TOKEN (or telemetry.webhook_token) is required in production — MCP endpoints must not be open")
 	}
 }
 

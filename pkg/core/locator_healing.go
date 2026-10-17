@@ -649,10 +649,10 @@ func SuggestHealedLocator(original, framework string) (healed string, confidence
 }
 
 // ExtractDOMSnapshot extracts the page HTML captured by a test listener
-// (between QA_CAPSULE_DOM_SNAPSHOT_START/END markers) from a single log blob.
+// (between SRE_CAPSULE_DOM_SNAPSHOT_START/END markers) from a single log blob.
 func ExtractDOMSnapshot(consoleLogs string) string {
-	const start = "[QA_CAPSULE_DOM_SNAPSHOT_START]"
-	const end = "[QA_CAPSULE_DOM_SNAPSHOT_END]"
+	const start = "[SRE_CAPSULE_DOM_SNAPSHOT_START]"
+	const end = "[SRE_CAPSULE_DOM_SNAPSHOT_END]"
 	i := strings.Index(consoleLogs, start)
 	if i < 0 {
 		return ""
@@ -667,7 +667,7 @@ func ExtractDOMSnapshot(consoleLogs string) string {
 
 // ExtractDOMSnapshotFromLogs searches console_logs, error_logs, and error_message.
 // Robot/Cypress write DOM snapshots to stdout → console_logs.
-// Playwright writes to stderr → error_logs (see qa-capsule-reporter.js).
+// Playwright writes to stderr → error_logs (see sre-capsule-reporter.js).
 // Cypress/Playwright may also embed markers in the failure message body.
 func ExtractDOMSnapshotFromLogs(consoleLogs, errorLogs, errorMessage string) string {
 	if s := ExtractDOMSnapshot(consoleLogs); s != "" {

@@ -4,7 +4,7 @@ icon: material/tune
 
 # Configuration Guide (two sides)
 
-Each QA Capsule integration is configured in **two places**: the QA Capsule platform and the **provider** (Slack, Jira, PagerDuty, etc.).
+Each SRE Capsule integration is configured in **two places**: the SRE Capsule platform and the **provider** (Slack, Jira, PagerDuty, etc.).
 
 <div align="center" class="integration-hero">
   <img src="../assets/integrations/slack.png" alt="Slack" title="Example logo">
@@ -21,7 +21,7 @@ flowchart LR
   subgraph provider [Provider]
     API[Account / API / Webhook]
   end
-  subgraph qac [QA Capsule]
+  subgraph srec [SRE Capsule]
     ENV[Server secrets]
     PE[Plugin Engine]
     GW[CI/CD Gateway routing]
@@ -37,15 +37,15 @@ flowchart LR
 | Side | Who configures | Where | What |
 |------|---------------|-----|------|
 | **Provider** | Tool admin (Slack, Atlassian, …) | Provider console | Service account, token, webhook URL, API keys |
-| **QA Capsule** | Manager / Lead (configure, execute); Manager / Admin (AUTO-RUN, gateway toggles) | UI + environment variables | Secrets, routing |
+| **SRE Capsule** | Manager / Lead (configure, execute); Manager / Admin (AUTO-RUN, gateway toggles) | UI + environment variables | Secrets, routing |
 
 ---
 
-## QA Capsule Side (detail)
+## SRE Capsule Side (detail)
 
 ### 1. Global secrets (recommended)
 
-On the **Go process** running QA Capsule:
+On the **Go process** running SRE Capsule:
 
 ```bash
 export SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
@@ -143,7 +143,7 @@ flowchart TB
   MF --> RUN
 ```
 
-| Example | Where to set on QA Capsule side | Where to set on provider side |
+| Example | Where to set on SRE Capsule side | Where to set on provider side |
 |---------|------------------------------|-------------------------------|
 | Slack webhook URL | `SLACK_WEBHOOK_URL` in env | Slack → Incoming Webhooks → URL |
 | Channel per team | Gateway **Slack Channel** | Create the `#alerts-*` channel in the workspace |
@@ -185,7 +185,7 @@ Depends on each tool — see the dedicated page:
 ## Production Checklist
 
 - [ ] Service account / app created with the provider
-- [ ] Token or URL copied into QA Capsule server secrets
+- [ ] Token or URL copied into SRE Capsule server secrets
 - [ ] Successful **Execute** in Plugin Engine
 - [ ] AUTO-RUN enabled only when ready
 - [ ] Routing added on the correct CI/CD gateway

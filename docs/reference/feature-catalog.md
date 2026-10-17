@@ -4,7 +4,7 @@ icon: material/view-list
 
 # Feature catalog
 
-Complete map of **QA Capsule Community** capabilities: UI, API, CLI, and background workers.
+Complete map of **SRE Capsule Community** capabilities: UI, API, CLI, and background workers.
 
 Typography in this site uses the shared compact theme (`docs/stylesheets/extra.css`): **Roboto 13px body**, smaller code blocks, consistent tables.
 
@@ -49,7 +49,7 @@ See [Editions](../guides/editions-community-enterprise.md).
 |---|---|---|
 | JSON webhook | `POST /api/webhooks/{project}` | `X-API-Key`, optional `X-Run-Id`, `X-Run-Attempt` |
 | JUnit upload | `POST /api/webhooks/upload` | Batch XML |
-| Async queue | Internal | `202 queued`; workers: `QACAPSULE_INGEST_WORKERS`, `QACAPSULE_INGEST_QUEUE_SIZE` |
+| Async queue | Internal | `202 queued`; workers: `SRECAPSULE_INGEST_WORKERS`, `SRECAPSULE_INGEST_QUEUE_SIZE` |
 | Deduplication | Fingerprint + run | Same test + same run + **open** incident only |
 | Flaky tag | `[FLAKY]` prefix | Re-fail after resolve within policy window |
 | Perf tag | `[PERF]` | Passed test slower than 150% of 30-day avg |
@@ -69,7 +69,7 @@ See [Editions](../guides/editions-community-enterprise.md).
 |---|---|
 | JWT (UI sessions) | [Security & authentication](../setup/security-authentication.md) |
 | Project API keys | Webhooks, CLI, artifacts |
-| MCP bearer token | `QACAPSULE_MCP_TOKEN` |
+| MCP bearer token | `SRECAPSULE_MCP_TOKEN` |
 | Optional webhook token | `telemetry.webhook_token` in config |
 | RBAC | [RBAC & teams](../setup/rbac-teams.md) |
 
@@ -79,7 +79,7 @@ See [Editions](../guides/editions-community-enterprise.md).
 
 | Tool | Path | Purpose |
 |---|---|---|
-| **qacapsule CLI** | `cmd/cli` | `qacapsule run` + flaky warning |
+| **srecapsule CLI** | `cmd/cli` | `srecapsule run` + flaky warning |
 | **JUnit agent** | `cmd/agent` | Push XML to webhook |
 | **listusers** | `cmd/listusers` | List DB users |
 | **resetpass** | `cmd/resetpass` | Reset password offline |
@@ -105,7 +105,7 @@ See [Operations & health API](../api/operations-health.md).
 
 | Path | Content |
 |---|---|
-| `QACAPSULE_DATA_DIR` / `./data` | `qacapsule.db` (SQLite WAL) |
+| `SRECAPSULE_DATA_DIR` / `./data` | `srecapsule.db` (SQLite WAL) |
 | `./data/artifacts/` | Incident uploads (local provider) |
 | `plugins/` | JSON integration manifests |
 | `reports/` | Telemetry JSON for `/ws` demo |

@@ -18,11 +18,11 @@ Automatically creates a Jira ticket (Bug / Task) via the REST API `POST /rest/ap
 
 ---
 
-=== "QA Capsule Side"
+=== "SRE Capsule Side"
 
     ## Server variables
 
-    | Variable | Required | QA Capsule source |
+    | Variable | Required | SRE Capsule source |
     |----------|-------------|-------------------|
     | `JIRA_URL` | **Yes** | Env / Configure (e.g. `https://company.atlassian.net`) |
     | `JIRA_EMAIL` | **Yes** | Atlassian service account |
@@ -57,8 +57,8 @@ Automatically creates a Jira ticket (Bug / Task) via the REST API `POST /rest/ap
     {
       "fields": {
         "project": { "key": "SCRUM" },
-        "summary": "[QA Capsule] checkout payment",
-        "description": "Incident from QA Capsule.\n\nTimeout...",
+        "summary": "[SRE Capsule] checkout payment",
+        "description": "Incident from SRE Capsule.\n\nTimeout...",
         "issuetype": { "name": "Bug" }
       }
     }
@@ -83,7 +83,7 @@ Automatically creates a Jira ticket (Bug / Task) via the REST API `POST /rest/ap
 
     1. [id.atlassian.com](https://id.atlassian.com) → **Security** → **API tokens**
     2. **Create API token** → copy once
-    3. Store in secret manager / `export JIRA_API_TOKEN` on the QA Capsule server
+    3. Store in secret manager / `export JIRA_API_TOKEN` on the SRE Capsule server
 
     ## 3. Jira project
 
@@ -96,7 +96,7 @@ Automatically creates a Jira ticket (Bug / Task) via the REST API `POST /rest/ap
 
     ```bash
     curl -u "email:API_TOKEN" -H "Content-Type: application/json" \
-      -d '{"fields":{"project":{"key":"SCRUM"},"summary":"QA Capsule test","issuetype":{"name":"Task"}}}' \
+      -d '{"fields":{"project":{"key":"SCRUM"},"summary":"SRE Capsule test","issuetype":{"name":"Task"}}}' \
       "https://VOTRE-DOMAINE.atlassian.net/rest/api/2/issue"
     ```
 

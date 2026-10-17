@@ -1,8 +1,8 @@
 # Automated tests (multi-framework)
 
-**QA Capsule Community** — realistic demo suites for CI/CD ingestion, incident correlation, and **MCP self-healing**. Each pipeline runs against **public demo sites** and **fails on purpose** on the last scenario so JUnit upload + MCP `heal_incident` can be exercised from the dashboard or IDE.
+**SRE Capsule Community** — realistic demo suites for CI/CD ingestion, incident correlation, and **MCP self-healing**. Each pipeline runs against **public demo sites** and **fails on purpose** on the last scenario so JUnit upload + MCP `heal_incident` can be exercised from the dashboard or IDE.
 
-**Docs:** [Test frameworks catalog](https://qa-capsule.github.io/qa-capsule-community/integration/test-frameworks/) · [MCP self-healing](https://qa-capsule.github.io/qa-capsule-community/guides/mcp-self-healing-testing/)
+**Docs:** [Test frameworks catalog](https://sre-capsule.github.io/sre-capsule-community/integration/test-frameworks/) · [MCP self-healing](https://sre-capsule.github.io/sre-capsule-community/guides/mcp-self-healing-testing/)
 
 ## Demo targets
 
@@ -53,11 +53,11 @@ chmod +x tests/run-framework.sh tests/*/run.sh tests/upload-junit.sh
 ./tests/run-framework.sh junit-java
 ```
 
-### Upload to QA Capsule
+### Upload to SRE Capsule
 
 ```bash
-export QA_CAPSULE_URL="http://localhost:9000"
-export QA_CAPSULE_API_KEY="your-project-api-key"
+export SRE_CAPSULE_URL="http://localhost:9000"
+export SRE_CAPSULE_API_KEY="your-project-api-key"
 ./tests/run-framework.sh robot
 ```
 
@@ -70,13 +70,13 @@ export API_HEALTH_HOST=reqres.in
 
 ### DOM capture (MCP self-healing)
 
-Every **browser** framework embeds page HTML between `[QA_CAPSULE_DOM_SNAPSHOT_START/END]` markers on failure:
+Every **browser** framework embeds page HTML between `[SRE_CAPSULE_DOM_SNAPSHOT_START/END]` markers on failure:
 
 | Framework | Hook |
 |-----------|------|
 | Robot | `tests/robotframework/resources/dom_capture_listener.py` (`--listener` in CI) |
-| Cypress | `tests/cypress/cypress/support/qa-capsule.js` |
-| Playwright | `tests/playwright/fixtures/qa-capsule-fixture.js` |
+| Cypress | `tests/cypress/cypress/support/sre-capsule.js` |
+| Playwright | `tests/playwright/fixtures/sre-capsule-fixture.js` |
 | Selenium | `tests/selenium-pytest/conftest.py` |
 
 API suites (Pytest/Newman/JUnit) have no browser DOM — healing uses live URL fetch or error text.
@@ -86,7 +86,7 @@ API suites (Pytest/Newman/JUnit) have no browser DOM — healing uses live URL f
 All framework workflows are **manual** (`workflow_dispatch`). Each run:
 
 1. Executes real tests against the demo site/API
-2. Uploads JUnit XML to QA Capsule (`continue-on-error` on tests)
+2. Uploads JUnit XML to SRE Capsule (`continue-on-error` on tests)
 3. **Fails the workflow** (red pipeline) so failures are visible in GitHub
 
 Use **MCP `heal_incident`** or the dashboard **Propose fix** action to analyze incidents after upload.
@@ -105,7 +105,7 @@ Use **MCP `heal_incident`** or the dashboard **Propose fix** action to analyze i
 
 | Secret | Purpose |
 |--------|---------|
-| `QA_CAPSULE_URL` | Control plane base URL |
-| `QA_CAPSULE_API_*_KEY` | Per-framework project API key |
+| `SRE_CAPSULE_URL` | Control plane base URL |
+| `SRE_CAPSULE_API_*_KEY` | Per-framework project API key |
 
-Shared upload script: `.github/scripts/upload-junit-to-qacapsule.sh`.
+Shared upload script: `.github/scripts/upload-junit-to-srecapsule.sh`.

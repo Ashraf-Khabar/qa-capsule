@@ -10,7 +10,7 @@ icon: material/web
 | **Report** | `cypress-results.xml` |
 | **Repo workflow** | `.github/workflows/e2e-tests-cypress.yml` |
 | **Test folder** | `tests/cypress/` |
-| **Secret** | `QA_CAPSULE_API_CYPRESS_KEY` |
+| **Secret** | `SRE_CAPSULE_API_CYPRESS_KEY` |
 
 ## Test suites in this repository
 
@@ -48,11 +48,11 @@ module.exports = defineConfig({
 npx cypress run
 ```
 
-## 4. Upload to QA Capsule
+## 4. Upload to SRE Capsule
 
 ```bash
-curl -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Cypress" \
-  -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+curl -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Cypress" \
+  -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
   -H "X-Run-Id: ${CI_PIPELINE_ID}" \
   -H "X-Execution-Env: STAGING" \
   -H "X-Execution-Type: TEST-RUN" \
@@ -71,11 +71,11 @@ curl -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Cypress" \
   working-directory: tests/cypress
   continue-on-error: true
 
-- name: Send Alert to QA Capsule
+- name: Send Alert to SRE Capsule
   if: always()
   env:
-    WEBHOOK_URL: ${{ secrets.QA_CAPSULE_URL }}
-    API_KEY: ${{ secrets.QA_CAPSULE_API_CYPRESS_KEY }}
+    WEBHOOK_URL: ${{ secrets.SRE_CAPSULE_URL }}
+    API_KEY: ${{ secrets.SRE_CAPSULE_API_CYPRESS_KEY }}
   run: |
     curl -X POST "$WEBHOOK_URL/api/webhooks/upload?framework=Cypress" \
       -H "X-API-Key: $API_KEY" \

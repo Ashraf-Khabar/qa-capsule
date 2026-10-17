@@ -27,14 +27,14 @@ jobs:
             --reporter-junitfull-export newman-results.xml
         continue-on-error: true
 
-      - name: Upload results to QA Capsule
+      - name: Upload results to SRE Capsule
         if: always()
         env:
-          QA_CAPSULE_URL: ${{ secrets.QA_CAPSULE_URL }}
-          API_KEY: ${{ secrets.QA_CAPSULE_API_NEWMAN_KEY }}
+          SRE_CAPSULE_URL: ${{ secrets.SRE_CAPSULE_URL }}
+          API_KEY: ${{ secrets.SRE_CAPSULE_API_NEWMAN_KEY }}
         run: |
-          chmod +x .github/scripts/upload-junit-to-qacapsule.sh
-          .github/scripts/upload-junit-to-qacapsule.sh newman-results.xml Postman "${{ github.run_id }}-${{ github.run_attempt }}"
+          chmod +x .github/scripts/upload-junit-to-srecapsule.sh
+          .github/scripts/upload-junit-to-srecapsule.sh newman-results.xml Postman "${{ github.run_id }}-${{ github.run_attempt }}"
 
       - name: Fail pipeline on test failures
         if: steps.newman_run.outcome == 'failure'

@@ -1,6 +1,6 @@
 /** Spanish — keys used via data-i18n and t('key') */
 export default {
-    'app.title': 'QA Capsule — Plano de control SRE',
+    'app.title': 'SRE Capsule — Plano de control SRE',
     'common.save': 'Guardar cambios',
     'common.reset': 'Restablecer sección',
     'common.cancel': 'Cancelar',
@@ -57,7 +57,7 @@ export default {
     'login.ssoGoogle': 'Iniciar sesión con Google Workspace',
     'login.ssoEnterprise': 'Iniciar sesión con SSO (Enterprise)',
     'login.ssoLocked': 'Instale una licencia Enterprise en Configuración para habilitar SSO.',
-    'login.offline': 'No se puede contactar con el servidor QA Capsule. Inicie el backend de la aplicación y actualice esta página.',
+    'login.offline': 'No se puede contactar con el servidor SRE Capsule. Inicie el backend de la aplicación y actualice esta página.',
 
     'account.title': 'Mi cuenta',
     'account.subtitle': 'Identidad, perfiles de espacio de trabajo, apariencia, comportamiento del panel, notificaciones y seguridad.',
@@ -150,7 +150,7 @@ export default {
     'account.security.confirm': 'Confirmar contraseña',
     'account.data.title': 'Datos y privacidad',
     'account.data.desc': 'Preferencias locales almacenadas en este navegador. Las preferencias del servidor se sincronizan al guardar.',
-    'account.data.item1': 'Tema, filtros, diseños y perfiles → registro de cuenta en QA Capsule',
+    'account.data.item1': 'Tema, filtros, diseños y perfiles → registro de cuenta en SRE Capsule',
     'account.data.item2': 'Moneda y sonidos de alerta → sincronizados con la cuenta al guardar',
     'account.data.item3': 'Contracción de barra lateral → caché del navegador hasta sincronizar preferencias de apariencia',
     'account.landing.dashboard': 'Flujo de telemetría (Panel de control)',

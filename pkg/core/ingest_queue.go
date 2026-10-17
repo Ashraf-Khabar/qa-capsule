@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/quarantine"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/quarantine"
 )
 
 // ErrIngestQueueFull is returned when the ingest buffer is saturated.
@@ -37,7 +37,7 @@ var (
 )
 
 func ingestQueueSize() int {
-	if v := os.Getenv("QACAPSULE_INGEST_QUEUE_SIZE"); v != "" {
+	if v := os.Getenv("SRECAPSULE_INGEST_QUEUE_SIZE"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			return n
 		}
@@ -46,7 +46,7 @@ func ingestQueueSize() int {
 }
 
 func ingestWorkerCount() int {
-	if v := os.Getenv("QACAPSULE_INGEST_WORKERS"); v != "" {
+	if v := os.Getenv("SRECAPSULE_INGEST_WORKERS"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			return n
 		}

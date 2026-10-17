@@ -17,7 +17,7 @@ Sends a **CRITICAL** incident to the Splunk On-Call (formerly VictorOps) REST ro
 
 ---
 
-=== "QA Capsule Side"
+=== "SRE Capsule Side"
 
     | Variable | Required |
     |----------|-------------|
@@ -25,7 +25,7 @@ Sends a **CRITICAL** incident to the Splunk On-Call (formerly VictorOps) REST ro
 
     Configurable per pipeline via gateway **VictorOps Routing URL**.
 
-    JSON body: `message_type: CRITICAL`, `entity_display_name: QA Capsule`, `state_message` with incident summary.
+    JSON body: `message_type: CRITICAL`, `entity_display_name: SRE Capsule`, `state_message` with incident summary.
 
 === "Provider Side (Splunk On-Call)"
 

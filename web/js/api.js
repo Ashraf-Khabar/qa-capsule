@@ -54,7 +54,7 @@ function markApiOffline() {
     const now = Date.now();
     if (now - lastOfflineWarnAt > 8000) {
         lastOfflineWarnAt = now;
-        console.warn('QA Capsule server unreachable. Start the backend or check the URL/port.');
+        console.warn('SRE Capsule server unreachable. Start the backend or check the URL/port.');
     }
 }
 
@@ -71,7 +71,7 @@ export function resetApiOfflineBanner() {
 }
 
 export function describeApiFailure(status, offline) {
-    if (offline) return 'Server unreachable. Start the backend (go run ./cmd/qacapsule) and open http://localhost:9000.';
+    if (offline) return 'Server unreachable. Start the backend (go run ./cmd/srecapsule) and open http://localhost:9000.';
     if (status === 504) return 'Server is busy (request timed out). Wait a few seconds and try again.';
     if (status === 401) return 'Session expired. Please sign in again.';
     if (status === 403) return 'Access denied for this action.';

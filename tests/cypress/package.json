@@ -1,5 +1,5 @@
 {
-  "name": "qa-capsule-cypress-demo",
+  "name": "sre-capsule-cypress-demo",
   "private": true,
   "version": "1.0.0",
   "description": "Cypress Swag Labs checkout demo — TC-04 fails with a broken checkout locator for MCP self-healing.",

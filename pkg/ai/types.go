@@ -1,4 +1,4 @@
-// Package ai provides the LLM integration layer for QA Capsule. It covers
+// Package ai provides the LLM integration layer for SRE Capsule. It covers
 // provider configuration (Groq, Gemini, OpenAI, Ollama, Anthropic, Mistral,
 // Azure OpenAI, OpenRouter), the Repository interface for persisting settings
 // and analysis results, and the Analyzer interface that drives Root Cause

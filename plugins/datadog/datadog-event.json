@@ -4,7 +4,7 @@
     "DD_API_KEY": "",
     "DD_SITE": "datadoghq.com"
   },
-  "description": "Creates a Datadog event for SRE dashboards and monitors when QA Capsule detects a critical failure.",
+  "description": "Creates a Datadog event for SRE dashboards and monitors when SRE Capsule detects a critical failure.",
   "integration": "datadog",
   "name": "Datadog Event",
   "status": "Active",

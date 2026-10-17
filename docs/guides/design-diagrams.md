@@ -4,7 +4,7 @@ icon: material/vector-polyline
 
 # Design Schemas & Diagrams
 
-Reference architecture for **QA Capsule**. All diagrams use [Mermaid](https://mermaid.js.org/); they render in MkDocs Material and on GitHub.
+Reference architecture for **SRE Capsule**. All diagrams use [Mermaid](https://mermaid.js.org/); they render in MkDocs Material and on GitHub.
 
 Related narrative: [System Architecture](architecture.md) · [Platform User Guide](platform-user-guide.md)
 
@@ -22,7 +22,7 @@ flowchart TB
         CI[CI/CD Pipeline]
     end
 
-    QC[(QA Capsule Control Plane)]
+    QC[(SRE Capsule Control Plane)]
 
     subgraph external [External systems]
         SLACK[Slack / Teams]
@@ -42,13 +42,13 @@ flowchart TB
 
 ## 2. Containers (C4 Level 2)
 
-Logical containers inside a single QA Capsule process (Docker or bare metal).
+Logical containers inside a single SRE Capsule process (Docker or bare metal).
 
 ```mermaid
 flowchart TB
     USER[Browser / CI client]
 
-    subgraph process [QA Capsule process :9000]
+    subgraph process [SRE Capsule process :9000]
         WEB[Static Web UI<br/>Vanilla JS + Drawflow]
         API[HTTP API<br/>pkg/api/server]
         CORE[Domain core<br/>pkg/core]
@@ -78,7 +78,7 @@ flowchart TB
 ```mermaid
 flowchart TB
     subgraph entry [Entry]
-        MAIN[cmd/qacapsule/main.go]
+        MAIN[cmd/srecapsule/main.go]
     end
 
     subgraph api [pkg/api/server]
@@ -136,14 +136,14 @@ Typical **Docker Compose** or bare-metal deployment.
 ```mermaid
 flowchart LR
     subgraph host [Host / VM / K8s pod]
-        subgraph container [qa-capsule container]
+        subgraph container [sre-capsule container]
             GO[Go binary :9000]
             WEB[./web static]
         end
     end
 
     subgraph volume [Persistent volumes]
-        SQLITE[(qacapsule.db)]
+        SQLITE[(srecapsule.db)]
         ARTIFACTS[(data/artifacts)]
         CONFIG[(config.yaml)]
         PLUGINS[(plugins/)]
@@ -161,7 +161,7 @@ flowchart LR
 | Port / path | Purpose |
 |-------------|---------|
 | `:9000` | HTTP — UI + API |
-| `./data/qacapsule.db` | SQLite (mount for persistence) |
+| `./data/srecapsule.db` | SQLite (mount for persistence) |
 | `./config.yaml` | Server, SMTP, security, plugins dir |
 | `./plugins/` | Integration manifests (optional bind-mount) |
 | `./data/artifacts/` | Uploaded traces/screenshots |

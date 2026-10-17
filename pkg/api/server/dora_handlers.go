@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 )
 
 func registerDORARoutes(config *core.Config) {

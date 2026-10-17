@@ -4,7 +4,7 @@ icon: fontawesome/brands/gitlab
 
 # GitLab CI/CD Integration
 
-Integrating QA Capsule with GitLab CI allows you to capture test failures directly from your GitLab Runners. Whether you are using shared SaaS runners or self-hosted runners, QA Capsule can ingest your telemetry instantly.
+Integrating SRE Capsule with GitLab CI allows you to capture test failures directly from your GitLab Runners. Whether you are using shared SaaS runners or self-hosted runners, SRE Capsule can ingest your telemetry instantly.
 
 This guide will walk you through provisioning the endpoint, securing your credentials, and updating your `.gitlab-ci.yml` file.
 
@@ -18,7 +18,7 @@ This guide will walk you through provisioning the endpoint, securing your creden
 
 Before proceeding, ensure you have the following:
 
-1. **QA Capsule Access:** You must have the `Operator` or `Administrator` role to provision a new Webhook endpoint.
+1. **SRE Capsule Access:** You must have the `Operator` or `Administrator` role to provision a new Webhook endpoint.
 2. **GitLab Access:** You must have the `Maintainer` or `Owner` role in your GitLab project to manage CI/CD Variables.
 3. **A Test Pipeline:** An existing `.gitlab-ci.yml` file that runs your automated test suites.
 
@@ -26,7 +26,7 @@ Before proceeding, ensure you have the following:
 
 ## Step 1: Identify your Repository Path
 
-Unlike GitHub (which uses Workflow IDs) or Jenkins (which uses Job Names), QA Capsule tracks GitLab pipelines using the **GitLab Repository Path** (also known as the project path with its namespace).
+Unlike GitHub (which uses Workflow IDs) or Jenkins (which uses Job Names), SRE Capsule tracks GitLab pipelines using the **GitLab Repository Path** (also known as the project path with its namespace).
 
 **How to find it:**
 
@@ -37,11 +37,11 @@ Unlike GitHub (which uses Workflow IDs) or Jenkins (which uses Job Names), QA Ca
 
 ---
 
-## Step 2: Provision the Endpoint in QA Capsule
+## Step 2: Provision the Endpoint in SRE Capsule
 
-Now that you have your Repository Path, you must create a dedicated secure entry point in the QA Capsule database.
+Now that you have your Repository Path, you must create a dedicated secure entry point in the SRE Capsule database.
 
-1. Log in to your **QA Capsule Dashboard**.
+1. Log in to your **SRE Capsule Dashboard**.
 2. Navigate to the **CI/CD Gateways** module using the left-hand sidebar.
 3. Click on the **GitLab CI** provider card.
 4. **Fill out the Provisioning Form:**
@@ -56,19 +56,19 @@ Now that you have your Repository Path, you must create a dedicated secure entry
 
 ## Step 3: Configure GitLab CI/CD Variables
 
-You must never commit your QA Capsule API Key into your `.gitlab-ci.yml` file. We will use GitLab's CI/CD Variables to securely inject them into the runner.
+You must never commit your SRE Capsule API Key into your `.gitlab-ci.yml` file. We will use GitLab's CI/CD Variables to securely inject them into the runner.
 
 1. Open your project on GitLab.
 2. Navigate to **Settings > CI/CD** in the left sidebar.
 3. Expand the **Variables** section.
 4. Click **Add variable** to add the Webhook URL:
-   * **Key:** `QA_CAPSULE_URL`
+   * **Key:** `SRE_CAPSULE_URL`
    * **Value:** Paste the generated Webhook URL (e.g., `https://sre.yourcompany.com/api/webhooks/gitlab`).
    * **Type:** Variable
    * **Visibility:** Masked (Checked) - *Optional for URL, but recommended.*
    * Click **Add variable**.
 5. Click **Add variable** again for the API Key:
-   * **Key:** `QA_CAPSULE_API_KEY`
+   * **Key:** `SRE_CAPSULE_API_KEY`
    * **Value:** Paste the generated API Key (e.g., `sre_pk_gitlab_a1b2c3d4e5f6`).
    * **Type:** Variable
    * **Visibility:** Masked (Checked) - **CRITICAL**
@@ -100,12 +100,12 @@ run_e2e_tests:
     - npx playwright test
   
   # ========================================================================
-  # QA CAPSULE TELEMETRY AGENT
+  # SRE CAPSULE TELEMETRY AGENT
   # ========================================================================
   after_script:
     - >
       if [ "$CI_JOB_STATUS" == "failed" ]; then
-        echo "Test failure detected. Sending telemetry to QA Capsule..."
+        echo "Test failure detected. Sending telemetry to SRE Capsule..."
         
         # Build the JSON Payload dynamically using GitLab predefined variables
         PAYLOAD=$(cat <<EOF
@@ -120,9 +120,9 @@ run_e2e_tests:
         )
         
         # Dispatch the telemetry via cURL
-        curl --silent --show-error -X POST "$QA_CAPSULE_URL" \
+        curl --silent --show-error -X POST "$SRE_CAPSULE_URL" \
           -H "Content-Type: application/json" \
-          -H "X-API-Key: $QA_CAPSULE_API_KEY" \
+          -H "X-API-Key: $SRE_CAPSULE_API_KEY" \
           -d "$PAYLOAD"
       else
         echo "Tests passed successfully. No alert sent."
@@ -143,12 +143,12 @@ Understanding the Logic:
 
 3. Open the GitLab Job logs and scroll to the bottom to view the after_script execution.
 
-4. If successful, you will see Test failure detected. Sending telemetry to QA Capsule... and no curl errors.
+4. If successful, you will see Test failure detected. Sending telemetry to SRE Capsule... and no curl errors.
 
-5. Open your QA Capsule Dashboard; the incident will appear instantly.
+5. Open your SRE Capsule Dashboard; the incident will appear instantly.
 
 Troubleshooting
 
 * **`CI_JOB_STATUS` is empty :** Note that `$CI_JOB_STATUS` is only available in GitLab Runner v13.5 and newer. If you are using an ancient runner, use the `rules: - when: on_failure `block instead of an `after_script` condition.
 
-* **401 Unauthorized Error :** GitLab injected the secret, but it was incorrect. Double-check that you didn't accidentally copy a trailing whitespace when pasting the `QA_CAPSULE_API_KEY` into the GitLab Variables UI.
+* **401 Unauthorized Error :** GitLab injected the secret, but it was incorrect. Double-check that you didn't accidentally copy a trailing whitespace when pasting the `SRE_CAPSULE_API_KEY` into the GitLab Variables UI.

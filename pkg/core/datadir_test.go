@@ -16,7 +16,7 @@ func TestTryPrepareDataDir_Writable(t *testing.T) {
 
 func TestTryPrepareDataDir_ReadonlyDB(t *testing.T) {
 	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "qacapsule.db")
+	dbPath := filepath.Join(dir, "srecapsule.db")
 	if err := os.WriteFile(dbPath, []byte("x"), 0o444); err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +28,7 @@ func TestTryPrepareDataDir_ReadonlyDB(t *testing.T) {
 
 func TestResolveDataDir_ExplicitEnv(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("QACAPSULE_DATA_DIR", dir)
+	t.Setenv("SRECAPSULE_DATA_DIR", dir)
 	resolvedDataDir = ""
 	got := DataDir()
 	if got != dir {

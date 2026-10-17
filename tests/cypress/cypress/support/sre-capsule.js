@@ -1,5 +1,5 @@
 /**
- * QA Capsule support file for Cypress.
+ * SRE Capsule support file for Cypress.
  *
  * On failure, captures page HTML synchronously (cy.state('window')) so the
  * snapshot is embedded in the Mocha/JUnit failure message before upload.
@@ -12,9 +12,9 @@ const MAX_HTML_CHARS = 24_000;
 function buildSnapshot(win) {
   const html = win.document.documentElement.outerHTML.slice(0, MAX_HTML_CHARS);
   return (
-    `[QA_CAPSULE_DOM_SNAPSHOT_START]\n` +
+    `[SRE_CAPSULE_DOM_SNAPSHOT_START]\n` +
     `${html}\n` +
-    `[QA_CAPSULE_DOM_SNAPSHOT_END]`
+    `[SRE_CAPSULE_DOM_SNAPSHOT_END]`
   );
 }
 
@@ -33,7 +33,7 @@ function appendSnapshotToFailedTest(test) {
     }
     // Best-effort Node log (may not run if the command queue is dead).
     try {
-      cy.task('qacLog', snapshot, { log: false });
+      cy.task('sreLog', snapshot, { log: false });
     } catch (_) {
       // ignore
     }

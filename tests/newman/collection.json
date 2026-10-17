@@ -1,9 +1,9 @@
 {
   "info": {
-    "name": "QA Capsule — Reqres API Demo",
-    "_postman_id": "qa-capsule-reqres-demo",
+    "name": "SRE Capsule — Reqres API Demo",
+    "_postman_id": "sre-capsule-reqres-demo",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Live HTTP checks against reqres.in. The 'Contract drift' folder fails on purpose for QA Capsule ingest and MCP healing demos."
+    "description": "Live HTTP checks against reqres.in. The 'Contract drift' folder fails on purpose for SRE Capsule ingest and MCP healing demos."
   },
   "item": [
     {
@@ -29,12 +29,12 @@
           "name": "POST create user returns 201",
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-            "pm.test('Name echoed', () => pm.expect(pm.response.json().name).to.equal('QA Capsule'));"
+            "pm.test('Name echoed', () => pm.expect(pm.response.json().name).to.equal('SRE Capsule'));"
           ]}}],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\"name\": \"QA Capsule\", \"job\": \"SRE Engineer\"}" },
+            "body": { "mode": "raw", "raw": "{\"name\": \"SRE Capsule\", \"job\": \"SRE Engineer\"}" },
             "url": "https://reqres.in/api/users"
           }
         }

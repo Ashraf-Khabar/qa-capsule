@@ -237,7 +237,7 @@ func TestSuggestHealedLocator_EmptyLocator_ZeroConfidence(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestExtractDOMSnapshot_ValidMarkers(t *testing.T) {
-	logs := "some log line\n[QA_CAPSULE_DOM_SNAPSHOT_START]<html><body>page</body></html>[QA_CAPSULE_DOM_SNAPSHOT_END]\nafter"
+	logs := "some log line\n[SRE_CAPSULE_DOM_SNAPSHOT_START]<html><body>page</body></html>[SRE_CAPSULE_DOM_SNAPSHOT_END]\nafter"
 	got := ExtractDOMSnapshot(logs)
 	if got != "<html><body>page</body></html>" {
 		t.Errorf("unexpected DOM snapshot: %q", got)
@@ -253,7 +253,7 @@ func TestExtractDOMSnapshot_NoStartMarker_ReturnsEmpty(t *testing.T) {
 }
 
 func TestExtractDOMSnapshot_NoEndMarker_ReturnsEverythingAfterStart(t *testing.T) {
-	logs := "[QA_CAPSULE_DOM_SNAPSHOT_START]<html>truncated"
+	logs := "[SRE_CAPSULE_DOM_SNAPSHOT_START]<html>truncated"
 	got := ExtractDOMSnapshot(logs)
 	if got != "<html>truncated" {
 		t.Errorf("expected content after start marker, got: %q", got)
@@ -261,7 +261,7 @@ func TestExtractDOMSnapshot_NoEndMarker_ReturnsEverythingAfterStart(t *testing.T
 }
 
 func TestExtractDOMSnapshot_MultilineHTML(t *testing.T) {
-	logs := "[QA_CAPSULE_DOM_SNAPSHOT_START]\n<html>\n  <body>\n    <div>content</div>\n  </body>\n</html>\n[QA_CAPSULE_DOM_SNAPSHOT_END]"
+	logs := "[SRE_CAPSULE_DOM_SNAPSHOT_START]\n<html>\n  <body>\n    <div>content</div>\n  </body>\n</html>\n[SRE_CAPSULE_DOM_SNAPSHOT_END]"
 	got := ExtractDOMSnapshot(logs)
 	if !strings.Contains(got, "<div>content</div>") {
 		t.Errorf("expected full multi-line HTML, got: %q", got)
@@ -276,8 +276,8 @@ func TestExtractDOMSnapshot_EmptyInput_ReturnsEmpty(t *testing.T) {
 }
 
 func TestExtractDOMSnapshotFromLogs_PrefersConsoleLogs(t *testing.T) {
-	console := "[QA_CAPSULE_DOM_SNAPSHOT_START]<html>console</html>[QA_CAPSULE_DOM_SNAPSHOT_END]"
-	errorLogs := "[QA_CAPSULE_DOM_SNAPSHOT_START]<html>stderr</html>[QA_CAPSULE_DOM_SNAPSHOT_END]"
+	console := "[SRE_CAPSULE_DOM_SNAPSHOT_START]<html>console</html>[SRE_CAPSULE_DOM_SNAPSHOT_END]"
+	errorLogs := "[SRE_CAPSULE_DOM_SNAPSHOT_START]<html>stderr</html>[SRE_CAPSULE_DOM_SNAPSHOT_END]"
 	got := ExtractDOMSnapshotFromLogs(console, errorLogs, "")
 	if got != "<html>console</html>" {
 		t.Errorf("expected console snapshot, got: %q", got)
@@ -285,7 +285,7 @@ func TestExtractDOMSnapshotFromLogs_PrefersConsoleLogs(t *testing.T) {
 }
 
 func TestExtractDOMSnapshotFromLogs_FallsBackToErrorLogs(t *testing.T) {
-	errorLogs := "[QA_CAPSULE_DOM_SNAPSHOT_START]<html>playwright</html>[QA_CAPSULE_DOM_SNAPSHOT_END]"
+	errorLogs := "[SRE_CAPSULE_DOM_SNAPSHOT_START]<html>playwright</html>[SRE_CAPSULE_DOM_SNAPSHOT_END]"
 	got := ExtractDOMSnapshotFromLogs("", errorLogs, "")
 	if got != "<html>playwright</html>" {
 		t.Errorf("expected error_logs snapshot, got: %q", got)
@@ -293,7 +293,7 @@ func TestExtractDOMSnapshotFromLogs_FallsBackToErrorLogs(t *testing.T) {
 }
 
 func TestExtractDOMSnapshotFromLogs_FallsBackToErrorMessage(t *testing.T) {
-	errMsg := "TimeoutError\n[QA_CAPSULE_DOM_SNAPSHOT_START]<html>cypress</html>[QA_CAPSULE_DOM_SNAPSHOT_END]"
+	errMsg := "TimeoutError\n[SRE_CAPSULE_DOM_SNAPSHOT_START]<html>cypress</html>[SRE_CAPSULE_DOM_SNAPSHOT_END]"
 	got := ExtractDOMSnapshotFromLogs("", "", errMsg)
 	if got != "<html>cypress</html>" {
 		t.Errorf("expected error_message snapshot, got: %q", got)

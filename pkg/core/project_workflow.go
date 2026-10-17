@@ -3,7 +3,7 @@ package core
 import (
 	"database/sql"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/integrations"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/integrations"
 )
 
 // LoadProjectWorkflow reads the visual workflow DAG for a project by name.

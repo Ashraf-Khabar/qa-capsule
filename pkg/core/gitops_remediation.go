@@ -48,7 +48,7 @@ func CreateRemediationPR(repo string, filePath string, newCode string) (prURL st
 		return "", err
 	}
 
-	branchName := fmt.Sprintf("qa-capsule/heal-%d", time.Now().Unix())
+	branchName := fmt.Sprintf("sre-capsule/heal-%d", time.Now().Unix())
 	if err := githubCreateBranch(client, base, token, branchName, headSHA); err != nil {
 		return "", err
 	}
@@ -64,8 +64,8 @@ func CreateRemediationPR(repo string, filePath string, newCode string) (prURL st
 	}
 
 	prURL, err = githubCreatePR(client, base, token, branchName, defaultBranch,
-		fmt.Sprintf("QA Capsule: remediate %s", filePath),
-		"Self-healing fix proposal from QA Capsule (framework-agnostic). Review before merging.")
+		fmt.Sprintf("SRE Capsule: remediate %s", filePath),
+		"Self-healing fix proposal from SRE Capsule (framework-agnostic). Review before merging.")
 	return prURL, err
 }
 

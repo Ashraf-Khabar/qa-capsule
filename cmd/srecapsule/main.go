@@ -5,22 +5,22 @@ import (
 	"os"
 	"strings"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/api/server"
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/api/server"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 )
 
 func ensureLocalDevJWTEnv(config core.Config) {
 	if strings.TrimSpace(os.Getenv("APP_ENV")) != "" {
 		return
 	}
-	if strings.TrimSpace(os.Getenv("QACAPSULE_JWT_SECRET")) != "" {
+	if strings.TrimSpace(os.Getenv("SRECAPSULE_JWT_SECRET")) != "" {
 		return
 	}
 	if strings.TrimSpace(config.Security.JWTSecret) != "" {
 		return
 	}
 	_ = os.Setenv("APP_ENV", "development")
-	slog.Warn("no JWT secret configured; APP_ENV=development enabled for this local run — set security.jwt_secret or QACAPSULE_JWT_SECRET in production")
+	slog.Warn("no JWT secret configured; APP_ENV=development enabled for this local run — set security.jwt_secret or SRECAPSULE_JWT_SECRET in production")
 }
 
 func main() {
@@ -33,7 +33,7 @@ func main() {
 		slog.Error("remediation engine init failed", "error", err)
 		os.Exit(1)
 	}
-	core.InitDB("qa-capsule.db")
+	core.InitDB("sre-capsule.db")
 	core.InitSuperApp()
 	server.Start(config)
 }

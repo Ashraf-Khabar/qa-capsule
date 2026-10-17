@@ -9,8 +9,8 @@ import (
 
 var resolvedDataDir string
 
-// DataDir returns the writable directory used for qacapsule.db and artifacts.
-// Order: QACAPSULE_DATA_DIR → ./data → ~/.qa-capsule/data (fallback when ./data is not writable).
+// DataDir returns the writable directory used for srecapsule.db and artifacts.
+// Order: SRECAPSULE_DATA_DIR → ./data → ~/.sre-capsule/data (fallback when ./data is not writable).
 func DataDir() string {
 	if resolvedDataDir == "" {
 		resolvedDataDir = resolveDataDir()
@@ -20,23 +20,23 @@ func DataDir() string {
 
 // DBFilePath is the SQLite database file path under DataDir().
 func DBFilePath() string {
-	return filepath.Join(DataDir(), "qacapsule.db")
+	return filepath.Join(DataDir(), "srecapsule.db")
 }
 
 func resolveDataDir() string {
-	if v := strings.TrimSpace(os.Getenv("QACAPSULE_DATA_DIR")); v != "" {
-		return mustPrepareDataDir(v, "QACAPSULE_DATA_DIR")
+	if v := strings.TrimSpace(os.Getenv("SRECAPSULE_DATA_DIR")); v != "" {
+		return mustPrepareDataDir(v, "SRECAPSULE_DATA_DIR")
 	}
 	if dir, ok := tryPrepareDataDir("./data"); ok {
 		return dir
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatalf("[FATAL] ./data is not writable and HOME is unavailable; set QACAPSULE_DATA_DIR to a writable path")
+		log.Fatalf("[FATAL] ./data is not writable and HOME is unavailable; set SRECAPSULE_DATA_DIR to a writable path")
 	}
-	fallback := filepath.Join(home, ".qa-capsule", "data")
+	fallback := filepath.Join(home, ".sre-capsule", "data")
 	absFallback, _ := filepath.Abs(fallback)
-	log.Printf("[WARNING] ./data is not writable (common after Docker created root-owned files). Using %s instead. To use ./data: chmod -R u+w data  OR  rm -f data/qacapsule.db*  OR  export QACAPSULE_DATA_DIR=./data after fixing permissions.", absFallback)
+	log.Printf("[WARNING] ./data is not writable (common after Docker created root-owned files). Using %s instead. To use ./data: chmod -R u+w data  OR  rm -f data/srecapsule.db*  OR  export SRECAPSULE_DATA_DIR=./data after fixing permissions.", absFallback)
 	return mustPrepareDataDir(fallback, "fallback data directory")
 }
 
@@ -47,7 +47,7 @@ func tryPrepareDataDir(dir string) (string, bool) {
 	if !isDirWritable(dir) {
 		return "", false
 	}
-	dbPath := filepath.Join(dir, "qacapsule.db")
+	dbPath := filepath.Join(dir, "srecapsule.db")
 	if _, err := os.Stat(dbPath); err == nil && !isFileWritable(dbPath) {
 		return "", false
 	}
@@ -59,7 +59,7 @@ func mustPrepareDataDir(dir, label string) string {
 		return d
 	}
 	abs, _ := filepath.Abs(dir)
-	log.Fatalf("[FATAL] Data directory not writable (%s): %s — mkdir -p and chmod u+w, or choose another QACAPSULE_DATA_DIR", label, abs)
+	log.Fatalf("[FATAL] Data directory not writable (%s): %s — mkdir -p and chmod u+w, or choose another SRECAPSULE_DATA_DIR", label, abs)
 	return ""
 }
 

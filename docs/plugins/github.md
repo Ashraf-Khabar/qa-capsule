@@ -17,7 +17,7 @@ Triggers a GitHub workflow via `POST /repos/{owner}/{repo}/actions/workflows/{id
 
 ---
 
-=== "QA Capsule Side"
+=== "SRE Capsule Side"
 
     | Variable | Required | Gateway |
     |----------|-------------|---------|
@@ -27,7 +27,7 @@ Triggers a GitHub workflow via `POST /repos/{owner}/{repo}/actions/workflows/{id
     | `GITHUB_WORKFLOW_ID` | **Yes** | Numeric ID or filename `ci.yml` |
     | `GITHUB_REF` | No | Branch (default `main`) |
 
-    Dispatch inputs: `triggered_by: qa-capsule`, `incident: <summary>`.
+    Dispatch inputs: `triggered_by: sre-capsule`, `incident: <summary>`.
 
     Success: HTTP **204**.
 

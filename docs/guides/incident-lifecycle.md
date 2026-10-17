@@ -4,7 +4,7 @@ icon: material/shield-sync
 
 # Incident Lifecycle & Correlation Engine
 
-How QA Capsule creates, deduplicates, tags, resolves, and suppresses incidents.
+How SRE Capsule creates, deduplicates, tags, resolves, and suppresses incidents.
 
 ---
 

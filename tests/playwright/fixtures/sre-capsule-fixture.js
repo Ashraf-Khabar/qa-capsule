@@ -1,8 +1,8 @@
 /**
- * QA Capsule test fixture for Playwright.
+ * SRE Capsule test fixture for Playwright.
  *
  * On failure, captures page HTML and embeds DOM markers in the test error message
- * (JUnit failure body) plus a named attachment for qa-capsule-reporter.js.
+ * (JUnit failure body) plus a named attachment for sre-capsule-reporter.js.
  */
 
 const { test: baseTest, expect } = require('@playwright/test');
@@ -12,9 +12,9 @@ const MAX_HTML_CHARS = 24_000;
 function buildSnapshot(html) {
   const trimmed = html.slice(0, MAX_HTML_CHARS);
   return (
-    `[QA_CAPSULE_DOM_SNAPSHOT_START]\n` +
+    `[SRE_CAPSULE_DOM_SNAPSHOT_START]\n` +
     `${trimmed}\n` +
-    `[QA_CAPSULE_DOM_SNAPSHOT_END]`
+    `[SRE_CAPSULE_DOM_SNAPSHOT_END]`
   );
 }
 
@@ -32,7 +32,7 @@ const test = baseTest.extend({
         return;
       }
       const snapshot = buildSnapshot(html);
-      await testInfo.attach('qa-capsule-dom-snapshot', {
+      await testInfo.attach('sre-capsule-dom-snapshot', {
         body: Buffer.from(html, 'utf8'),
         contentType: 'text/html',
       });

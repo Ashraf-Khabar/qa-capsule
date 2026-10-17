@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 )
 
 func staticWebHandler() http.Handler {
@@ -16,8 +16,8 @@ func staticWebHandler() http.Handler {
 		} else if strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".css") {
 			w.Header().Set("Cache-Control", "no-cache, must-revalidate")
 		}
-		w.Header().Set("X-QA-Capsule-Edition", core.EditionID())
-		w.Header().Set("X-QA-Capsule-Version", core.Version)
+		w.Header().Set("X-SRE-Capsule-Edition", core.EditionID())
+		w.Header().Set("X-SRE-Capsule-Version", core.Version)
 		fs.ServeHTTP(w, r)
 	})
 }

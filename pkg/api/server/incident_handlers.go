@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 
 	"github.com/golang-jwt/jwt/v5"
 )

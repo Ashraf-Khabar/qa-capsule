@@ -1,6 +1,6 @@
 /** French — keys used via data-i18n and t('key') */
 export default {
-    'app.title': 'QA Capsule — Plan de contrôle SRE',
+    'app.title': 'SRE Capsule — Plan de contrôle SRE',
     'common.save': 'Enregistrer les modifications',
     'common.reset': 'Réinitialiser la section',
     'common.cancel': 'Annuler',
@@ -57,7 +57,7 @@ export default {
     'login.ssoGoogle': 'Se connecter avec Google Workspace',
     'login.ssoEnterprise': 'Se connecter avec SSO (Enterprise)',
     'login.ssoLocked': 'Installez une licence Enterprise dans les Paramètres pour activer le SSO.',
-    'login.offline': 'Impossible de joindre le serveur QA Capsule. Démarrez le backend de l\'application, puis actualisez cette page.',
+    'login.offline': 'Impossible de joindre le serveur SRE Capsule. Démarrez le backend de l\'application, puis actualisez cette page.',
 
     'account.title': 'Mon compte',
     'account.subtitle': 'Identité, profils d\'espace de travail, apparence, comportement du tableau de bord, notifications et sécurité.',
@@ -150,7 +150,7 @@ export default {
     'account.security.confirm': 'Confirmer le mot de passe',
     'account.data.title': 'Données et confidentialité',
     'account.data.desc': 'Préférences locales stockées dans ce navigateur. Les préférences serveur se synchronisent à l\'enregistrement.',
-    'account.data.item1': 'Thème, filtres, mises en page et profils → enregistrement du compte sur QA Capsule',
+    'account.data.item1': 'Thème, filtres, mises en page et profils → enregistrement du compte sur SRE Capsule',
     'account.data.item2': 'Devise et sons d\'alerte → synchronisés avec le compte à l\'enregistrement',
     'account.data.item3': 'Réduction de la barre latérale → cache navigateur jusqu\'à la synchronisation des préférences d\'apparence',
     'account.landing.dashboard': 'Flux de télémétrie (Tableau de bord)',

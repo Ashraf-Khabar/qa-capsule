@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	aiPkg "github.com/QA-Capsule/qa-capsule-community/pkg/ai"
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	aiPkg "github.com/SRE-Capsule/sre-capsule-community/pkg/ai"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 )
 
 func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, action string) {
@@ -429,7 +429,7 @@ func buildLocatorPrompt(original, framework, pageHTML, errorMsg string) string {
 		b.WriteString("\nIMPORTANT: Your healed_locator MUST appear verbatim in the HTML or interactive elements list above.\n")
 	} else {
 		b.WriteString("WARNING: No page HTML was captured. ")
-		b.WriteString("Enable the DOM capture hook for your test framework (Cypress qa-capsule.js, Playwright qa-capsule-fixture, Robot dom_capture_listener, Selenium conftest). ")
+		b.WriteString("Enable the DOM capture hook for your test framework (Cypress sre-capsule.js, Playwright sre-capsule-fixture, Robot dom_capture_listener, Selenium conftest). ")
 		b.WriteString("Suggest the most likely fix based on the broken selector name alone, with low confidence.\n")
 	}
 	return b.String()
@@ -602,7 +602,7 @@ func doHTTPFetchPage(url string) string {
 		return ""
 	}
 	// Mimic a real browser so the server does not block the request.
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; QACapsule-Healer/1.0)")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; SRECapsule-Healer/1.0)")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,*/*")
 
 	resp, err := client.Do(req)

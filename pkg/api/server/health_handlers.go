@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 )
 
 func registerHealthRoutes(config *core.Config) {
@@ -80,21 +80,21 @@ func handleMetrics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 	uptime := time.Since(processStartedAt).Seconds()
 	lines := []string{
-		"# HELP qacapsule_up QA Capsule process is running.",
-		"# TYPE qacapsule_up gauge",
-		"qacapsule_up 1",
-		"# HELP qacapsule_uptime_seconds Process uptime in seconds.",
-		"# TYPE qacapsule_uptime_seconds gauge",
-		fmt.Sprintf("qacapsule_uptime_seconds %.0f", uptime),
-		"# HELP qacapsule_ingest_queue_depth Ingest jobs waiting in buffer.",
-		"# TYPE qacapsule_ingest_queue_depth gauge",
-		fmt.Sprintf("qacapsule_ingest_queue_depth %d", core.IngestQueueDepth()),
-		"# HELP qacapsule_ingest_processed_total Ingest batches processed by workers.",
-		"# TYPE qacapsule_ingest_processed_total counter",
-		fmt.Sprintf("qacapsule_ingest_processed_total %d", core.IngestProcessedTotal()),
-		"# HELP qacapsule_ingest_dropped_total Ingest batches rejected (queue full).",
-		"# TYPE qacapsule_ingest_dropped_total counter",
-		fmt.Sprintf("qacapsule_ingest_dropped_total %d", core.IngestDroppedTotal()),
+		"# HELP srecapsule_up SRE Capsule process is running.",
+		"# TYPE srecapsule_up gauge",
+		"srecapsule_up 1",
+		"# HELP srecapsule_uptime_seconds Process uptime in seconds.",
+		"# TYPE srecapsule_uptime_seconds gauge",
+		fmt.Sprintf("srecapsule_uptime_seconds %.0f", uptime),
+		"# HELP srecapsule_ingest_queue_depth Ingest jobs waiting in buffer.",
+		"# TYPE srecapsule_ingest_queue_depth gauge",
+		fmt.Sprintf("srecapsule_ingest_queue_depth %d", core.IngestQueueDepth()),
+		"# HELP srecapsule_ingest_processed_total Ingest batches processed by workers.",
+		"# TYPE srecapsule_ingest_processed_total counter",
+		fmt.Sprintf("srecapsule_ingest_processed_total %d", core.IngestProcessedTotal()),
+		"# HELP srecapsule_ingest_dropped_total Ingest batches rejected (queue full).",
+		"# TYPE srecapsule_ingest_dropped_total counter",
+		fmt.Sprintf("srecapsule_ingest_dropped_total %d", core.IngestDroppedTotal()),
 	}
 	_, _ = w.Write([]byte(strings.Join(lines, "\n") + "\n"))
 }

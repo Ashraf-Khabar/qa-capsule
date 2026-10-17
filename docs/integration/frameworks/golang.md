@@ -19,8 +19,8 @@ gotestsum --junitfile report.xml ./...
 ## Upload
 
 ```bash
-curl -f -S -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Go" \
-  -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+curl -f -S -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Go" \
+  -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
   -H "X-Run-Id: ${GITHUB_RUN_ID}" \
   -F "file=@report.xml"
 ```
@@ -31,11 +31,11 @@ curl -f -S -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Go" \
 - run: go install gotest.tools/gotestsum@latest && gotestsum --junitfile report.xml ./...
   continue-on-error: true
 
-- name: Upload to QA Capsule
+- name: Upload to SRE Capsule
   if: always()
   run: |
-    curl -f -S -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Go" \
-      -H "X-API-Key: ${{ secrets.QA_CAPSULE_API_KEY }}" \
+    curl -f -S -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Go" \
+      -H "X-API-Key: ${{ secrets.SRE_CAPSULE_API_KEY }}" \
       -H "X-Run-Id: ${{ github.run_id }}" \
       -F "file=@report.xml"
 ```

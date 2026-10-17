@@ -4,7 +4,7 @@ icon: material/lan
 
 # System Architecture
 
-This document explains **how QA Capsule is built**, how data flows from CI/CD to remediation, and how each major package cooperates. It is written for Staff SREs, platform engineers, and contributors who need to reason about behavior without reading every source file.
+This document explains **how SRE Capsule is built**, how data flows from CI/CD to remediation, and how each major package cooperates. It is written for Staff SREs, platform engineers, and contributors who need to reason about behavior without reading every source file.
 
 !!! tip "Visual reference"
     For **all design schemas** (C4, ER, sequences, state machines, RBAC, deployment), see **[Design Schemas & Diagrams](design-diagrams.md)** — 18 Mermaid diagrams.
@@ -30,11 +30,11 @@ flowchart TB
     subgraph clients [Clients]
         CI[CI/CD pipelines]
         PW[Playwright reporter]
-        CLI[qacapsule CLI]
+        CLI[srecapsule CLI]
         UI[Web UI - Vanilla JS]
     end
 
-    subgraph server [Go control plane - cmd/qacapsule]
+    subgraph server [Go control plane - cmd/srecapsule]
         API[pkg/api/server HTTP routes]
         CORE[pkg/core business logic]
         INT[pkg/integrations engine]
@@ -43,7 +43,7 @@ flowchart TB
     end
 
     subgraph storage [Persistence]
-        DB[(SQLite qacapsule.db)]
+        DB[(SQLite srecapsule.db)]
         ART[(data/artifacts/)]
         PLG[(plugins/*.json)]
     end
@@ -67,8 +67,8 @@ flowchart TB
 
 | Path | Responsibility |
 |------|----------------|
-| `cmd/qacapsule/` | Main server entry: load config, init DB, init remediation registry, init Super-App (healing + quarantine), start HTTP server. |
-| `cmd/cli/` | Developer CLI (`qacapsule run`, flaky checks). |
+| `cmd/srecapsule/` | Main server entry: load config, init DB, init remediation registry, init Super-App (healing + quarantine), start HTTP server. |
+| `cmd/cli/` | Developer CLI (`srecapsule run`, flaky checks). |
 | `pkg/api/server/` | Route registration, JWT middleware, handlers (webhooks, incidents, workflow, intelligence, DORA, runbooks, plugins). |
 | `pkg/core/` | Domain logic: ingest, incidents, projects, routing, workflow persistence, DORA, pipeline runs, RBAC, migrations. |
 | `pkg/integrations/` | Plugin registry, linear `Engine`, `WorkflowEngine` DAG walker, runbook templates, condition evaluation. |
@@ -85,7 +85,7 @@ flowchart TB
 
 1. **`core.LoadConfig()`** — reads `config.yaml` (port, SMTP, security, plugins directory).
 2. **`core.InitRemediationEngine(pluginsDir)`** — scans `plugins/`, builds `integrations.Registry`, wraps `integrations.Engine`.
-3. **`core.InitDB("data/qacapsule.db")`** — opens SQLite, runs `runSchemaMigrations()` (idempotent `ALTER` / `CREATE IF NOT EXISTS`).
+3. **`core.InitDB("data/srecapsule.db")`** — opens SQLite, runs `runSchemaMigrations()` (idempotent `ALTER` / `CREATE IF NOT EXISTS`).
 4. **`core.InitSuperApp()`** — wires `quarantine.Engine` + `healing.Service` with SQLite repositories.
 5. **`server.Start(config)`** — registers all HTTP routes, `InitJWT`, serves `./web` as static files.
 
@@ -99,7 +99,7 @@ If any step fails at startup (e.g. plugins directory missing), the process exits
 
 - Login: `POST /api/login` → signed JWT (`Claims`: username, role, `require_password_change`).
 - Protected routes use `jwtAuthMiddleware` with minimum role (`observer` < `lead` < `manager` < `admin`).
-- Secret: `security.jwt_secret` in config or env `QACAPSULE_JWT_SECRET` (dev fallback logs a warning).
+- Secret: `security.jwt_secret` in config or env `SRECAPSULE_JWT_SECRET` (dev fallback logs a warning).
 
 ### CI ingestion (`X-API-Key`)
 
@@ -239,7 +239,7 @@ Tags `[FLAKY]` and `[PERF]` are also derived in `DeriveTags(name)` for workflow 
 
 ## Self-healing context (sync on demand)
 
-After ingest, QA Capsule stores normalized failure telemetry. Self-healing is produced on demand:
+After ingest, SRE Capsule stores normalized failure telemetry. Self-healing is produced on demand:
 
 1. `GET /api/healing/insights` lists open failures.
 2. `GET /api/incidents/{id}/healing/context` returns framework-agnostic context.

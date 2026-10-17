@@ -17,7 +17,7 @@ Posts a **MessageCard** to a Teams Incoming Webhook connector.
 
 ---
 
-=== "QA Capsule Side"
+=== "SRE Capsule Side"
 
     ## Variables
 
@@ -47,7 +47,7 @@ Posts a **MessageCard** to a Teams Incoming Webhook connector.
 
     1. Teams → target channel → **⋯** → **Connectors**
     2. Search for **Incoming Webhook** → **Configure**
-    3. Name: `QA Capsule Alerts` → create
+    3. Name: `SRE Capsule Alerts` → create
     4. Copy the URL `https://....webhook.office.com/...`
 
     ## 2. Best practices
@@ -61,7 +61,7 @@ Posts a **MessageCard** to a Teams Incoming Webhook connector.
     ## 3. Test
 
     ```bash
-    curl -H "Content-Type: application/json" -d '{"@type":"MessageCard","@context":"http://schema.org/extensions","summary":"Test","themeColor":"E81123","sections":[{"activityTitle":"QA Capsule test","text":"Hello"}]}' \
+    curl -H "Content-Type: application/json" -d '{"@type":"MessageCard","@context":"http://schema.org/extensions","summary":"Test","themeColor":"E81123","sections":[{"activityTitle":"SRE Capsule test","text":"Hello"}]}' \
       "URL_DU_CONNECTEUR"
     ```
 

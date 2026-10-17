@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/quarantine"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/quarantine"
 )
 
 // IsTestQuarantined reports whether the test is on the active deny list for the project.

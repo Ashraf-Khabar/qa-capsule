@@ -2,11 +2,11 @@
 icon: material/home
 ---
 
-# QA Capsule — SRE Control Plane
+# SRE Capsule — SRE Control Plane
 
 **Version: 1.0.17-beta**
 
-**QA Flight Recorder** (QA Capsule) is an enterprise-grade Site Reliability Engineering (SRE) control plane that ingests CI/CD and End-to-End (E2E) test failures, correlates duplicate alerts, stores visual test evidence, routes notifications to the right teams, and tracks resolution metrics in real time.
+**SRE Flight Recorder** (SRE Capsule) is an enterprise-grade Site Reliability Engineering (SRE) control plane that ingests CI/CD and End-to-End (E2E) test failures, correlates duplicate alerts, stores visual test evidence, routes notifications to the right teams, and tracks resolution metrics in real time.
 
 ---
 
@@ -19,7 +19,7 @@ When a pipeline fails, engineers typically:
 3. Manually notify Slack or Microsoft Teams.
 4. Lose context when the same test fails again on the next run.
 
-**QA Capsule automates this workflow** — from ingestion to notification to resolution tracking, with optional Playwright traces and local developer feedback via CLI.
+**SRE Capsule automates this workflow** — from ingestion to notification to resolution tracking, with optional Playwright traces and local developer feedback via CLI.
 
 ---
 
@@ -40,7 +40,7 @@ When a pipeline fails, engineers typically:
 | **Runbooks** | One-click apply validated workflow templates (502, flaky, OOM, …). |
 | **DORA metrics** | Deployment frequency, lead time, CFR, MTTR + Prometheus signals. |
 | **FinOps & Analytics** | MTTR, CI minutes lost, flaky cost, customizable dashboard charts, PDF export. |
-| **Developer CLI** | `qacapsule run` wraps local tests and warns on known flaky fingerprints. |
+| **Developer CLI** | `srecapsule run` wraps local tests and warns on known flaky fingerprints. |
 | **Playwright Reporter** | Real-time failure POST + optional trace zip upload. |
 | **Multi-Tenancy & RBAC** | Teams, project-scoped visibility, roles: Platform Admin, Manager, Lead, Observer. |
 | **Universal CI/CD Gateways** | JSON webhooks, JUnit XML upload, GitHub / GitLab / Jenkins guides. |
@@ -53,7 +53,7 @@ When a pipeline fails, engineers typically:
 flowchart LR
     CI[CI/CD Pipeline] -->|JSON or JUnit XML| WH[Webhook API]
     PW[Playwright Reporter] -->|Fire-and-forget| WH
-    CLI[qacapsule CLI] -->|check-flaky| API[Incidents API]
+    CLI[srecapsule CLI] -->|check-flaky| API[Incidents API]
     WH --> ING[Ingestion + Quarantine gate]
     ING --> DB[(SQLite)]
     ING --> WF{Workflow DAG?}
@@ -80,8 +80,8 @@ See the full breakdown in [System Architecture](guides/architecture.md).
 ## Quick Start
 
 ```bash
-git clone https://github.com/QA-Capsule/qa-capsule-community.git
-cd qa-capsule-community
+git clone https://github.com/SRE-Capsule/sre-capsule-community.git
+cd sre-capsule-community
 docker compose up -d --build
 ```
 
@@ -90,7 +90,7 @@ Open **http://localhost:9000** — default login `admin` / `admin` (password cha
 Build the developer CLI:
 
 ```bash
-go build -o bin/qacapsule-cli ./cmd/cli
+go build -o bin/srecapsule-cli ./cmd/cli
 ```
 
 ---
@@ -101,7 +101,7 @@ go build -o bin/qacapsule-cli ./cmd/cli
 |---|---|
 | [**Feature catalog**](reference/feature-catalog.md) | **Complete list** of UI, API, CLI, and ops features |
 | [Security & JWT](setup/security-authentication.md) | Login, API keys, MCP token, production checklist |
-| [Utility binaries](reference/utility-binaries.md) | `qacapsule`, agent, listusers, resetpass |
+| [Utility binaries](reference/utility-binaries.md) | `srecapsule`, agent, listusers, resetpass |
 | [Editions](guides/editions-community-enterprise.md) | Community vs Enterprise build tags |
 | [MCP & self-healing testing](guides/mcp-self-healing-testing.md) | UI, API, MCP, CLI validation guide |
 | [Operations & health API](api/operations-health.md) | `/healthz`, `/readyz`, `/metrics` |
@@ -122,7 +122,7 @@ go build -o bin/qacapsule-cli ./cmd/cli
 | [Artifacts & CLI](guides/artifacts-and-cli.md) | Upload, storage, local wrapper |
 | [Plugin Engine](plugins/overview.md) | Native Go integrations (manifests) |
 | [Visual Workflow Builder](plugins/visual-workflow.md) | DAG editor, simulate API, enable/draft/legacy modes |
-| [Plugin configuration guide](plugins/configuration-guide.md) | Two-sided setup (QA Capsule + vendor) with logos |
+| [Plugin configuration guide](plugins/configuration-guide.md) | Two-sided setup (SRE Capsule + vendor) with logos |
 | [Integrations catalog](plugins/integrations-catalog.md) | All plugins — Slack, Jira, PagerDuty, Datadog, TestRail, … |
 | [Dashboard Guide](guides/dashboard-operations.md) | Filters, resolve, exports |
 | [AI RCA & Quarantine](guides/intelligence-quarantine.md) | LLM summaries, deny-list, CI API |

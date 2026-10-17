@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/integrations"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/integrations"
 )
 
 var remediationEngine *integrations.Engine
@@ -84,7 +84,7 @@ func RunSinglePlugin(_ Config, pluginRelPath string, action string, projectConte
 		return "", err
 	}
 	inc := integrations.IncidentContext{
-		Name:   "Manual test (QA Capsule Plugin Engine)",
+		Name:   "Manual test (SRE Capsule Plugin Engine)",
 		Status: "CRITICAL",
 		Action: action,
 	}

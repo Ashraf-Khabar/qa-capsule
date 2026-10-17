@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>QA Flight Recorder | Control Plane</title>
+    <title>SRE Flight Recorder | Control Plane</title>
     <link rel="icon" href="/assets/logo.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap">
@@ -179,7 +179,7 @@
     <div id="app-container" style="display: none; width: 100%; height: 100%; flex-direction: column;">
 
         <div id="api-offline-banner" style="display: none; background: #3d1f1f; color: #ff7b72; padding: 10px 20px; text-align: center; font-size: 13px; border-bottom: 1px solid #ff7b72; flex-shrink: 0;" data-i18n="login.offline">
-            Cannot reach the QA Capsule server. Start the application backend, then refresh this page.
+            Cannot reach the SRE Capsule server. Start the application backend, then refresh this page.
         </div>
 
         <div style="display: flex; flex: 1; min-height: 0; width: 100%;">
@@ -189,9 +189,9 @@
                     <svg class="sidebar-collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
                 <div class="sidebar-brand">
-                    <img src="assets/logo.png" alt="QA Capsule Logo" class="sidebar-logo">
+                    <img src="assets/logo.png" alt="SRE Capsule Logo" class="sidebar-logo">
                     <div class="sidebar-brand-text">
-                        <span class="sidebar-product-name">QA Capsule</span>
+                        <span class="sidebar-product-name">SRE Capsule</span>
                         <span class="sidebar-product-tagline">SRE SYS MONITORING</span>
                     </div>
                 </div>
@@ -862,13 +862,13 @@
                     <div class="aipage-mcp-header">
                         <div>
                             <h3 class="aipage-row__title" style="margin:0 0 4px;">MCP Server (deploy on your infrastructure)</h3>
-                            <p class="aipage-row__desc" style="margin:0;">QA Capsule exposes MCP at <code id="ai-usage-mcp-url">…/mcp</code>. Deploy the server on a VM, Kubernetes cluster, or cloud host — IDE agents connect over HTTPS with a Bearer token.</p>
+                            <p class="aipage-row__desc" style="margin:0;">SRE Capsule exposes MCP at <code id="ai-usage-mcp-url">…/mcp</code>. Deploy the server on a VM, Kubernetes cluster, or cloud host — IDE agents connect over HTTPS with a Bearer token.</p>
                         </div>
                     </div>
                     <div class="aipage-mcp-grid">
                         <div class="aipage-mcp-col">
                             <p class="aipage-mcp-col__title">Connect an agent</p>
-                            <p class="aipage-mcp-col__desc">Use Cursor, Claude Desktop, or any MCP client. Set URL to your QA Capsule host + <code>/mcp</code> and header <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+                            <p class="aipage-mcp-col__desc">Use Cursor, Claude Desktop, or any MCP client. Set URL to your SRE Capsule host + <code>/mcp</code> and header <code>Authorization: Bearer &lt;token&gt;</code>.</p>
                             <button type="button" class="btn-secondary" style="margin-top:12px;" onclick="window.copyMCPAgentConfig && window.copyMCPAgentConfig()">Copy MCP connection config</button>
                         </div>
                         <div class="aipage-mcp-col">
@@ -972,7 +972,7 @@
                     <div class="aipage-row">
                         <div class="aipage-row__meta">
                             <h3 class="aipage-row__title">Authentication</h3>
-                            <p class="aipage-row__desc">Enter your API key directly <strong>or</strong> set it as a server environment variable. The key is stored locally in the QA Capsule database and is never exposed through the API.</p>
+                            <p class="aipage-row__desc">Enter your API key directly <strong>or</strong> set it as a server environment variable. The key is stored locally in the SRE Capsule database and is never exposed through the API.</p>
                         </div>
                         <div class="aipage-row__body">
                             <div class="form-field" style="margin:0 0 12px;">
@@ -1048,18 +1048,18 @@
                     <div class="aipage-mcp-header">
                         <div>
                             <h3 class="aipage-row__title" style="margin:0 0 4px;">MCP Server deployment</h3>
-                            <p class="aipage-row__desc" style="margin:0;">Run QA Capsule on a dedicated server (VM, Docker, K8s). MCP endpoint: <code id="mcp-server-url">…/mcp</code>. Set <code>QACAPSULE_MCP_TOKEN</code> on the server; agents connect via HTTPS Bearer auth.</p>
+                            <p class="aipage-row__desc" style="margin:0;">Run SRE Capsule on a dedicated server (VM, Docker, K8s). MCP endpoint: <code id="mcp-server-url">…/mcp</code>. Set <code>SRECAPSULE_MCP_TOKEN</code> on the server; agents connect via HTTPS Bearer auth.</p>
                         </div>
                     </div>
                     <div class="aipage-mcp-grid">
                         <div class="aipage-mcp-col">
                             <p class="aipage-mcp-col__title">Server token</p>
                             <p id="mcp-token-status" class="aipage-mcp-col__status"></p>
-                            <p class="aipage-mcp-col__desc" style="margin-top:8px;">Env: <code>QACAPSULE_MCP_TOKEN</code> or <code>telemetry.webhook_token</code> in config.yaml.</p>
+                            <p class="aipage-mcp-col__desc" style="margin-top:8px;">Env: <code>SRECAPSULE_MCP_TOKEN</code> or <code>telemetry.webhook_token</code> in config.yaml.</p>
                         </div>
                         <div class="aipage-mcp-col">
                             <p class="aipage-mcp-col__title">Extend with custom MCP</p>
-                            <p class="aipage-mcp-col__desc">Register additional tools in your agent alongside QA Capsule MCP (e.g. filesystem, git, Playwright MCP). Use <code>heal_incident</code> as the primary self-healing entry point; community servers: <a href="https://github.com/modelcontextprotocol/servers" class="text-link" target="_blank" rel="noopener">modelcontextprotocol/servers</a>.</p>
+                            <p class="aipage-mcp-col__desc">Register additional tools in your agent alongside SRE Capsule MCP (e.g. filesystem, git, Playwright MCP). Use <code>heal_incident</code> as the primary self-healing entry point; community servers: <a href="https://github.com/modelcontextprotocol/servers" class="text-link" target="_blank" rel="noopener">modelcontextprotocol/servers</a>.</p>
                             <button type="button" class="btn-secondary" style="margin-top:14px;" onclick="window.copyMCPAgentConfig && window.copyMCPAgentConfig()">Copy connection snippet</button>
                         </div>
                     </div>
@@ -1756,7 +1756,7 @@
                                     </div>
                                     <div class="aipage-row__body">
                                 <ul class="profile-data-list">
-                                    <li>Theme, filters, layouts &amp; configurations → account record on QA Capsule</li>
+                                    <li>Theme, filters, layouts &amp; configurations → account record on SRE Capsule</li>
                                     <li>Currency &amp; alert sounds → synced with account when you save</li>
                                     <li>Sidebar collapse → browser cache until appearance prefs sync</li>
                                 </ul>

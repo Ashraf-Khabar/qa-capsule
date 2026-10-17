@@ -19,8 +19,8 @@ icon: material/language-php
 
 ```bash
 vendor/bin/phpunit
-curl -f -S -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=PHPUnit" \
-  -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+curl -f -S -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=PHPUnit" \
+  -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
   -F "file=@build/logs/junit.xml"
 ```
 

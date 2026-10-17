@@ -7,7 +7,7 @@ import es from './i18n/messages-es.js';
 import zh from './i18n/messages-zh.js';
 import de from './i18n/messages-de.js';
 
-const LOCALE_KEY = 'qacapsule-locale';
+const LOCALE_KEY = 'srecapsule-locale';
 export const PREF_LANGUAGE_KEY = LOCALE_KEY;
 const SUPPORTED = ['en', 'fr', 'es', 'zh', 'de'];
 

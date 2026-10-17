@@ -156,8 +156,8 @@ function initDrawflow() {
 }
 
 function bindDrawflowEvents() {
-    if (!editor || editor._qaCapsuleBound) return;
-    editor._qaCapsuleBound = true;
+    if (!editor || editor._sreCapsuleBound) return;
+    editor._sreCapsuleBound = true;
     const refresh = () => {
         populateActionSelects();
         bindNodeControls();

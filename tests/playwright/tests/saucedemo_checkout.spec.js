@@ -8,7 +8,7 @@
  *   TC-04         Broken checkout    → FAIL (MCP self-healing demo)
  */
 
-const { test, expect } = require('../fixtures/qa-capsule-fixture');
+const { test, expect } = require('../fixtures/sre-capsule-fixture');
 
 const BASE_URL = 'https://www.saucedemo.com/';
 const USERNAME = 'standard_user';
@@ -23,7 +23,7 @@ async function login(page) {
   await expect(page.locator('.title')).toContainText('Products');
 }
 
-test.describe('Swag Labs Checkout — QA Capsule Self-Healing Demo', () => {
+test.describe('Swag Labs Checkout — SRE Capsule Self-Healing Demo', () => {
   test('TC-01 Inventory lists products after login', async ({ page }) => {
     await login(page);
     await expect(page.locator('.inventory_item').first()).toBeVisible();
@@ -39,7 +39,8 @@ test.describe('Swag Labs Checkout — QA Capsule Self-Healing Demo', () => {
     await login(page);
     await page.click('[data-test="add-to-cart-sauce-labs-backpack"]');
     await page.click('.shopping_cart_link');
-    await expect(page.locator('.inventory_item_name')).toContainText('Sauce Labs Backpack');
+    await expect(page).toHaveURL(/cart\.html/);
+    await expect(page.locator('.cart_item .inventory_item_name')).toContainText('Sauce Labs Backpack');
   });
 
   test('TC-04 Checkout with broken locator [self-healing demo]', async ({ page }) => {

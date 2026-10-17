@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/quarantine"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/quarantine"
 
 	_ "modernc.org/sqlite"
 )

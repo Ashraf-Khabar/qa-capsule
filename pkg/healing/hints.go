@@ -106,7 +106,7 @@ func buildSummary(category, testName string) string {
 
 func buildMCPPrompt(incidentID int64, category string) string {
 	return strings.TrimSpace(strings.Join([]string{
-		"Self-heal this CI test failure using QA Capsule MCP tools.",
+		"Self-heal this CI test failure using SRE Capsule MCP tools.",
 		"1. Call get_incident_context with incident_id=" + formatInt(incidentID) + ".",
 		"2. Read the test source file from the repo (infer path from stack trace).",
 		"3. Apply the smallest correct fix for category \"" + category + "\" (framework-agnostic).",

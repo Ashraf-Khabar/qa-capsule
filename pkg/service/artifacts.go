@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/core"
-	"github.com/QA-Capsule/qa-capsule-community/pkg/storage"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/storage"
 )
 
 const MaxArtifactBytes = 50 << 20 // 50MB

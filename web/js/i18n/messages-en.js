@@ -1,6 +1,6 @@
 /** English (source) — keys used via data-i18n and t('key') */
 export default {
-    'app.title': 'QA Capsule — SRE Control Plane',
+    'app.title': 'SRE Capsule — SRE Control Plane',
     'common.save': 'Save changes',
     'common.reset': 'Reset section',
     'common.cancel': 'Cancel',
@@ -57,7 +57,7 @@ export default {
     'login.ssoGoogle': 'Sign in with Google Workspace',
     'login.ssoEnterprise': 'Sign in with SSO (Enterprise)',
     'login.ssoLocked': 'Install an Enterprise license in Settings to enable SSO.',
-    'login.offline': 'Cannot reach the QA Capsule server. Start the application backend, then refresh this page.',
+    'login.offline': 'Cannot reach the SRE Capsule server. Start the application backend, then refresh this page.',
 
     'account.title': 'My Account',
     'account.subtitle': 'Identity, workspace profiles, appearance, dashboard behavior, notifications, and security.',
@@ -150,7 +150,7 @@ export default {
     'account.security.confirm': 'Confirm password',
     'account.data.title': 'Data & privacy',
     'account.data.desc': 'Local preferences stored in this browser. Server-side prefs sync when you save.',
-    'account.data.item1': 'Theme, filters, layouts & profiles → account record on QA Capsule',
+    'account.data.item1': 'Theme, filters, layouts & profiles → account record on SRE Capsule',
     'account.data.item2': 'Currency & alert sounds → synced with account when you save',
     'account.data.item3': 'Sidebar collapse → browser cache until appearance prefs sync',
     'account.landing.dashboard': 'Telemetry Stream (Dashboard)',

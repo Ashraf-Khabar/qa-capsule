@@ -9,7 +9,7 @@
  *   TC-03  Cart shows selected item       → passes
  *   TC-04  Checkout with broken locator   → FAILS (MCP self-healing demo)
  *
- * On failure, cypress/support/qa-capsule.js captures page HTML for heal_incident.
+ * On failure, cypress/support/sre-capsule.js captures page HTML for heal_incident.
  */
 
 const BASE_URL = 'https://www.saucedemo.com/';
@@ -19,7 +19,7 @@ const PASSWORD = 'secret_sauce';
 // Real checkout button: [data-test="checkout"]
 const BROKEN_CHECKOUT = '[data-test="proceed-to-payment"]';
 
-describe('Swag Labs Checkout — QA Capsule Self-Healing Demo', () => {
+describe('Swag Labs Checkout — SRE Capsule Self-Healing Demo', () => {
   beforeEach(() => {
     cy.visit(BASE_URL);
     cy.get('#user-name').type(USERNAME);

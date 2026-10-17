@@ -7,7 +7,7 @@ icon: material/view-grid
 All integrations are implemented in **Go** (native HTTP). Quick reference with logos.
 
 !!! tip "Detailed two-sided configuration"
-    Read the [Configuration Guide (QA Capsule + provider)](configuration-guide.md) first, then each tool's dedicated page.
+    Read the [Configuration Guide (SRE Capsule + provider)](configuration-guide.md) first, then each tool's dedicated page.
 
 ---
 
@@ -36,7 +36,7 @@ All integrations are implemented in **Go** (native HTTP). Quick reference with l
 
 ---
 
-## QA Capsule Role Matrix
+## SRE Capsule Role Matrix
 
 | Action | Platform Admin | Manager | Lead | Observer |
 |--------|------------------|---------|------|----------|

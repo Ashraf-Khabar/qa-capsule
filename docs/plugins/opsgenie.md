@@ -17,7 +17,7 @@ Creates an alert via `POST /v2/alerts` (header `Authorization: GenieKey …`).
 
 ---
 
-=== "QA Capsule Side"
+=== "SRE Capsule Side"
 
     | Variable | Required | Default |
     |----------|-------------|--------|
@@ -46,7 +46,7 @@ Creates an alert via `POST /v2/alerts` (header `Authorization: GenieKey …`).
     curl -X POST https://api.opsgenie.com/v2/alerts \
       -H "Authorization: GenieKey VOTRE_CLE" \
       -H "Content-Type: application/json" \
-      -d '{"message":"QA Capsule test","description":"test","priority":"P3"}'
+      -d '{"message":"SRE Capsule test","description":"test","priority":"P3"}'
     ```
 
 ---

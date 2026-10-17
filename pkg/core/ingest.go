@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/QA-Capsule/qa-capsule-community/pkg/quarantine"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/quarantine"
 )
 
 // PipelineCrashDefaultName is used when a CI webhook reports failure without a test name.

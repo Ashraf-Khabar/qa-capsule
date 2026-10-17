@@ -10,7 +10,7 @@ Validate ingestion, dashboard, integrations, artifacts, flaky detection, and opt
 
 ## Prerequisites
 
-* QA Capsule running (`go run ./cmd/qacapsule/main.go` or Docker).
+* SRE Capsule running (`go run ./cmd/srecapsule/main.go` or Docker).
 * Logged in as **Platform Admin** (`admin` / `admin` after password change).
 * Terminal with `curl` or PowerShell.
 
@@ -125,11 +125,11 @@ Expect `[PERF] Perf login` incident.
 ## Phase 8: Developer CLI (optional)
 
 ```bash
-go build -o bin/qacapsule-cli ./cmd/cli
-export QACAPSULE_API_URL=http://localhost:9000
-export QACAPSULE_API_KEY=YOUR_KEY
+go build -o bin/srecapsule-cli ./cmd/cli
+export SRECAPSULE_API_URL=http://localhost:9000
+export SRECAPSULE_API_KEY=YOUR_KEY
 
-bin/qacapsule-cli run --test-name "E2E Checkout @jira-TEST-1" \
+bin/srecapsule-cli run --test-name "E2E Checkout @jira-TEST-1" \
   --test-error "Timeout waiting for #submit-btn" \
   cmd /c "exit 1"
 ```

@@ -4,13 +4,13 @@ icon: material/package-variant
 
 # Community vs Enterprise editions
 
-QA Capsule ships two **compile-time** editions using Go build tags.
+SRE Capsule ships two **compile-time** editions using Go build tags.
 
 ---
 
 ## Community (default)
 
-- Build: `go build ./cmd/qacapsule` (no tags)
+- Build: `go build ./cmd/srecapsule` (no tags)
 - Login: **Community Edition** badge, no SSO paywall
 - SSO section hidden in UI
 - `GET /api/sso/status` returns `"edition": "community"`
@@ -20,7 +20,7 @@ QA Capsule ships two **compile-time** editions using Go build tags.
 
 ## Enterprise
 
-- Build: `go build -tags enterprise ./cmd/qacapsule`
+- Build: `go build -tags enterprise ./cmd/srecapsule`
 - License key stored in `enterprise_config.license_key`
 - When license is active:
   - SSO block visible on login (Google Workspace flow)
@@ -54,4 +54,4 @@ curl -s http://localhost:9000/api/sso/status | jq .
 }
 ```
 
-Response header `X-QA-Capsule-Edition` is also set on static assets.
+Response header `X-SRE-Capsule-Edition` is also set on static assets.

@@ -4,22 +4,22 @@ icon: material/play-circle
 
 # Playwright Reporter (Native)
 
-Send failures to QA Capsule **as each test ends** (fire-and-forget), without waiting for the full suite. Optionally upload the Playwright trace zip to the artifact API.
+Send failures to SRE Capsule **as each test ends** (fire-and-forget), without waiting for the full suite. Optionally upload the Playwright trace zip to the artifact API.
 
-Source: `examples/playwright-reporter/qacapsule-reporter.ts`
+Source: `examples/playwright-reporter/srecapsule-reporter.ts`
 
 ---
 
 ## Prerequisites
 
-1. QA Capsule server running (port `9000` by default).
+1. SRE Capsule server running (port `9000` by default).
 2. A **CI/CD Gateway** project with API key.
 3. Environment variables on the runner:
 
 ```bash
-export QACAPSULE_API_URL=http://localhost:9000
-export QACAPSULE_API_KEY=your_project_api_key
-export QACAPSULE_PROJECT=Frontend E2E   # optional label
+export SRECAPSULE_API_URL=http://localhost:9000
+export SRECAPSULE_API_KEY=your_project_api_key
+export SRECAPSULE_PROJECT=Frontend E2E   # optional label
 ```
 
 ---
@@ -34,16 +34,16 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   reporter: [
     ['list'],
-    ['./examples/playwright-reporter/qacapsule-reporter.ts', {
-      apiUrl: process.env.QACAPSULE_API_URL || 'http://localhost:9000',
-      apiKey: process.env.QACAPSULE_API_KEY,
-      project: process.env.QACAPSULE_PROJECT,
+    ['./examples/playwright-reporter/srecapsule-reporter.ts', {
+      apiUrl: process.env.SRECAPSULE_API_URL || 'http://localhost:9000',
+      apiKey: process.env.SRECAPSULE_API_KEY,
+      project: process.env.SRECAPSULE_PROJECT,
     }],
   ],
 });
 ```
 
-For a published package, copy `qacapsule-reporter.ts` into your repo or reference it by relative path.
+For a published package, copy `srecapsule-reporter.ts` into your repo or reference it by relative path.
 
 ---
 
@@ -94,7 +94,7 @@ You can use both: reporter for speed, JUnit for full suite archival.
 
 | Issue | Fix |
 |---|---|
-| No incidents | Check `QACAPSULE_API_KEY`, server logs |
+| No incidents | Check `SRECAPSULE_API_KEY`, server logs |
 | No artifact | `last_incident_id` missing — verify webhook returns 202 with ids |
 | Zip fails on Windows | Ensure PowerShell available; path without special chars |
 | Perf alerts | Send several fast `PASSED` runs then one slow run |

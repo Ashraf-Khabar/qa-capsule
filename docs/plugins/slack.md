@@ -18,7 +18,7 @@ Sends a formatted alert card to a Slack channel via **Incoming Webhook** (native
 
 ---
 
-=== "QA Capsule Side"
+=== "SRE Capsule Side"
 
     ## 1. Role prerequisites
 
@@ -66,9 +66,9 @@ Sends a formatted alert card to a Slack channel via **Incoming Webhook** (native
     3. **Slack Channel** field: `#alerts-frontend` or member ID `U01234567`
     4. Save the gateway
 
-    At runtime, QA Capsule sends `"channel": "<gateway value>"` in the Slack JSON.
+    At runtime, SRE Capsule sends `"channel": "<gateway value>"` in the Slack JSON.
 
-    ## 5. Payload sent by QA Capsule
+    ## 5. Payload sent by SRE Capsule
 
     ```json
     {
@@ -76,13 +76,13 @@ Sends a formatted alert card to a Slack channel via **Incoming Webhook** (native
       "attachments": [{
         "color": "#ff4444",
         "title": "SRE Alert: [Playwright] checkout",
-        "text": "Error detected by QA Capsule.\n\nTimeout 30000ms",
-        "footer": "QA Capsule Remediation Engine"
+        "text": "Error detected by SRE Capsule.\n\nTimeout 30000ms",
+        "footer": "SRE Capsule Remediation Engine"
       }]
     }
     ```
 
-    ## 6. QA Capsule troubleshooting
+    ## 6. SRE Capsule troubleshooting
 
     | Symptom | Cause | Solution |
     |----------|-------|----------|
@@ -96,14 +96,14 @@ Sends a formatted alert card to a Slack channel via **Incoming Webhook** (native
     ## 1. Create a Slack App
 
     1. [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**
-    2. Name: `QA Capsule Bot`
+    2. Name: `SRE Capsule Bot`
     3. Workspace: your organization
 
     ## 2. Enable Incoming Webhooks
 
     1. App menu → **Incoming Webhooks** → **On**
     2. **Add New Webhook to Workspace**
-    3. Choose a default channel (e.g. `#general`) — QA Capsule can **override** the channel via `SLACK_CHANNEL`
+    3. Choose a default channel (e.g. `#general`) — SRE Capsule can **override** the channel via `SLACK_CHANNEL`
     4. Copy the URL: `https://hooks.slack.com/services/T…/B…/…`
 
     ## 3. Permissions / best practices
@@ -120,7 +120,7 @@ Sends a formatted alert card to a Slack channel via **Incoming Webhook** (native
 
     ```bash
     curl -X POST -H "Content-Type: application/json" \
-      -d '{"text":"QA Capsule test"}' \
+      -d '{"text":"SRE Capsule test"}' \
       "https://hooks.slack.com/services/VOTRE_URL"
     ```
 
@@ -129,7 +129,7 @@ Sends a formatted alert card to a Slack channel via **Incoming Webhook** (native
     ## 5. Slack limits
 
     - Incoming Webhooks: no advanced threads without migrating to `chat.postMessage` API + Bot token (out of community scope)
-    - Standard Slack rate limits; large CI bursts → group via QA Capsule correlation
+    - Standard Slack rate limits; large CI bursts → group via SRE Capsule correlation
 
 ---
 

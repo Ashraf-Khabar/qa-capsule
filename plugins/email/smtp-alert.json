@@ -1,7 +1,7 @@
 {
   "auto_run": true,
   "config": {
-    "SMTP_FROM": "achraf@qa-cap,com",
+    "SMTP_FROM": "achraf@sre-cap.com",
     "SMTP_HOST": "sandbox.smtp.mailtrap.io",
     "SMTP_PASS": "5768cda5d786f5",
     "SMTP_PORT": "587",

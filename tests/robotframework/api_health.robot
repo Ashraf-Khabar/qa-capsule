@@ -30,10 +30,10 @@ POST Create User Returns 201
     [Documentation]    Create endpoint accepts JSON body.
     [Tags]    api    passing
     ${headers}=    Create Dictionary    Content-Type=application/json
-    ${body}=    Create Dictionary    name=QA Capsule    job=SRE Engineer
+    ${body}=    Create Dictionary    name=SRE Capsule    job=SRE Engineer
     ${response}=    POST On Session    api    /api/users    json=${body}    headers=${headers}
     Should Be Valid HTTP Status    ${response.status_code}    201
-    Should Be Equal    ${response.json()}[name]    QA Capsule
+    Should Be Equal    ${response.json()}[name]    SRE Capsule
 
 GET Missing User Wrong Status Expectation (Self-Healing Demo)
     [Documentation]

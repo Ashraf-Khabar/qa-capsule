@@ -4,7 +4,7 @@ icon: material/book-open-page-variant
 
 # Platform User Guide (Complete)
 
-End-to-end guide for **every major feature** in QA Capsule: Operations dashboard, CI/CD Gateways, Plugin Engine, Visual Workflows, Self-Healing Hub, Quarantine, Runbooks, DORA, FinOps, and Help Center.
+End-to-end guide for **every major feature** in SRE Capsule: Operations dashboard, CI/CD Gateways, Plugin Engine, Visual Workflows, Self-Healing Hub, Quarantine, Runbooks, DORA, FinOps, and Help Center.
 
 For internal mechanics, see [System Architecture](architecture.md).
 
@@ -74,7 +74,7 @@ Client-side search on name, project, error text. Project dropdown limits API fet
 ### Provision a gateway
 
 1. Create project row: name, team, CI system, repo path.
-2. Copy generated **API key** — store in CI secrets as `QACAPSULE_API_KEY`.
+2. Copy generated **API key** — store in CI secrets as `SRECAPSULE_API_KEY`.
 3. Configure webhook URL: `POST https://<host>:9000/api/webhooks/<optional-suffix>` with header `X-API-Key`.
 
 ### Recommended headers

@@ -1,13 +1,13 @@
 /**
- * QA Capsule DOM Capture Reporter for Playwright.
+ * SRE Capsule DOM Capture Reporter for Playwright.
  *
  * This reporter reads test attachments that were written by the
- * qa-capsule-fixture.js afterEach hook.  When a test fails and the page
+ * sre-capsule-fixture.js afterEach hook.  When a test fails and the page
  * content was captured, this reporter writes the DOM snapshot (wrapped in
- * QA Capsule markers) to process.stderr.
+ * SRE Capsule markers) to process.stderr.
  *
  * Playwright's JUnit reporter always includes stderr content in the
- * <system-err> element of each <testcase>, which QA Capsule ingests into
+ * <system-err> element of each <testcase>, which SRE Capsule ingests into
  * the console_logs column.  The heal_incident MCP tool then uses that HTML
  * to ask the AI for the correct replacement locator.
  *
@@ -17,21 +17,21 @@
 
 const MAX_HTML_CHARS = 24_000;
 
-class QACapsuleReporter {
+class SRECapsuleReporter {
   onTestEnd(test, result) {
     if (result.status === 'passed' || result.status === 'skipped') return;
 
     // Look for a DOM snapshot attachment written by the fixture.
     const domAttachment = result.attachments.find(
-      (a) => a.name === 'qa-capsule-dom-snapshot'
+      (a) => a.name === 'sre-capsule-dom-snapshot'
     );
     if (!domAttachment || !domAttachment.body) return;
 
     const html = domAttachment.body.toString('utf8').slice(0, MAX_HTML_CHARS);
     const snapshot =
-      `\n[QA_CAPSULE_DOM_SNAPSHOT_START]\n` +
+      `\n[SRE_CAPSULE_DOM_SNAPSHOT_START]\n` +
       `${html}\n` +
-      `[QA_CAPSULE_DOM_SNAPSHOT_END]\n`;
+      `[SRE_CAPSULE_DOM_SNAPSHOT_END]\n`;
 
     // stderr is captured by Playwright's JUnit reporter into <system-err>.
     process.stderr.write(snapshot);
@@ -40,4 +40,4 @@ class QACapsuleReporter {
   onEnd() {}
 }
 
-module.exports = QACapsuleReporter;
+module.exports = SRECapsuleReporter;

@@ -4,7 +4,7 @@ icon: material/truck-delivery
 
 # CI/CD providers — configuration guide
 
-How to wire **any CI/CD platform** to QA Capsule using the same upload contract. Framework-specific report paths are in [Test frameworks](test-frameworks.md).
+How to wire **any CI/CD platform** to SRE Capsule using the same upload contract. Framework-specific report paths are in [Test frameworks](test-frameworks.md).
 
 ---
 
@@ -25,7 +25,7 @@ How to wire **any CI/CD platform** to QA Capsule using the same upload contract.
 
 | Variable | Example |
 |----------|---------|
-| Base URL | `https://qa-capsule.example.com` |
+| Base URL | `https://sre-capsule.example.com` |
 | API key | From **CI/CD Gateways** (shown once at provision) |
 
 ---
@@ -36,7 +36,7 @@ How to wire **any CI/CD platform** to QA Capsule using the same upload contract.
 flowchart LR
   A[Install deps] --> B[Run tests]
   B --> C[Produce JUnit XML]
-  C --> D[Upload to QA Capsule]
+  C --> D[Upload to SRE Capsule]
   D --> E[Optional: fail job if tests failed]
 ```
 
@@ -48,12 +48,12 @@ flowchart LR
 
 ## GitHub Actions
 
-**Secrets:** `QA_CAPSULE_URL`, `QA_CAPSULE_API_KEY` (or per-framework keys).
+**Secrets:** `SRE_CAPSULE_URL`, `SRE_CAPSULE_API_KEY` (or per-framework keys).
 
 ```yaml
 env:
-  QA_CAPSULE_URL: ${{ secrets.QA_CAPSULE_URL }}
-  QA_CAPSULE_API_KEY: ${{ secrets.QA_CAPSULE_API_ROBOT_KEY }}
+  SRE_CAPSULE_URL: ${{ secrets.SRE_CAPSULE_URL }}
+  SRE_CAPSULE_API_KEY: ${{ secrets.SRE_CAPSULE_API_ROBOT_KEY }}
 
 jobs:
   test:
@@ -66,11 +66,11 @@ jobs:
         run: ./scripts/run-tests.sh   # or pytest, playwright, etc.
         continue-on-error: true
 
-      - name: Send results to QA Capsule
+      - name: Send results to SRE Capsule
         if: always()
         env:
-          WEBHOOK_URL: ${{ secrets.QA_CAPSULE_URL }}
-          API_KEY: ${{ secrets.QA_CAPSULE_API_ROBOT_KEY }}
+          WEBHOOK_URL: ${{ secrets.SRE_CAPSULE_URL }}
+          API_KEY: ${{ secrets.SRE_CAPSULE_API_ROBOT_KEY }}
         run: |
           curl -f -S -X POST "${WEBHOOK_URL}/api/webhooks/upload?framework=RobotFramework" \
             -H "X-API-Key: ${API_KEY}" \
@@ -99,7 +99,7 @@ Full walkthrough: [GitHub Actions](github.md)
 
 ## GitLab CI
 
-**Variables:** `QA_CAPSULE_URL`, `QA_CAPSULE_API_KEY` (masked).
+**Variables:** `SRE_CAPSULE_URL`, `SRE_CAPSULE_API_KEY` (masked).
 
 ```yaml
 robot-tests:
@@ -113,8 +113,8 @@ robot-tests:
     - chmod +x scripts/run-tests.sh && ./scripts/run-tests.sh
   after_script:
     - |
-      curl -f -S -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=RobotFramework" \
-        -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+      curl -f -S -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=RobotFramework" \
+        -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
         -H "X-Run-Id: ${CI_PIPELINE_ID}" \
         -H "X-Execution-Env: STAGING" \
         -H "X-Execution-Type: TEST-RUN" \
@@ -131,13 +131,13 @@ Full walkthrough: [GitLab CI](gitlab.md)
 
 ## Jenkins
 
-**Credentials:** Secret text `QA_CAPSULE_API_KEY`.
+**Credentials:** Secret text `SRE_CAPSULE_API_KEY`.
 
 ```groovy
 pipeline {
   agent any
   environment {
-    QA_CAPSULE_URL = 'https://qa-capsule.example.com'
+    SRE_CAPSULE_URL = 'https://sre-capsule.example.com'
   }
   stages {
     stage('Test') {
@@ -148,9 +148,9 @@ pipeline {
   }
   post {
     always {
-      withCredentials([string(credentialsId: 'QA_CAPSULE_API_KEY', variable: 'API_KEY')]) {
+      withCredentials([string(credentialsId: 'SRE_CAPSULE_API_KEY', variable: 'API_KEY')]) {
         sh '''
-          curl -f -S -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
+          curl -f -S -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
             -H "X-API-Key: ${API_KEY}" \
             -H "X-Run-Id: ${BUILD_NUMBER}" \
             -F "file=@pytest-results.xml"
@@ -167,7 +167,7 @@ Full walkthrough: [Jenkins](jenkins.md)
 
 ## Azure DevOps
 
-**Pipeline variables (secret):** `QA_CAPSULE_URL`, `QA_CAPSULE_API_KEY`
+**Pipeline variables (secret):** `SRE_CAPSULE_URL`, `SRE_CAPSULE_API_KEY`
 
 ```yaml
 trigger:
@@ -182,13 +182,13 @@ steps:
     continueOnError: true
 
   - script: |
-      curl -f -S -X POST "$(QA_CAPSULE_URL)/api/webhooks/upload?framework=Pytest" \
-        -H "X-API-Key: $(QA_CAPSULE_API_KEY)" \
+      curl -f -S -X POST "$(SRE_CAPSULE_URL)/api/webhooks/upload?framework=Pytest" \
+        -H "X-API-Key: $(SRE_CAPSULE_API_KEY)" \
         -H "X-Run-Id: $(Build.BuildId)" \
         -H "X-Execution-Env: STAGING" \
         -H "X-Execution-Type: TEST-RUN" \
         -F "file=@$(Build.ArtifactStagingDirectory)/pytest-results.xml"
-    displayName: Upload to QA Capsule
+    displayName: Upload to SRE Capsule
     condition: always()
 ```
 
@@ -213,10 +213,10 @@ jobs:
           command: pytest --junitxml=/tmp/pytest-results.xml
           when: always
       - run:
-          name: Upload to QA Capsule
+          name: Upload to SRE Capsule
           command: |
-            curl -f -S -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
-              -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+            curl -f -S -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
+              -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
               -H "X-Run-Id: ${CIRCLE_BUILD_NUM}" \
               -F "file=@/tmp/pytest-results.xml"
           when: always
@@ -243,8 +243,8 @@ pipelines:
           - pytest --junitxml=pytest-results.xml || true
         after-script:
           - |
-            curl -f -S -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
-              -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+            curl -f -S -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
+              -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
               -H "X-Run-Id: ${BITBUCKET_BUILD_NUMBER}" \
               -F "file=@pytest-results.xml"
 ```
@@ -259,8 +259,8 @@ Use an **exit-handler** hook or a final step that always runs:
 #!/usr/bin/env bash
 set -euo pipefail
 # run in exit-handler or after test step
-curl -f -S -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
-  -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+curl -f -S -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
+  -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
   -H "X-Run-Id: ${BUILDKITE_BUILD_NUMBER}" \
   -F "file=@pytest-results.xml"
 ```
@@ -285,7 +285,7 @@ curl -f -S -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=Pytest" \
 | Issue | Fix |
 |-------|-----|
 | Upload skipped on failure | Add `always()` / `after_script` / `post { always }` |
-| `localhost` from SaaS runner | Use a public QA Capsule URL or self-hosted runner |
+| `localhost` from SaaS runner | Use a public SRE Capsule URL or self-hosted runner |
 | Double path in URL | Secret = origin only, path is `/api/webhooks/upload` |
 | 401 | Key from correct **project** in CI/CD Gateways |
 

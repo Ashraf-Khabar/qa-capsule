@@ -1,9 +1,9 @@
-site_name: QA Flight Recorder (QA Capsule)
+site_name: SRE Flight Recorder (SRE Capsule)
 site_description: Enterprise SRE Control Plane for CI/CD Telemetry, E2E Testing, and Incident Response
-site_author: QA Capsule Team
-site_url: https://qa-capsule.github.io/qa-capsule-community/
-repo_name: QA-Capsule/qa-capsule-community
-repo_url: https://github.com/QA-Capsule/qa-capsule-community
+site_author: SRE Capsule Team
+site_url: https://sre-capsule.github.io/sre-capsule-community/
+repo_name: SRE-Capsule/sre-capsule-community
+repo_url: https://github.com/SRE-Capsule/sre-capsule-community
 edit_uri: edit/main/docs/
 
 theme:
@@ -142,4 +142,4 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/QA-Capsule/qa-capsule-community
+      link: https://github.com/SRE-Capsule/sre-capsule-community

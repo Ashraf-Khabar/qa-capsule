@@ -4,7 +4,7 @@ icon: material/cog
 
 # System Configuration & Security
 
-Congratulations! If you have successfully completed the Docker deployment, your QA Capsule instance is now running. However, before you can start integrating your CI/CD pipelines, you must secure the platform and configure its core settings.
+Congratulations! If you have successfully completed the Docker deployment, your SRE Capsule instance is now running. However, before you can start integrating your CI/CD pipelines, you must secure the platform and configure its core settings.
 
 This guide will walk you through the initial administrative setup, from your very first login to provisioning your engineering team.
 
@@ -12,12 +12,12 @@ This guide will walk you through the initial administrative setup, from your ver
 
 ## 1. The Initial Boot & First Login
 
-QA Capsule is designed with a "Secure by Default" philosophy. There is no open registration page. Upon the very first boot of the Docker container, the Go backend automatically provisions a default **System Administrator** account inside the SQLite database.
+SRE Capsule is designed with a "Secure by Default" philosophy. There is no open registration page. Upon the very first boot of the Docker container, the Go backend automatically provisions a default **System Administrator** account inside the SQLite database.
 
 ### Accessing the Portal
 
-1. Open your web browser and navigate to the URL where you deployed QA Capsule (e.g., `http://localhost:9000` or `https://sre.yourcompany.com`).
-2. You will be greeted by the QA Capsule login screen.
+1. Open your web browser and navigate to the URL where you deployed SRE Capsule (e.g., `http://localhost:9000` or `https://sre.yourcompany.com`).
+2. You will be greeted by the SRE Capsule login screen.
 
 ### Default Credentials
 
@@ -40,9 +40,9 @@ Instead, the system will redirect you to a red **ACTION REQUIRED** screen. This 
 
 ## 2. SMTP Gateway Configuration
 
-Because QA Capsule is an enterprise-grade tool, users cannot simply "sign up." They must be invited by an Administrator. When you create a new user, the system generates a highly secure, randomized temporary password. 
+Because SRE Capsule is an enterprise-grade tool, users cannot simply "sign up." They must be invited by an Administrator. When you create a new user, the system generates a highly secure, randomized temporary password. 
 
-To deliver this password to the new user, QA Capsule needs to know how to send emails. You must configure the SMTP Gateway.
+To deliver this password to the new user, SRE Capsule needs to know how to send emails. You must configure the SMTP Gateway.
 
 ### Configuration Steps
 
@@ -64,7 +64,7 @@ To deliver this password to the new user, QA Capsule needs to know how to send e
 
 ## 3. Network & Security Policy (Domain Fencing)
 
-If you are deploying QA Capsule in a corporate environment, you likely want to ensure that only employees of your company can access the system. QA Capsule includes a Domain Fencing feature.
+If you are deploying SRE Capsule in a corporate environment, you likely want to ensure that only employees of your company can access the system. SRE Capsule includes a Domain Fencing feature.
 
 1. Still in the **System Settings** menu, locate the **Network & Security Policy** card.
 2. In the **Allowed Email Domains** field, enter your company's domain (e.g., `@acme-corp.com`).
@@ -82,7 +82,7 @@ Now that your system is secure and can send emails, it is time to invite your te
 
 ### Global Roles Explained
 
-QA Capsule uses a Role-Based Access Control (RBAC) system. Every user must be assigned one of these global roles:
+SRE Capsule uses a Role-Based Access Control (RBAC) system. Every user must be assigned one of these global roles:
 
 1. **Observer** — View dashboard and incidents for assigned teams; cannot resolve or configure plugins.
 
@@ -111,7 +111,7 @@ Here is exactly what happens when you click "Deploy Identity":
 
 1. The backend creates the user in the SQLite database.
 2. A temporary password (e.g., `sre_temp_9f8a7b`) is generated, hashed with bcrypt, and saved.
-3. The system uses the SMTP Gateway to email Jane Doe, welcoming her to QA Capsule and providing her temporary password.
+3. The system uses the SMTP Gateway to email Jane Doe, welcoming her to SRE Capsule and providing her temporary password.
 4. When Jane logs in for the first time, she will hit the exact same **ACTION REQUIRED** screen you saw in Step 1, forcing her to choose a private password.
 
 You have now successfully configured the system! You are ready to move on to setting up your `CI/CD integrations`.
@@ -120,7 +120,7 @@ You have now successfully configured the system! You are ready to move on to set
 
 ## 5. Artifact Storage (Test Evidence)
 
-QA Capsule stores Playwright traces, screenshots, and videos linked to incidents.
+SRE Capsule stores Playwright traces, screenshots, and videos linked to incidents.
 
 ### `config.yaml` block
 
@@ -156,7 +156,7 @@ plugins:
   directory: ./plugins
 ```
 
-Integrations load **once at server start**. After editing a manifest JSON, restart QA Capsule. Shell `command` fields are ignored — use `"integration": "slack"` etc. See [Plugin Engine](../plugins/overview.md).
+Integrations load **once at server start**. After editing a manifest JSON, restart SRE Capsule. Shell `command` fields are ignored — use `"integration": "slack"` etc. See [Plugin Engine](../plugins/overview.md).
 
 ---
 

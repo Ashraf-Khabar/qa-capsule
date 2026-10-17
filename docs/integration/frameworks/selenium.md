@@ -24,7 +24,7 @@ Selenium is a **driver library**, not a reporter. Pair it with a runner that exp
 | **Report** | `selenium-results.xml` |
 | **Repo workflow** | `.github/workflows/e2e-tests-selenium-pytest.yml` |
 | **Test folder** | `tests/selenium-pytest/` |
-| **Secret** | `QA_CAPSULE_API_SELENIUM_KEY` |
+| **Secret** | `SRE_CAPSULE_API_SELENIUM_KEY` |
 
 ### Test suites in this repository
 
@@ -59,11 +59,11 @@ pytest tests/selenium-pytest/ -v --junitxml=selenium-results.xml
   run: pytest tests/selenium-pytest/ -v --junitxml=selenium-results.xml
   continue-on-error: true
 
-- name: Send Alert to QA Capsule
+- name: Send Alert to SRE Capsule
   if: always()
   env:
-    WEBHOOK_URL: ${{ secrets.QA_CAPSULE_URL }}
-    API_KEY: ${{ secrets.QA_CAPSULE_API_SELENIUM_KEY }}
+    WEBHOOK_URL: ${{ secrets.SRE_CAPSULE_URL }}
+    API_KEY: ${{ secrets.SRE_CAPSULE_API_SELENIUM_KEY }}
   run: |
     curl -X POST "$WEBHOOK_URL/api/webhooks/upload?framework=Pytest" \
       -H "X-API-Key: $API_KEY" \
@@ -87,8 +87,8 @@ pytest tests/selenium-pytest/ -v --junitxml=selenium-results.xml
 
 ```bash
 mvn test
-curl -X POST "${QA_CAPSULE_URL}/api/webhooks/upload?framework=JUnit" \
-  -H "X-API-Key: ${QA_CAPSULE_API_KEY}" \
+curl -X POST "${SRE_CAPSULE_URL}/api/webhooks/upload?framework=JUnit" \
+  -H "X-API-Key: ${SRE_CAPSULE_API_KEY}" \
   -H "X-Run-Id: ${BUILD_NUMBER}" \
   -H "X-Execution-Env: STAGING" \
   -H "X-Execution-Type: TEST-RUN" \

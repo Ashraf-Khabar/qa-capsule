@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# QA Flight Recorder - CI/CD Telemetry Agent
+# SRE Flight Recorder - CI/CD Telemetry Agent
 # ==============================================================================
 
 # Variables injectées par la CI ou le Control Plane
