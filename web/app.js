@@ -21,9 +21,10 @@ import * as dora from './js/dora.js';
 import { setupAutocomplete } from './js/autocomplete.js';
 import { initTheme, applyTheme } from './js/ui.js';
 import { initI18n, t, setLocale, applyI18n } from './js/i18n.js';
+import { initCommentUI, openResolveComposer, hydrateOpenComments } from './js/comments.js';
 
 // EXPORT GLOBALLY FOR HTML INLINE HANDLERS
-Object.assign(window, { notify, showConfirmModal, showPromptModal, closeModal, toggleTheme, initSidebar, toggleSidebar, parseJwt, performLogout, fetchWithAuth, applyTheme, t, setLocale, applyI18n });
+Object.assign(window, { notify, showConfirmModal, showPromptModal, closeModal, toggleTheme, initSidebar, toggleSidebar, parseJwt, performLogout, fetchWithAuth, applyTheme, t, setLocale, applyI18n, openResolveComposer, hydrateOpenComments });
 
 // Bind all module functions to the window so HTML 'onclick' can find them
 for (const [key, value] of Object.entries(iam)) {
@@ -259,9 +260,7 @@ window.resolveSelected = async function () {
     if (window.selectedIncidents.size === 0) return;
     const ids = Array.from(window.selectedIncidents).map(id => parseInt(id, 10)).filter(id => !isNaN(id));
     if (ids.length === 0) return;
-    window.selectedIncidents.clear();
-    window.updateBulkActionUI();
-    await window.resolveIncidentsByIds(ids, 'Alerts resolved');
+    window.openResolveComposer(ids, 'Alerts resolved');
 };
 
 window.deleteSelected = async function () {
@@ -309,9 +308,7 @@ window.resolveGroup = async function (groupId, event) {
     const ids = targetIncidents.filter(inc => !normalizeIsResolved(inc)).map(inc => parseInt(inc.id, 10)).filter(id => !isNaN(id));
     if (ids.length === 0) return;
 
-    targetIncidents.forEach(i => window.selectedIncidents.delete(String(i.id)));
-    window.updateBulkActionUI();
-    await window.resolveIncidentsByIds(ids, ids.length === 1 ? 'Sub-alert resolved.' : 'Pipelines marked as resolved.');
+    window.openResolveComposer(ids, ids.length === 1 ? 'Sub-alert resolved.' : 'Pipelines marked as resolved.');
 }
 
 window.deleteGroup = async function (groupId, event) {
@@ -1140,6 +1137,7 @@ window.renderIncidentsList = function () {
                     </button>
                     <div id="log-content-${inc.id}" class="incident-log-panel" style="display: ${logDisplay};">${displayLog}</div>
                 </div>
+                <div class="incident-comments" data-incident-id="${inc.id}"></div>
             </div>`;
         }).join('');
 
@@ -1196,6 +1194,7 @@ window.renderIncidentsList = function () {
             el.style.display = 'block';
             if (icon) icon.style.transform = 'rotate(180deg)';
             executionHub.onExecGroupExpanded(groupId);
+            hydrateOpenComments();
         }
     });
 };
@@ -1526,6 +1525,7 @@ window.onload = function () {
     initI18n();
     initTheme();
     initSidebar();
+    initCommentUI();
     pingApiServer();
     window.checkAuth();
     if (!localStorage.getItem('sre-jwt') && window.probeLoginServer) window.probeLoginServer();

@@ -7,7 +7,7 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap">
-    <link rel="stylesheet" href="/style.css?v=1.0.25-demo">
+    <link rel="stylesheet" href="/style.css?v=1.0.26-collab">
     <script>
         try {
             if (localStorage.getItem('sre-sidebar-collapsed') === '1') {
@@ -1321,7 +1321,7 @@
                 </div>
 
                 <div class="aipage-status-strip account-status-strip">
-                    <div class="account-avatar" aria-hidden="true">
+                    <div class="account-avatar" id="profile-avatar-bubble" aria-hidden="true">
                         <span id="profile-avatar-initials">?</span>
                     </div>
                     <div class="aipage-status-sep"></div>
@@ -1371,6 +1371,18 @@
                                         <div class="form-field" style="margin:0 0 14px;">
                                             <label for="profile-fullname">Display name</label>
                                             <input type="text" id="profile-fullname" class="login-input" placeholder="Your full name" style="max-width:none;">
+                                        </div>
+                                        <div class="form-field avatar-field" style="margin:0 0 14px;">
+                                            <label>Profile picture</label>
+                                            <p class="form-field-hint">Choose an avatar or upload a photo. It appears next to your comments.</p>
+                                            <div id="avatar-picker" class="avatar-picker"></div>
+                                            <div class="avatar-upload-row">
+                                                <label class="btn-secondary btn-sm avatar-upload-label">
+                                                    Upload a photo
+                                                    <input type="file" id="avatar-file" accept="image/png,image/jpeg,image/webp" hidden>
+                                                </label>
+                                                <button type="button" class="btn-secondary btn-sm" id="avatar-clear">Use initials</button>
+                                            </div>
                                         </div>
                                         <div class="form-field" style="margin:0;">
                                             <label for="pref-landing-view">Default home screen</label>
@@ -1834,7 +1846,41 @@
         </div>
     </div>
 
+    <div id="comment-modal" class="comment-modal" hidden>
+        <div class="comment-modal__backdrop" data-comment-close></div>
+        <div class="comment-modal__card" role="dialog" aria-modal="true" aria-labelledby="comment-modal-title">
+            <h3 id="comment-modal-title">Mark as solved</h3>
+            <p id="comment-modal-hint" class="comment-modal__hint"></p>
+            <div class="rte">
+                <div class="rte-toolbar" role="toolbar" aria-label="Comment formatting">
+                    <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+                    <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+                    <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+                    <label class="rte-color">Color <input type="color" id="rte-color" value="#2563eb" aria-label="Text color"></label>
+                    <label class="rte-size">Size
+                        <select id="rte-size" aria-label="Font size">
+                            <option value="12px">12</option>
+                            <option value="14px" selected>14</option>
+                            <option value="16px">16</option>
+                            <option value="18px">18</option>
+                            <option value="20px">20</option>
+                            <option value="24px">24</option>
+                            <option value="28px">28</option>
+                        </select>
+                    </label>
+                    <button type="button" data-cmd="code" title="Inline code">&lt;/&gt;</button>
+                    <button type="button" data-cmd="pre" title="Code block">{ }</button>
+                </div>
+                <div id="rte-editor" class="rte-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write a note. Type @ to mention someone."></div>
+                <div id="rte-mentions" class="rte-mentions" hidden></div>
+            </div>
+            <div class="comment-modal__actions">
+                <button type="button" class="btn-secondary" data-comment-close>Cancel</button>
+                <button type="button" class="btn-primary" id="comment-modal-submit">Mark solved</button>
+            </div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-    <script type="module" src="app.js?v=1.0.25-demo"></script>
+    <script type="module" src="app.js?v=1.0.26-collab"></script>
 </body>
 </html>

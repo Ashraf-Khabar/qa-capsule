@@ -8,6 +8,7 @@ import { roleLabel, normalizeRole, canAccessView } from './roles.js';
 import { setSelectedCurrency } from './settings.js';
 import { renderConfigurationPresets, renderThemePickers, initConfigurationPresetsUI } from './config-presets.js';
 import { setLocale, applyI18n, t, getLocale, PREF_LANGUAGE_KEY } from './i18n.js';
+import { avatarMarkup, renderAvatarPicker, resizeProfilePhoto } from './avatars.js';
 
 export const PREF_DEFAULT_RANGE_KEY = 'sre-pref-default-range';
 export const PREF_CURRENCY_KEY = 'sre-pref-currency';
@@ -236,13 +237,22 @@ export function applyDefaultLandingView(prefs, role) {
     if (typeof window.switchView === 'function') window.switchView(view, nav);
 }
 
+let currentAvatar = { kind: '', value: '' };
+
 function renderProfileHeader({ fullname, username, role }) {
     const displayName = resolveProfileDisplayName({ fullname, username });
-    const initialsEl = document.getElementById('profile-avatar-initials');
+    const bubble = document.getElementById('profile-avatar-bubble');
     const nameEl = document.getElementById('profile-display-name');
     const badgeEl = document.getElementById('profile-role-badge');
     const roleEl = document.getElementById('profile-role');
-    if (initialsEl) initialsEl.textContent = initialsFromDisplayName(displayName);
+    if (bubble) {
+        bubble.innerHTML = avatarMarkup({
+            avatar_kind: currentAvatar.kind,
+            avatar_value: currentAvatar.value,
+            fullname: displayName,
+            username
+        }, 40);
+    }
     if (nameEl) nameEl.textContent = displayName || username || '—';
     if (roleEl && role) roleEl.textContent = roleLabel(role);
     if (badgeEl && role) {
@@ -473,6 +483,8 @@ export function loadProfileView() {
             if (!ok || !data) throw new Error('Failed to load profile');
             const nameInput = document.getElementById('profile-fullname');
             if (nameInput) nameInput.value = data.fullname || '';
+            currentAvatar = { kind: data.avatar_kind || '', value: data.avatar_value || '' };
+            renderAvatarChooser();
             renderProfileHeader({
                 fullname: data.fullname,
                 username: data.username ?? payload.username,
@@ -541,6 +553,53 @@ export function clearLocalProfileData() {
         try { localStorage.removeItem(k); } catch (_) { /* quota */ }
     });
     notify('Local data cleared — reload recommended', 'success');
+}
+
+function renderAvatarChooser() {
+    const picker = document.getElementById('avatar-picker');
+    renderAvatarPicker(picker, currentAvatar.kind === 'preset' ? currentAvatar.value : '', (id) => {
+        saveAvatar('preset', id);
+    });
+    const file = document.getElementById('avatar-file');
+    if (file && file.dataset.bound !== '1') {
+        file.dataset.bound = '1';
+        file.addEventListener('change', async () => {
+            const chosen = file.files && file.files[0];
+            file.value = '';
+            if (!chosen) return;
+            try {
+                const dataUrl = await resizeProfilePhoto(chosen);
+                await saveAvatar('photo', dataUrl);
+            } catch (err) {
+                notify(err.message || 'Could not use that photo', 'error');
+            }
+        });
+    }
+    const clear = document.getElementById('avatar-clear');
+    if (clear && clear.dataset.bound !== '1') {
+        clear.dataset.bound = '1';
+        clear.addEventListener('click', () => saveAvatar('', ''));
+    }
+}
+
+async function saveAvatar(kind, value) {
+    const res = await fetchWithAuth('/api/me/avatar', {
+        method: 'PUT',
+        body: JSON.stringify({ kind, value })
+    });
+    if (!res.ok) {
+        notify('Could not save the avatar', 'error');
+        return;
+    }
+    currentAvatar = { kind, value };
+    renderAvatarChooser();
+    const payload = parseJwt(localStorage.getItem('sre-jwt'));
+    renderProfileHeader({
+        fullname: document.getElementById('profile-fullname')?.value,
+        username: payload.username,
+        role: payload.role
+    });
+    notify('Profile picture saved', 'success');
 }
 
 export function saveProfile() {

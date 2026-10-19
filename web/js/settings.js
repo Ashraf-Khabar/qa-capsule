@@ -1561,9 +1561,11 @@ window._onAIProviderClick = function(providerId) {
 
     const keyStatus = document.getElementById('ai-key-status');
     if (keyStatus) {
-        keyStatus.textContent = meta.defaultKeyEnv
-            ? `Set ${meta.defaultKeyEnv} as a server environment variable.`
-            : providerId === 'ollama' ? 'No API key required for Ollama.' : '';
+        keyStatus.textContent = meta.keyOptional
+            ? 'No API key required for this local provider.'
+            : meta.defaultKeyEnv
+                ? `Set ${meta.defaultKeyEnv} as a server environment variable, or paste the key below.`
+                : '';
         keyStatus.style.color = '';
     }
 };

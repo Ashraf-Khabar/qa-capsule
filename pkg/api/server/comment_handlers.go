@@ -208,14 +208,14 @@ func handleIncidentCommentBatch(w http.ResponseWriter, r *http.Request) {
 }
 
 type commentRow struct {
-	ID           int64  `json:"id"`
-	Author       string `json:"author"`
-	Fullname     string `json:"fullname"`
-	AvatarKind   string `json:"avatar_kind"`
-	AvatarValue  string `json:"avatar_value"`
-	BodyHTML     string `json:"body_html"`
-	CreatedAt    string `json:"created_at"`
-	IncidentID   int64  `json:"-"`
+	ID          int64  `json:"id"`
+	Author      string `json:"author"`
+	Fullname    string `json:"fullname"`
+	AvatarKind  string `json:"avatar_kind"`
+	AvatarValue string `json:"avatar_value"`
+	BodyHTML    string `json:"body_html"`
+	CreatedAt   string `json:"created_at"`
+	IncidentID  int64  `json:"-"`
 }
 
 func loadComments(ids []int64) (map[string][]commentRow, error) {

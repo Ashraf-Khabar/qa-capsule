@@ -55,11 +55,11 @@ func handleAIConfig(w http.ResponseWriter, r *http.Request) {
 		dbKeySet := strings.TrimSpace(cfg.APIKey) != ""
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"provider":        string(cfg.Provider),
-			"model":           cfg.Model,
-			"base_url":        cfg.BaseURL,
-			"api_key_env":     cfg.APIKeyEnv,
-			"api_key_set":     envKeySet || dbKeySet,
+			"provider":    string(cfg.Provider),
+			"model":       cfg.Model,
+			"base_url":    cfg.BaseURL,
+			"api_key_env": cfg.APIKeyEnv,
+			"api_key_set": envKeySet || dbKeySet,
 			// api_key_stored lets the UI show a masked indicator when a key is saved in the DB.
 			"api_key_stored":  dbKeySet,
 			"max_tokens":      cfg.MaxTokens,

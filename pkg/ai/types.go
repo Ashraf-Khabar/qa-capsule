@@ -10,13 +10,13 @@ import "time"
 type ProviderKind string
 
 const (
-	ProviderDisabled   ProviderKind = "disabled"
-	ProviderOpenAI     ProviderKind = "openai"
-	ProviderOllama     ProviderKind = "ollama"
-	ProviderAnthropic  ProviderKind = "anthropic"
-	ProviderGemini     ProviderKind = "gemini"
-	ProviderMistral    ProviderKind = "mistral"
-	ProviderGroq       ProviderKind = "groq"
+	ProviderDisabled    ProviderKind = "disabled"
+	ProviderOpenAI      ProviderKind = "openai"
+	ProviderOllama      ProviderKind = "ollama"
+	ProviderAnthropic   ProviderKind = "anthropic"
+	ProviderGemini      ProviderKind = "gemini"
+	ProviderMistral     ProviderKind = "mistral"
+	ProviderGroq        ProviderKind = "groq"
 	ProviderOpenRouter  ProviderKind = "openrouter"
 	ProviderAzure       ProviderKind = "azure"
 	ProviderDeepSeek    ProviderKind = "deepseek"
@@ -40,16 +40,16 @@ const (
 )
 
 type ProviderConfig struct {
-	Provider       ProviderKind `json:"provider"`
-	Model          string       `json:"model"`
-	BaseURL        string       `json:"base_url"`
-	APIKeyEnv      string       `json:"api_key_env"`
+	Provider  ProviderKind `json:"provider"`
+	Model     string       `json:"model"`
+	BaseURL   string       `json:"base_url"`
+	APIKeyEnv string       `json:"api_key_env"`
 	// APIKey holds the key entered directly in the UI and stored in the local DB.
 	// It is never returned to the client — only its presence is reported via APIKeyStored.
-	APIKey         string       `json:"-"`
-	MaxTokens      int          `json:"max_tokens"`
-	TimeoutSeconds int          `json:"timeout_seconds"`
-	Enabled        bool         `json:"enabled"`
+	APIKey         string `json:"-"`
+	MaxTokens      int    `json:"max_tokens"`
+	TimeoutSeconds int    `json:"timeout_seconds"`
+	Enabled        bool   `json:"enabled"`
 }
 
 type JobStatus string
