@@ -41,8 +41,8 @@ jobs:
       - name: Upload results to SRE Capsule
         if: always()
         env:
-          SRE_CAPSULE_URL: ${{ secrets.SRE_CAPSULE_URL }}
-          API_KEY: ${{ secrets.SRE_CAPSULE_API_ROBOT_KEY }}
+          SRE_CAPSULE_URL: ${{ secrets.SRE_CAPSULE_URL || secrets.QA_CAPSULE_URL }}
+          API_KEY: ${{ secrets.SRE_CAPSULE_API_ROBOT_KEY || secrets.QA_CAPSULE_API_ROBOT_KEY }}
         run: |
           chmod +x .github/scripts/upload-junit-to-srecapsule.sh
           .github/scripts/upload-junit-to-srecapsule.sh \
