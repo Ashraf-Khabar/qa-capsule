@@ -10,9 +10,15 @@ WEBHOOK_URL="${WEBHOOK_URL:-${SRE_CAPSULE_URL:-}}"
 API_KEY="${API_KEY:-${API_KEY_LEGACY:-}}"
 
 if [ -z "$WEBHOOK_URL" ] || [ -z "$API_KEY" ]; then
-  echo "Skipping SRE Capsule upload — set SRE_CAPSULE_URL and the project API key secret."
-  exit 0
+  echo "ERROR: SRE Capsule upload skipped — SRE_CAPSULE_URL or API_KEY is empty."
+  echo "Add repository secrets SRE_CAPSULE_URL (public https base URL, no path) and the project API key."
+  echo "Nothing was sent, so the dashboard will stay empty."
+  exit 1
 fi
+
+# The UI shows https://host/api/webhooks/<ci>. Ingest expects the origin only.
+WEBHOOK_URL="${WEBHOOK_URL%/}"
+WEBHOOK_URL="${WEBHOOK_URL%%/api/webhooks*}"
 
 if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
   echo "JUnit report not found: ${FILE:-<unset>}"
@@ -37,18 +43,18 @@ CURL_EXIT=$?
 set -e
 
 if [ "$CURL_EXIT" -ne 0 ]; then
-  echo "WARNING: curl exit ${CURL_EXIT} — could not reach SRE Capsule at ${WEBHOOK_URL}"
-  echo "GitHub-hosted runners cannot reach localhost or a private address. Set SRE_CAPSULE_URL to a public https URL."
+  echo "ERROR: curl exit ${CURL_EXIT} — GitHub could not reach SRE Capsule."
+  echo "A runner cannot open localhost or a private address. SRE_CAPSULE_URL must be a public https origin, with no /api/webhooks path."
   cat /tmp/sre-ingest.err || true
-  exit 0
+  exit 1
 fi
 
 echo "SRE Capsule HTTP status: ${HTTP_STATUS}"
 cat /tmp/sre-ingest.json || true
 
 if [ "$HTTP_STATUS" -ge 400 ] 2>/dev/null; then
-  echo "WARNING: SRE Capsule ingestion returned HTTP ${HTTP_STATUS}"
-  exit 0
+  echo "ERROR: SRE Capsule ingestion returned HTTP ${HTTP_STATUS}"
+  exit 1
 fi
 
 echo "Results queued for processing."

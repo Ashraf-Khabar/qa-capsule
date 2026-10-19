@@ -41,11 +41,11 @@ jobs:
             Cypress \
             "${{ github.run_id }}-${{ github.run_attempt }}"
 
-      - name: Fail pipeline on test failures
+      - name: Note expected demo failures
         if: steps.cypress_run.outcome == 'failure'
         run: |
-          echo "FAILED: Cypress reported failures (expected for MCP self-healing demo on saucedemo.com)."
-          exit 1
+          echo "Cypress reported failures (expected for the MCP self-healing demo on saucedemo.com)."
+          echo "TC-04 uses a broken locator on purpose. This does not fail the workflow."
 
       - name: Upload Cypress artifacts
         if: always()

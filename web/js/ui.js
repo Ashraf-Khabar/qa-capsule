@@ -48,16 +48,65 @@ export function initTheme() {
 
 const SIDEBAR_COLLAPSED_KEY = 'sre-sidebar-collapsed';
 
+function syncSidebarCollapsedClass(collapsed) {
+    document.documentElement.classList.toggle('sidebar-is-collapsed', !!collapsed);
+}
+
+let sidebarNavTip = null;
+
+function ensureSidebarNavTip() {
+    if (sidebarNavTip) return sidebarNavTip;
+    sidebarNavTip = document.createElement('div');
+    sidebarNavTip.className = 'sidebar-nav-tip';
+    sidebarNavTip.hidden = true;
+    document.body.appendChild(sidebarNavTip);
+    return sidebarNavTip;
+}
+
+function sidebarItemLabel(item) {
+    const text = item.querySelector('.nav-text')?.textContent || item.dataset.tooltip || '';
+    return text.replace(/\s+/g, ' ').trim();
+}
+
+function bindSidebarHoverLabels(sidebar) {
+    if (sidebar.dataset.hoverLabels === '1') return;
+    sidebar.dataset.hoverLabels = '1';
+    const tip = ensureSidebarNavTip();
+
+    const hide = () => { tip.hidden = true; };
+    sidebar.addEventListener('mouseover', (event) => {
+        if (!sidebar.classList.contains('collapsed')) {
+            hide();
+            return;
+        }
+        const item = event.target.closest?.('.nav-item');
+        if (!item || !sidebar.contains(item)) return;
+        const label = sidebarItemLabel(item);
+        if (!label) {
+            hide();
+            return;
+        }
+        const rect = item.getBoundingClientRect();
+        tip.textContent = label;
+        tip.hidden = false;
+        tip.style.top = `${rect.top + rect.height / 2}px`;
+        tip.style.left = `${rect.right + 10}px`;
+    });
+    sidebar.addEventListener('mouseleave', hide);
+}
+
 export function initSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const btn = document.getElementById('sidebar-collapse-btn');
     if (!sidebar) return;
     const collapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1';
     sidebar.classList.toggle('collapsed', collapsed);
+    syncSidebarCollapsedClass(collapsed);
     if (btn) {
         btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
         btn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
     }
+    bindSidebarHoverLabels(sidebar);
 }
 
 export function toggleSidebar() {
@@ -66,7 +115,9 @@ export function toggleSidebar() {
     if (!sidebar) return;
     const collapsed = !sidebar.classList.contains('collapsed');
     sidebar.classList.toggle('collapsed', collapsed);
+    syncSidebarCollapsedClass(collapsed);
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+    if (sidebarNavTip) sidebarNavTip.hidden = true;
     if (btn) {
         btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
         btn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';

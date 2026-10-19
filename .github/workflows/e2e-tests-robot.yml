@@ -53,8 +53,8 @@ jobs:
       - name: Fail pipeline on test failures
         if: steps.robot_run.outcome == 'failure'
         run: |
-          echo "FAILED: Robot suites reported failures (expected for self-healing / MCP demos)."
-          exit 1
+          echo "Robot suites reported failures (expected for self-healing / MCP demos)."
+          echo "The intentional demo failure does not fail the workflow."
 
       - name: Upload Robot artifacts
         if: always()

@@ -21,6 +21,7 @@ services:
     volumes:
       - ./reports:/app/reports
       - ./plugins:/app/plugins
+      - ./web:/app/web
       - ./config.yaml:/app/config.yaml:ro
       # Named volume avoids host permission issues (root-owned ./data after a prior Docker run).
       - srecapsule_data:/app/data

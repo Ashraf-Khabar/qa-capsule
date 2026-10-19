@@ -7,7 +7,14 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap">
-    <link rel="stylesheet" href="/style.css?v=1.0.23-demo">
+    <link rel="stylesheet" href="/style.css?v=1.0.25-demo">
+    <script>
+        try {
+            if (localStorage.getItem('sre-sidebar-collapsed') === '1') {
+                document.documentElement.classList.add('sidebar-is-collapsed');
+            }
+        } catch (e) {}
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1828,6 +1835,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-    <script type="module" src="app.js?v=1.0.23-demo"></script>
+    <script type="module" src="app.js?v=1.0.25-demo"></script>
 </body>
 </html>

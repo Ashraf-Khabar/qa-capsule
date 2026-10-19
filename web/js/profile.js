@@ -182,18 +182,32 @@ export function syncApplicationCurrency(code) {
     if (prefSel && prefSel.value !== currency) prefSel.value = currency;
 }
 
-function applySidebarCollapsedPref(collapsed) {
+function readStoredSidebarCollapsed() {
+    try {
+        const stored = localStorage.getItem('sre-sidebar-collapsed');
+        if (stored === '1') return true;
+        if (stored === '0') return false;
+    } catch (_) { /* private mode */ }
+    return null;
+}
+
+function paintSidebarCollapsed(collapsed) {
     const sidebar = document.querySelector('.sidebar');
     const btn = document.getElementById('sidebar-collapse-btn');
     if (!sidebar) return;
     sidebar.classList.toggle('collapsed', !!collapsed);
-    try {
-        localStorage.setItem('sre-sidebar-collapsed', collapsed ? '1' : '0');
-    } catch (_) { /* quota */ }
+    document.documentElement.classList.toggle('sidebar-is-collapsed', !!collapsed);
     if (btn) {
         btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
         btn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
     }
+}
+
+function applySidebarCollapsedPref(collapsed) {
+    paintSidebarCollapsed(collapsed);
+    try {
+        localStorage.setItem('sre-sidebar-collapsed', collapsed ? '1' : '0');
+    } catch (_) { /* quota */ }
 }
 
 function applyVisualPreferenceClasses(prefs) {
@@ -275,7 +289,12 @@ export function applyPreferences(prefs) {
         theme: userPreferences.theme
     });
     applyVisualPreferenceClasses(userPreferences);
-    applySidebarCollapsedPref(!!userPreferences.sidebar_collapsed_default);
+    const storedCollapsed = readStoredSidebarCollapsed();
+    if (storedCollapsed === null) {
+        applySidebarCollapsedPref(!!userPreferences.sidebar_collapsed_default);
+    } else {
+        paintSidebarCollapsed(storedCollapsed);
+    }
     syncDashboardRefreshGlobals(userPreferences);
 
     if (userPreferences.currency) {

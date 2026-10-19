@@ -429,8 +429,30 @@ textarea::placeholder {
 }
 
 /* --- COLLAPSED STATE RULES --- */
-.sidebar.collapsed {
+.sidebar.collapsed,
+html.sidebar-is-collapsed .sidebar {
     width: 70px; /* Reduced width */
+}
+
+html.sidebar-is-collapsed .sidebar .nav-text,
+html.sidebar-is-collapsed .sidebar .nav-section-label,
+html.sidebar-is-collapsed .sidebar .sidebar-brand,
+html.sidebar-is-collapsed .sidebar .nav-item.nav-theme .nav-text,
+html.sidebar-is-collapsed .sidebar .nav-item.nav-theme > div:first-child {
+    display: none;
+}
+
+html.sidebar-is-collapsed .sidebar .nav-item,
+html.sidebar-is-collapsed .sidebar .sidebar-top {
+    justify-content: center;
+}
+
+html.sidebar-is-collapsed .sidebar .nav-icon {
+    margin-right: 0;
+}
+
+html.sidebar-is-collapsed .sidebar .toggle-switch {
+    margin-left: 0;
 }
 
 /* Hide all text inside the sidebar when collapsed */
@@ -569,13 +591,10 @@ textarea::placeholder {
     position: relative;
 }
 
-.sidebar.collapsed .nav-item[data-tooltip]:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    left: calc(100% + 8px);
-    top: 50%;
+.sidebar-nav-tip {
+    position: fixed;
+    z-index: 10000;
     transform: translateY(-50%);
-    z-index: 1000;
     padding: 8px 12px;
     background: var(--bg-elevated);
     border: 1px solid var(--border-strong);
@@ -583,14 +602,14 @@ textarea::placeholder {
     color: var(--text-main);
     font-size: 12px;
     font-weight: 600;
+    line-height: 1.3;
     white-space: nowrap;
     box-shadow: var(--shadow-md);
     pointer-events: none;
 }
 
-.sidebar.collapsed .nav-item.logout:hover::after,
-.sidebar.collapsed .nav-item.nav-theme:hover::after {
-    content: attr(data-tooltip);
+.sidebar-nav-tip[hidden] {
+    display: none;
 }
 
 .sidebar.collapsed .nav-item.nav-theme .nav-text,

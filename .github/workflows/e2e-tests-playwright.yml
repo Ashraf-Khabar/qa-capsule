@@ -45,11 +45,11 @@ jobs:
             Playwright \
             "${{ github.run_id }}-${{ github.run_attempt }}"
 
-      - name: Fail pipeline on test failures
+      - name: Note expected demo failures
         if: steps.playwright_run.outcome == 'failure'
         run: |
-          echo "FAILED: Playwright reported failures (expected for MCP self-healing demo on saucedemo.com)."
-          exit 1
+          echo "Playwright reported failures (expected for the MCP self-healing demo on saucedemo.com)."
+          echo "TC-04 uses a broken locator on purpose. This does not fail the workflow."
 
       - name: Upload Playwright artifacts
         if: always()
