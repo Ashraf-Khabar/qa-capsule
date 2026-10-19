@@ -69,9 +69,10 @@ func (HTTPAnalyzer) Analyze(ctx context.Context, cfg ProviderConfig, in Analysis
 		return callAnthropic(ctx, cfg, prompt)
 	case ProviderGemini:
 		return callGemini(ctx, cfg, prompt)
-	case ProviderOpenAI, ProviderMistral, ProviderGroq, ProviderOpenRouter, ProviderAzure:
-		return callOpenAI(ctx, cfg, prompt)
 	default:
+		if IsOpenAICompatible(cfg.Provider) {
+			return callOpenAI(ctx, cfg, prompt)
+		}
 		return NoOpAnalyzer{}.Analyze(ctx, cfg, in)
 	}
 }
@@ -98,13 +99,15 @@ func (HTTPAnalyzer) GenerateFixProposal(ctx context.Context, cfg ProviderConfig,
 			return FixProposal{}, e
 		}
 		text = llmTextFromAnalysis(res)
-	case ProviderOpenAI, ProviderMistral, ProviderGroq, ProviderOpenRouter, ProviderAzure:
-		res, e := callOpenAI(ctx, cfg, prompt)
-		if e != nil {
-			return FixProposal{}, e
-		}
-		text = llmTextFromAnalysis(res)
 	default:
+		if IsOpenAICompatible(cfg.Provider) {
+			res, e := callOpenAI(ctx, cfg, prompt)
+			if e != nil {
+				return FixProposal{}, e
+			}
+			text = llmTextFromAnalysis(res)
+			break
+		}
 		return NoOpAnalyzer{}.GenerateFixProposal(ctx, cfg, incident, fileContent)
 	}
 	return parseFixProposal(text), nil
@@ -293,6 +296,9 @@ func buildPrompt(in AnalysisInput) string {
 
 func callOpenAI(ctx context.Context, cfg ProviderConfig, prompt string) (AnalysisResult, error) {
 	key := apiKeyFromEnv(cfg)
+	if key == "" && cfg.Provider == ProviderLMStudio {
+		key = "lm-studio"
+	}
 	if key == "" {
 		return AnalysisResult{}, fmt.Errorf("missing API key env %s", cfg.APIKeyEnv)
 	}
@@ -310,35 +316,21 @@ func callOpenAI(ctx context.Context, cfg ProviderConfig, prompt string) (Analysi
 func chatCompletionsURL(cfg ProviderConfig) string {
 	base := strings.TrimSuffix(strings.TrimSpace(cfg.BaseURL), "/")
 	if base == "" {
-		switch cfg.Provider {
-		case ProviderMistral:
-			base = "https://api.mistral.ai"
-		case ProviderGroq:
-			base = "https://api.groq.com/openai"
-		case ProviderOpenRouter:
-			base = "https://openrouter.ai/api"
-		case ProviderAzure:
-			base = "https://YOUR-RESOURCE.openai.azure.com/openai/deployments/YOUR-DEPLOYMENT"
-		default:
-			base = "https://api.openai.com"
-		}
+		base = DefaultBaseURL(cfg.Provider)
+	}
+	if base == "" {
+		base = "https://api.openai.com/v1"
 	}
 	if strings.Contains(base, "chat/completions") {
 		return base
 	}
-	if cfg.Provider == ProviderAzure {
+	if cfg.Provider == ProviderAzure || strings.Contains(base, ".openai.azure.com") {
+		if strings.Contains(base, "api-version=") {
+			return base
+		}
 		return base + "/chat/completions?api-version=2024-08-01-preview"
 	}
-	if strings.HasSuffix(base, "/v1") {
-		return base + "/chat/completions"
-	}
-	if cfg.Provider == ProviderGroq {
-		return base + "/v1/chat/completions"
-	}
-	if cfg.Provider == ProviderOpenRouter {
-		return base + "/v1/chat/completions"
-	}
-	return base + "/v1/chat/completions"
+	return base + "/chat/completions"
 }
 
 func apiKeyFromEnv(cfg ProviderConfig) string {
@@ -370,6 +362,9 @@ func apiKeyFromEnv(cfg ProviderConfig) string {
 	case ProviderOpenRouter:
 		return os.Getenv("OPENROUTER_API_KEY")
 	default:
+		if env := DefaultKeyEnv(cfg.Provider); env != "" {
+			return os.Getenv(env)
+		}
 		return ""
 	}
 }
@@ -499,14 +494,14 @@ func extractSelectorHint(err string) string {
 func AnalyzeRaw(ctx context.Context, cfg ProviderConfig, prompt string) (string, error) {
 	var res AnalysisResult
 	var err error
-	switch cfg.Provider {
-	case ProviderOpenAI, ProviderMistral, ProviderGroq, ProviderOpenRouter, ProviderAzure:
+	switch {
+	case IsOpenAICompatible(cfg.Provider):
 		res, err = callOpenAI(ctx, cfg, prompt)
-	case ProviderGemini:
+	case cfg.Provider == ProviderGemini:
 		res, err = callGemini(ctx, cfg, prompt)
-	case ProviderAnthropic:
+	case cfg.Provider == ProviderAnthropic:
 		res, err = callAnthropic(ctx, cfg, prompt)
-	case ProviderOllama:
+	case cfg.Provider == ProviderOllama:
 		res, err = callOllama(ctx, cfg, prompt)
 	default:
 		return "", fmt.Errorf("no AI provider configured")

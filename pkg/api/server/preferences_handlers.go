@@ -293,16 +293,18 @@ func registerPreferencesRoutes(config *core.Config) {
 
 		switch r.Method {
 		case http.MethodGet:
-			var fullname, role string
-			if err := core.DB.QueryRow("SELECT fullname, role FROM users WHERE id = ?", userID).Scan(&fullname, &role); err != nil {
+			var fullname, role, avatarKind, avatarValue string
+			if err := core.DB.QueryRow("SELECT fullname, role, COALESCE(avatar_kind, ''), COALESCE(avatar_value, '') FROM users WHERE id = ?", userID).Scan(&fullname, &role, &avatarKind, &avatarValue); err != nil {
 				http.Error(w, "Database error", http.StatusInternalServerError)
 				return
 			}
 			json.NewEncoder(w).Encode(map[string]interface{}{
-				"username":    claims.Username,
-				"fullname":    fullname,
-				"role":        role,
-				"preferences": loadUserPreferences(userID),
+				"username":     claims.Username,
+				"fullname":     fullname,
+				"role":         role,
+				"avatar_kind":  avatarKind,
+				"avatar_value": avatarValue,
+				"preferences":  loadUserPreferences(userID),
 			})
 
 		case http.MethodPut:

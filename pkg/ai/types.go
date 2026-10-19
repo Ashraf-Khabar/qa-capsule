@@ -1,6 +1,6 @@
 // Package ai provides the LLM integration layer for SRE Capsule. It covers
-// provider configuration (Groq, Gemini, OpenAI, Ollama, Anthropic, Mistral,
-// Azure OpenAI, OpenRouter), the Repository interface for persisting settings
+// provider configuration (OpenAI-compatible vendors, Gemini, Ollama, Anthropic),
+// the Repository interface for persisting settings
 // and analysis results, and the Analyzer interface that drives Root Cause
 // Analysis (RCA) and code fix proposals from incident telemetry.
 package ai
@@ -17,8 +17,26 @@ const (
 	ProviderGemini     ProviderKind = "gemini"
 	ProviderMistral    ProviderKind = "mistral"
 	ProviderGroq       ProviderKind = "groq"
-	ProviderOpenRouter ProviderKind = "openrouter"
-	ProviderAzure      ProviderKind = "azure"
+	ProviderOpenRouter  ProviderKind = "openrouter"
+	ProviderAzure       ProviderKind = "azure"
+	ProviderDeepSeek    ProviderKind = "deepseek"
+	ProviderXAI         ProviderKind = "xai"
+	ProviderCohere      ProviderKind = "cohere"
+	ProviderTogether    ProviderKind = "together"
+	ProviderFireworks   ProviderKind = "fireworks"
+	ProviderPerplexity  ProviderKind = "perplexity"
+	ProviderCerebras    ProviderKind = "cerebras"
+	ProviderSambaNova   ProviderKind = "sambanova"
+	ProviderNVIDIA      ProviderKind = "nvidia"
+	ProviderHuggingFace ProviderKind = "huggingface"
+	ProviderGitHub      ProviderKind = "github"
+	ProviderQwen        ProviderKind = "qwen"
+	ProviderMoonshot    ProviderKind = "moonshot"
+	ProviderZhipu       ProviderKind = "zhipu"
+	ProviderMiniMax     ProviderKind = "minimax"
+	ProviderLMStudio    ProviderKind = "lmstudio"
+	ProviderCloudflare  ProviderKind = "cloudflare"
+	ProviderCustom      ProviderKind = "custom"
 )
 
 type ProviderConfig struct {

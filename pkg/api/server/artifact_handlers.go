@@ -36,6 +36,12 @@ func registerArtifactRoutes(config *core.Config) {
 	http.HandleFunc("/api/incidents/", func(w http.ResponseWriter, r *http.Request) {
 		path := strings.TrimPrefix(r.URL.Path, "/api/incidents/")
 		parts := strings.Split(strings.Trim(path, "/"), "/")
+		if len(parts) >= 2 && parts[1] == "comments" {
+			jwtAuthMiddleware(config, "", func(w http.ResponseWriter, r *http.Request) {
+				handleIncidentComments(w, r, parts[0])
+			})(w, r)
+			return
+		}
 		if len(parts) >= 2 && parts[1] == "artifacts" {
 			handleIncidentArtifacts(config, w, r, parts[0])
 			return

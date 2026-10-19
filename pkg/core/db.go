@@ -408,6 +408,14 @@ func runSchemaMigrations() {
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_locator_healings_run ON locator_healings(run_id, created_at DESC)`,
 		`CREATE INDEX IF NOT EXISTS idx_locator_healings_incident ON locator_healings(incident_id)`,
+		`CREATE TABLE IF NOT EXISTS incident_comments (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			incident_id INTEGER NOT NULL,
+			author_username TEXT NOT NULL,
+			body_html TEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_incident_comments_incident ON incident_comments(incident_id, id)`,
 		`CREATE TABLE IF NOT EXISTS user_team_inheritance_optouts (
 			user_id INTEGER NOT NULL,
 			team_id INTEGER NOT NULL,
@@ -421,6 +429,8 @@ func runSchemaMigrations() {
 		execSchemaSQL(sqlStmt)
 	}
 	// Legacy DBs: pipeline_runs created before branch was in CREATE TABLE.
+	addColumnIfNotExists("users", "avatar_kind", `ALTER TABLE users ADD COLUMN avatar_kind TEXT DEFAULT ''`)
+	addColumnIfNotExists("users", "avatar_value", `ALTER TABLE users ADD COLUMN avatar_value TEXT DEFAULT ''`)
 	addColumnIfNotExists("pipeline_runs", "branch", `ALTER TABLE pipeline_runs ADD COLUMN branch TEXT DEFAULT ''`)
 	// MCP self-healing: mark incidents where a locator intervention was recorded.
 	addColumnIfNotExists("incidents", "mcp_healed", `ALTER TABLE incidents ADD COLUMN mcp_healed INTEGER NOT NULL DEFAULT 0`)

@@ -136,6 +136,7 @@ func Start(initialConfig core.Config) {
 	registerMCPRoutes(config)
 	registerAuthRoutes(config)
 	registerPreferencesRoutes(config)
+	registerCollaborationRoutes(config)
 	registerTeamRoutes(config)
 	registerProjectRoutes(config)
 	registerWorkflowRoutes(config)

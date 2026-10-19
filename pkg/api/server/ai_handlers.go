@@ -138,7 +138,7 @@ func handleAITest(w http.ResponseWriter, r *http.Request) {
 	}
 	envKeyMissing := cfg.APIKeyEnv == "" || os.Getenv(cfg.APIKeyEnv) == ""
 	dbKeyMissing := strings.TrimSpace(cfg.APIKey) == ""
-	if envKeyMissing && dbKeyMissing && cfg.Provider != aiPkg.ProviderOllama {
+	if envKeyMissing && dbKeyMissing && !aiPkg.KeyOptional(cfg.Provider) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"ok":    false,
