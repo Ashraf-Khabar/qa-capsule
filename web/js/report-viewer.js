@@ -3,6 +3,7 @@
  */
 import { fetchWithAuth, parseApiJson } from './api.js';
 import { notify } from './ui.js';
+import { hydrateOpenComments, revealComment } from './comments.js';
 
 function escapeHtml(s) {
     return String(s || '')
@@ -127,10 +128,38 @@ function renderTestDetailBlock(test, idx) {
             <span class="ur-status-pill ur-status-pill--${escapeHtml(st)}">${statusLabel(test.status)}</span>
             <span class="ur-test-name">${escapeHtml(displayTestName(test))}</span>
             <span class="ur-test-duration">${formatDuration(test.duration_ms)}</span>
+            ${test.incident_id ? `<span class="ur-comment-count" hidden></span>` : ''}
             ${test.incident_id ? `<span class="ur-test-inc">INC #${test.incident_id}</span>` : ''}
         </summary>
+        ${test.incident_id ? `
+        <section class="ur-discussion">
+            <h4 class="ur-discussion__title">Discussion</h4>
+            <div class="incident-comments ur-comments" data-incident-id="${test.incident_id}"></div>
+        </section>` : ''}
         ${showLogs ? `<pre class="log-block ur-test-log">${escapeHtml(logs)}</pre>` : ''}
     </details>`;
+}
+
+function renderRunDiscussion(tests) {
+    const seen = new Set();
+    const blocks = [];
+    for (const test of tests) {
+        const id = test.incident_id;
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        blocks.push(`
+        <article class="ur-run-thread">
+            <h3 class="ur-run-thread__title">${escapeHtml(displayTestName(test))}</h3>
+            <div class="incident-comments ur-comments" data-incident-id="${id}"></div>
+        </article>`);
+    }
+    if (!blocks.length) return '';
+    return `
+    <section class="ur-run-discussion">
+        <h2 class="ur-section-title">Discussion</h2>
+        <p class="ur-report-hint">Notes and replies on the tests in this run.</p>
+        ${blocks.join('')}
+    </section>`;
 }
 
 function renderSuiteTreeHtml(tests) {
@@ -206,6 +235,8 @@ function renderReportHtml(data) {
                 ${data.framework ? `<span>${escapeHtml(data.framework)}</span>` : ''}
             </p>
         </header>
+
+        ${renderRunDiscussion(tests)}
 
         <div class="ur-summary-bar">
             <div class="ur-kpi"><span class="ur-kpi-label">Total</span><span class="ur-kpi-value">${sum.total || 0}</span></div>
@@ -295,12 +326,52 @@ export async function openReport(groupId, event) {
             throw new Error((data && data.error) || 'Failed to load report');
         }
         root.innerHTML = renderReportHtml(data);
+        await hydrateOpenComments();
     } catch (e) {
         root.innerHTML = `<div class="unified-report-error">
             <p>${escapeHtml(e.message || 'Report load failed')}</p>
             <button type="button" class="btn btn-secondary" onclick="closeUnifiedReport()">Back to Dashboard</button>
         </div>`;
         notify(e.message || 'Report load failed', 'error');
+    }
+}
+
+export async function openReportByRun(project, runId, commentId) {
+    const root = document.getElementById('unified-report-root');
+    if (!root || !project || !runId) return;
+    showReportView();
+    root.innerHTML = '<div class="unified-report-loading">Loading unified report…</div>';
+    try {
+        const res = await fetchWithAuth(
+            `/api/reports/${encodeURIComponent(runId)}?project=${encodeURIComponent(project)}`
+        );
+        const { data } = await parseApiJson(res);
+        if (!res.ok) {
+            throw new Error((data && data.error) || 'Failed to load report');
+        }
+        root.innerHTML = renderReportHtml(data);
+        await hydrateOpenComments();
+        if (commentId) revealComment(commentId);
+    } catch (e) {
+        root.innerHTML = `<div class="unified-report-error">
+            <p>${escapeHtml(e.message || 'Report load failed')}</p>
+            <button type="button" class="btn btn-secondary" onclick="closeUnifiedReport()">Back to Dashboard</button>
+        </div>`;
+        notify(e.message || 'Report load failed', 'error');
+    }
+}
+
+export async function openSecureLink(token) {
+    if (!token) return;
+    try {
+        const res = await fetchWithAuth(`/api/links/${encodeURIComponent(token)}`);
+        const { data } = await parseApiJson(res);
+        if (!res.ok) {
+            throw new Error((data && data.error) || 'This link is not valid');
+        }
+        await openReportByRun(data.project_name, data.pipeline_run_id, data.comment_id);
+    } catch (e) {
+        notify(e.message || 'This link is not valid', 'error');
     }
 }
 

@@ -79,8 +79,8 @@ export function avatarMarkup(person, size) {
     if (kind === 'preset' && PRESET_MARKUP[value]) {
         return `<span class="avatar-ball avatar-ball--svg" style="width:${px}px;height:${px}px">${PRESET_MARKUP[value]}</span>`;
     }
-    const initials = initials(name);
-    return `<span class="avatar-ball avatar-ball--initials" style="width:${px}px;height:${px}px;font-size:${Math.max(10, Math.round(px * 0.36))}px">${initials}</span>`;
+    const letters = initials(name);
+    return `<span class="avatar-ball avatar-ball--initials" style="width:${px}px;height:${px}px;font-size:${Math.max(10, Math.round(px * 0.36))}px">${letters}</span>`;
 }
 
 function initials(name) {

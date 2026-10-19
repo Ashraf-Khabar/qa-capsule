@@ -8202,8 +8202,70 @@ img.avatar-ball { object-fit: cover; }
 
 .incident-comments { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
 .comment-thread { display: flex; flex-direction: column; gap: 10px; }
+.comment-thread--clip { max-height: 320px; overflow: auto; padding-right: 4px; }
+.comment-new-btn { align-self: flex-start; }
 .comment-empty { margin: 0; font-size: 12px; color: var(--text-muted); }
 .comment-item { display: flex; gap: 10px; align-items: flex-start; }
+.comment-item--focus {
+    border-radius: 10px;
+    padding: 6px;
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 2px var(--accent, var(--primary-color));
+}
+.comment-item--reply { margin-left: 28px; }
+.comment-replies { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.comment-replies:empty { display: none; }
+.comment-item__actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.comment-see-more {
+    align-self: flex-start;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--accent, var(--primary-color));
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+}
+.comment-see-more:hover { text-decoration: underline; }
+.ur-run-discussion {
+    margin: 0 0 20px;
+    padding: 16px 18px 18px;
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+}
+.ur-run-thread + .ur-run-thread {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-main);
+}
+.ur-run-thread__title {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 650;
+}
+.ur-comment-count {
+    font-size: 11px;
+    font-weight: 650;
+    color: var(--accent, var(--primary-color));
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+.ur-discussion {
+    margin: 4px 12px 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-main);
+}
+.ur-discussion__title {
+    margin: 0 0 8px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
 .comment-item__meta { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); }
 .comment-item__meta strong { color: var(--text-main); font-size: 13px; }
 .comment-item__text { font-size: 14px; line-height: 1.45; color: var(--text-main); word-break: break-word; }

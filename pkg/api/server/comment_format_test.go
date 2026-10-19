@@ -21,7 +21,7 @@ func TestRenderCommentBlocks_FormatsAndEscapes(t *testing.T) {
 	if !strings.Contains(html, "<strong>Hello </strong>") {
 		t.Fatalf("missing bold: %s", html)
 	}
-	if !strings.Contains(html, `data-user="ada"`) {
+	if !strings.Contains(html, `data-user="ada"`) || !strings.Contains(html, ">@ada<") {
 		t.Fatalf("missing mention: %s", html)
 	}
 	if !strings.Contains(html, "color:#ff00aa") || !strings.Contains(html, "font-size:18px") {
@@ -41,5 +41,39 @@ func TestRenderCommentBlocks_Empty(t *testing.T) {
 	}
 	if _, ok := RenderCommentBlocks([]CommentBlock{{Mention: "bad name"}}); ok {
 		t.Fatal("invalid mention should be dropped")
+	}
+}
+
+func TestRenderCommentBlocks_MentionShowsName(t *testing.T) {
+	blocks := []CommentBlock{{Mention: "ada@example.com"}, {T: " please look"}}
+	applyMentionLabels(blocks, map[string]string{"ada@example.com": "Ada Lovelace"})
+	html, ok := RenderCommentBlocks(blocks)
+	if !ok {
+		t.Fatal("expected content")
+	}
+	if !strings.Contains(html, `data-user="ada@example.com"`) || !strings.Contains(html, ">@Ada Lovelace<") {
+		t.Fatalf("mention should show the name: %s", html)
+	}
+	if strings.Contains(html, ">@ada@example.com<") {
+		t.Fatalf("mention should not show the email: %s", html)
+	}
+	if strings.Contains(html, "<script>") {
+		t.Fatal("label was not escaped")
+	}
+	blocks[0].MentionLabel = `<script>`
+	html, _ = RenderCommentBlocks(blocks)
+	if strings.Contains(html, "<script>") {
+		t.Fatalf("script label was not escaped: %s", html)
+	}
+}
+
+func TestRewriteMentionHTML_UsesCurrentName(t *testing.T) {
+	in := `<span class="mention" data-user="ada@example.com">@ada@example.com</span> hi`
+	out := rewriteMentionHTML(in, map[string]string{"ada@example.com": "Ada Lovelace"})
+	if !strings.Contains(out, ">@Ada Lovelace<") || !strings.Contains(out, `data-user="ada@example.com"`) {
+		t.Fatalf("rewrite failed: %s", out)
+	}
+	if !mentionedInHTML(out)["ada@example.com"] {
+		t.Fatal("username should stay readable for later edits")
 	}
 }

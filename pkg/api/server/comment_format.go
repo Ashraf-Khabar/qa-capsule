@@ -10,22 +10,24 @@ import (
 // CommentBlock is one formatted span produced by the comment editor.
 // The server renders these blocks itself so stored HTML cannot carry scripts.
 type CommentBlock struct {
-	T       string `json:"t,omitempty"`
-	B       bool   `json:"b,omitempty"`
-	I       bool   `json:"i,omitempty"`
-	U       bool   `json:"u,omitempty"`
-	Code    bool   `json:"code,omitempty"`
-	Pre     string `json:"pre,omitempty"`
-	Mention string `json:"mention,omitempty"`
-	Color   string `json:"color,omitempty"`
-	Size    string `json:"size,omitempty"`
-	Br      bool   `json:"br,omitempty"`
+	T            string `json:"t,omitempty"`
+	B            bool   `json:"b,omitempty"`
+	I            bool   `json:"i,omitempty"`
+	U            bool   `json:"u,omitempty"`
+	Code         bool   `json:"code,omitempty"`
+	Pre          string `json:"pre,omitempty"`
+	Mention      string `json:"mention,omitempty"`
+	MentionLabel string `json:"-"`
+	Color        string `json:"color,omitempty"`
+	Size         string `json:"size,omitempty"`
+	Br           bool   `json:"br,omitempty"`
 }
 
 var (
 	commentColorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 	commentSizeRe  = regexp.MustCompile(`^(12|14|16|18|20|24|28)px$`)
 	commentUserRe  = regexp.MustCompile(`^[a-zA-Z0-9._@+\-]{1,80}$`)
+	mentionSpanRe  = regexp.MustCompile(`<span class="mention" data-user="([^"]*)">@[^<]*</span>`)
 )
 
 // RenderCommentBlocks turns editor blocks into a safe HTML fragment.
@@ -60,13 +62,16 @@ func RenderCommentBlocks(blocks []CommentBlock) (string, bool) {
 			if !commentUserRe.MatchString(user) {
 				continue
 			}
-			esc := html.EscapeString(user)
+			label := strings.TrimSpace(block.MentionLabel)
+			if label == "" {
+				label = user
+			}
 			b.WriteString(`<span class="mention" data-user="`)
-			b.WriteString(esc)
+			b.WriteString(html.EscapeString(user))
 			b.WriteString(`">@`)
-			b.WriteString(esc)
+			b.WriteString(html.EscapeString(label))
 			b.WriteString(`</span>`)
-			textRunes += utf8.RuneCountInString(user) + 1
+			textRunes += utf8.RuneCountInString(label) + 1
 			continue
 		}
 		text := block.T
@@ -110,6 +115,72 @@ func RenderCommentBlocks(blocks []CommentBlock) (string, bool) {
 		return "", false
 	}
 	return out, true
+}
+
+// applyMentionLabels sets the visible name for each @mention.
+// names is keyed by lowercase username. The stored identity stays the username.
+func applyMentionLabels(blocks []CommentBlock, names map[string]string) {
+	for i := range blocks {
+		user := strings.TrimSpace(blocks[i].Mention)
+		if user == "" {
+			continue
+		}
+		if name := strings.TrimSpace(names[strings.ToLower(user)]); name != "" {
+			blocks[i].MentionLabel = name
+		}
+	}
+}
+
+// rewriteMentionHTML replaces the visible @mention text with the current display name.
+func rewriteMentionHTML(body string, names map[string]string) string {
+	if body == "" || len(names) == 0 {
+		return body
+	}
+	return mentionSpanRe.ReplaceAllStringFunc(body, func(span string) string {
+		parts := mentionSpanRe.FindStringSubmatch(span)
+		if len(parts) < 2 {
+			return span
+		}
+		user := html.UnescapeString(parts[1])
+		label := strings.TrimSpace(names[strings.ToLower(user)])
+		if label == "" {
+			return span
+		}
+		return `<span class="mention" data-user="` + html.EscapeString(user) + `">@` + html.EscapeString(label) + `</span>`
+	})
+}
+
+// mentionedInHTML returns the lowercase usernames already present in rendered comment HTML.
+func mentionedInHTML(body string) map[string]bool {
+	out := map[string]bool{}
+	for _, parts := range mentionSpanRe.FindAllStringSubmatch(body, -1) {
+		if len(parts) < 2 {
+			continue
+		}
+		user := strings.ToLower(strings.TrimSpace(html.UnescapeString(parts[1])))
+		if user != "" {
+			out[user] = true
+		}
+	}
+	return out
+}
+
+func mentionedUsers(blocks []CommentBlock) []string {
+	seen := map[string]bool{}
+	out := make([]string, 0)
+	for _, block := range blocks {
+		user := strings.TrimSpace(block.Mention)
+		if user == "" || !commentUserRe.MatchString(user) {
+			continue
+		}
+		key := strings.ToLower(user)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, user)
+	}
+	return out
 }
 
 func truncateRunes(s string, n int) string {

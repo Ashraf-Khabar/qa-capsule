@@ -1326,7 +1326,10 @@ window.checkAuth = function () {
 
         if (payload.role === 'admin') window.loadUsers();
 
-        if (document.getElementById('view-dashboard').classList.contains('active')) {
+        const linkMatch = (window.location.pathname || '').match(/^\/l\/([^/]+)$/);
+        if (linkMatch && window.openSecureLink) {
+            window.openSecureLink(decodeURIComponent(linkMatch[1]));
+        } else if (document.getElementById('view-dashboard').classList.contains('active')) {
             window.initDashboardTimeRange();
             window.loadDashboardFilters();
             window.pausePollingUntil = 0;

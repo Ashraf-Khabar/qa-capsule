@@ -156,11 +156,19 @@ func mergeReportTests(primary, fromIncidents []TestCaseResult) []TestCaseResult 
 	}
 	byKey := make(map[string]TestCaseResult, len(primary)+len(fromIncidents))
 	order := make([]string, 0, len(primary)+len(fromIncidents))
+	byLoose := make(map[string]string, len(primary)+len(fromIncidents))
 
 	add := func(tc TestCaseResult) {
 		key := reportTestKey(tc)
 		if key == "" {
 			key = fmt.Sprintf("idx:%d", len(order))
+		}
+		if loose := normalizeReportName(tc.Name); loose != "" {
+			if existingKey, ok := byLoose[loose]; ok {
+				key = existingKey
+			} else {
+				byLoose[loose] = key
+			}
 		}
 		if _, seen := byKey[key]; !seen {
 			order = append(order, key)
@@ -210,6 +218,22 @@ func reportTestKey(tc TestCaseResult) string {
 		return "fp:" + tc.Fingerprint
 	}
 	return "name:" + strings.TrimSpace(tc.Name)
+}
+
+// normalizeReportName strips framework and flaky prefixes so a JUnit row and its incident match.
+func normalizeReportName(name string) string {
+	n := strings.TrimSpace(name)
+	for i := 0; i < 3; i++ {
+		if !strings.HasPrefix(n, "[") {
+			break
+		}
+		end := strings.Index(n, "]")
+		if end <= 0 || end > 40 {
+			break
+		}
+		n = strings.TrimSpace(n[end+1:])
+	}
+	return strings.ToLower(strings.Join(strings.Fields(n), " "))
 }
 
 func globalReportStatus(summary ExecutionSummary, outcome string) string {

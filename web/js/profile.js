@@ -475,6 +475,7 @@ export function loadProfileView() {
     hydrateProfileFormFromPrefs(userPreferences);
     renderConfigurationPresets(userPreferences);
     renderThemePickers(userPreferences);
+    renderAvatarChooser();
 
     fetchWithAuth('/api/me')
         .then((res) => parseApiJson(res))

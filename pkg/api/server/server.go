@@ -152,6 +152,9 @@ func Start(initialConfig core.Config) {
 	registerChartRoutes(config)
 	registerSystemRoutes(config)
 
+	// Opaque comment links (/l/<token>) serve the app. The token is not a file path.
+	http.HandleFunc("/l/", serveAppIndex)
+
 	// Favicon (browsers request /favicon.ico by default)
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./web/assets/logo.png")

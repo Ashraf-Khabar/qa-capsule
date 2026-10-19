@@ -37,8 +37,17 @@ func registerArtifactRoutes(config *core.Config) {
 		path := strings.TrimPrefix(r.URL.Path, "/api/incidents/")
 		parts := strings.Split(strings.Trim(path, "/"), "/")
 		if len(parts) >= 2 && parts[1] == "comments" {
+			commentID := int64(0)
+			if len(parts) >= 3 && parts[2] != "" {
+				parsed, err := strconv.ParseInt(parts[2], 10, 64)
+				if err != nil || parsed <= 0 {
+					http.Error(w, "Invalid comment id", http.StatusBadRequest)
+					return
+				}
+				commentID = parsed
+			}
 			jwtAuthMiddleware(config, "", func(w http.ResponseWriter, r *http.Request) {
-				handleIncidentComments(w, r, parts[0])
+				handleIncidentComments(config, w, r, parts[0], commentID)
 			})(w, r)
 			return
 		}

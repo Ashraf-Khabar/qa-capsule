@@ -28,9 +28,10 @@ func InitDB(ignoredPath string) {
 		log.Fatalf("[FATAL] Failed to open SQLite database: %v", err)
 	}
 
-	// SQLite write concurrency: 2 conns reduce SQLITE_BUSY under parallel ingest.
-	DB.SetMaxOpenConns(2)
-	DB.SetMaxIdleConns(2)
+	// Several screens read at once (dashboard, report, comments). One connection
+	// deadlocks the pool when a handler starts a second query. WAL still serializes writes.
+	DB.SetMaxOpenConns(8)
+	DB.SetMaxIdleConns(4)
 	DB.SetConnMaxLifetime(time.Hour)
 
 	_, err = DB.Exec("PRAGMA journal_mode=WAL;")
@@ -411,6 +412,7 @@ func runSchemaMigrations() {
 		`CREATE TABLE IF NOT EXISTS incident_comments (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			incident_id INTEGER NOT NULL,
+			parent_id INTEGER,
 			author_username TEXT NOT NULL,
 			body_html TEXT NOT NULL,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -429,6 +431,7 @@ func runSchemaMigrations() {
 		execSchemaSQL(sqlStmt)
 	}
 	// Legacy DBs: pipeline_runs created before branch was in CREATE TABLE.
+	addColumnIfNotExists("incident_comments", "parent_id", `ALTER TABLE incident_comments ADD COLUMN parent_id INTEGER`)
 	addColumnIfNotExists("users", "avatar_kind", `ALTER TABLE users ADD COLUMN avatar_kind TEXT DEFAULT ''`)
 	addColumnIfNotExists("users", "avatar_value", `ALTER TABLE users ADD COLUMN avatar_value TEXT DEFAULT ''`)
 	addColumnIfNotExists("pipeline_runs", "branch", `ALTER TABLE pipeline_runs ADD COLUMN branch TEXT DEFAULT ''`)

@@ -1,13 +1,15 @@
 /**
  * Incident comments: rich text, @mentions, and the resolve note.
  */
-import { fetchWithAuth } from './api.js';
-import { notify } from './ui.js';
+import { fetchWithAuth, parseJwt } from './api.js';
+import { notify, showConfirmModal } from './ui.js';
 import { avatarMarkup } from './avatars.js';
 
 let directory = [];
 let directoryLoaded = false;
 let pendingAction = null;
+const commentHTML = new Map();
+const expandedThreads = new Set();
 
 const SIZE_OK = /^(12|14|16|18|20|24|28)px$/;
 
@@ -45,11 +47,34 @@ export function initCommentUI() {
         insertMention(item.dataset.mention);
     });
     document.addEventListener('click', (event) => {
+        const more = event.target.closest('[data-thread-more]');
+        if (more) {
+            event.preventDefault();
+            event.stopPropagation();
+            toggleThread(more.dataset.threadMore);
+            return;
+        }
+        const edit = event.target.closest('[data-edit-comment]');
+        if (edit) {
+            event.preventDefault();
+            event.stopPropagation();
+            openEditComposer(edit.dataset.incidentId, edit.dataset.editComment);
+            return;
+        }
+        const remove = event.target.closest('[data-delete-comment]');
+        if (remove) {
+            event.preventDefault();
+            event.stopPropagation();
+            confirmDeleteComment(remove);
+            return;
+        }
         const btn = event.target.closest('[data-add-comment]');
         if (!btn) return;
         event.preventDefault();
+        event.stopPropagation();
         const id = parseInt(btn.dataset.addComment, 10);
-        if (!Number.isNaN(id)) openCommentComposer([id]);
+        const parentId = parseInt(btn.dataset.replyTo || '0', 10);
+        if (!Number.isNaN(id)) openCommentComposer([id], { parentId: Number.isNaN(parentId) ? 0 : parentId });
     });
 }
 
@@ -64,14 +89,31 @@ export function openResolveComposer(ids, successMessage) {
     });
 }
 
-export function openCommentComposer(ids) {
+export function openCommentComposer(ids, options = {}) {
+    const parentId = options.parentId || 0;
     openComposer({
-        title: 'Comment',
-        hint: 'Type @ to mention a teammate. Bold, italic, underline, color, size, and code work like a ticket.',
-        submit: 'Post comment',
+        title: parentId ? 'Reply' : 'New comment',
+        hint: parentId
+            ? 'Your reply stays under this comment. Type @ to mention someone.'
+            : 'This starts a new comment. It does not change an existing one. Type @ to mention a teammate.',
+        submit: parentId ? 'Post reply' : 'Post comment',
         required: true,
         ids,
+        parentId,
         successMessage: null
+    });
+}
+
+function openEditComposer(incidentId, commentId) {
+    openComposer({
+        title: 'Edit comment',
+        hint: 'Update your note. Type @ to mention someone.',
+        submit: 'Save',
+        required: true,
+        mode: 'edit',
+        incidentId,
+        commentId,
+        html: commentHTML.get(String(commentId)) || ''
     });
 }
 
@@ -85,7 +127,7 @@ function openComposer(action) {
     if (title) title.textContent = action.title;
     if (hint) hint.textContent = action.hint;
     if (submit) submit.textContent = action.submit;
-    if (editor) editor.innerHTML = '';
+    if (editor) editor.innerHTML = action.html || '';
     hideMentions();
     const modal = document.getElementById('comment-modal');
     if (modal) modal.hidden = false;
@@ -112,11 +154,29 @@ async function submitCommentModal() {
     const submit = document.getElementById('comment-modal-submit');
     if (submit) submit.disabled = true;
     try {
+        if (action.mode === 'edit') {
+            if (!hasText) {
+                notify('Write a comment first', 'error');
+                return;
+            }
+            const res = await fetchWithAuth(`/api/incidents/${action.incidentId}/comments/${action.commentId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ blocks })
+            });
+            if (!res.ok) {
+                const message = await res.text();
+                throw new Error(message || 'Could not update the comment');
+            }
+            closeCommentModal();
+            notify('Comment updated', 'success');
+            await hydrateOpenComments(true);
+            return;
+        }
         if (hasText) {
             for (const id of action.ids) {
                 const res = await fetchWithAuth(`/api/incidents/${id}/comments`, {
                     method: 'POST',
-                    body: JSON.stringify({ blocks })
+                    body: JSON.stringify({ blocks, parent_id: action.parentId || 0 })
                 });
                 if (!res.ok) {
                     const message = await res.text();
@@ -142,6 +202,7 @@ async function submitCommentModal() {
 
 export async function hydrateOpenComments(force) {
     const nodes = [...document.querySelectorAll('.incident-comments[data-incident-id]')].filter((el) => {
+        if (el.closest('#unified-report-root')) return true;
         const body = el.closest('.pipeline-exec-body');
         return body && body.style.display !== 'none';
     });
@@ -152,32 +213,117 @@ export async function hydrateOpenComments(force) {
         if (!res.ok) return;
         const data = await res.json();
         const grouped = data.comments || {};
-        nodes.forEach((el) => renderThread(el, grouped[el.dataset.incidentId] || [], force));
+        nodes.forEach((el) => {
+            try {
+                renderThread(el, grouped[el.dataset.incidentId] || []);
+            } catch (_) { /* one broken thread must not hide the others */ }
+        });
     } catch (_) { /* dashboard still usable without the thread */ }
+}
+
+function currentUsername() {
+    return String(parseJwt(localStorage.getItem('sre-jwt'))?.username || '').toLowerCase();
+}
+
+function isMine(comment) {
+    return String(comment.author || '').toLowerCase() === currentUsername();
+}
+
+function toggleThread(incidentId) {
+    const key = String(incidentId || '');
+    if (!key) return;
+    if (expandedThreads.has(key)) expandedThreads.delete(key);
+    else expandedThreads.add(key);
+    document.querySelectorAll(`.incident-comments[data-incident-id="${key}"]`).forEach((node) => {
+        if (node.__comments) renderThread(node, node.__comments);
+    });
+}
+
+function confirmDeleteComment(btn) {
+    const incidentId = btn.dataset.incidentId;
+    const commentId = btn.dataset.deleteComment;
+    const isReply = btn.dataset.deleteKind === 'reply';
+    const hasReplies = btn.dataset.deleteReplies === '1';
+    const message = isReply
+        ? 'Delete this reply? This cannot be undone.'
+        : hasReplies
+            ? 'Delete this comment and its replies? This cannot be undone.'
+            : 'Delete this comment? This cannot be undone.';
+    showConfirmModal(isReply ? 'Delete reply?' : 'Delete comment?', message, 'danger', async () => {
+        try {
+            const res = await fetchWithAuth(`/api/incidents/${incidentId}/comments/${commentId}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Could not delete the comment');
+            }
+            notify(isReply ? 'Reply deleted' : 'Comment deleted', 'success');
+            await hydrateOpenComments(true);
+        } catch (err) {
+            notify(err.message || 'Could not delete the comment', 'error');
+        }
+    });
 }
 
 function renderThread(el, comments) {
     const id = el.dataset.incidentId;
-    const items = (comments || []).map((comment) => `
-        <article class="comment-item">
+    el.__comments = comments || [];
+    const byParent = new Map();
+    (comments || []).forEach((comment) => {
+        commentHTML.set(String(comment.id), comment.body_html || '');
+        const key = comment.parent_id || 0;
+        if (!byParent.has(key)) byParent.set(key, []);
+        byParent.get(key).push(comment);
+    });
+    const roots = byParent.get(0) || [];
+    const expanded = expandedThreads.has(String(id));
+    const clip = !expanded && roots.length > 2;
+    const renderList = (parentId, nested) => {
+        const list = byParent.get(parentId) || [];
+        return list.map((comment) => {
+            const replies = byParent.get(comment.id) || [];
+            const mine = isMine(comment);
+            const actions = [];
+            if (!nested && !mine) {
+                actions.push(`<button type="button" class="btn btn-secondary btn-sm comment-reply-btn" data-add-comment="${id}" data-reply-to="${comment.id}">Reply</button>`);
+            }
+            if (mine) {
+                actions.push(`<button type="button" class="btn btn-secondary btn-sm" data-edit-comment="${comment.id}" data-incident-id="${id}">Edit</button>`);
+                actions.push(`<button type="button" class="btn btn-secondary btn-sm btn-danger" data-delete-comment="${comment.id}" data-incident-id="${id}" data-delete-kind="${nested ? 'reply' : 'comment'}" data-delete-replies="${replies.length ? '1' : '0'}">Delete</button>`);
+            }
+            return `
+        <article class="comment-item${nested ? ' comment-item--reply' : ''}" data-comment-id="${escapeHtml(comment.id)}">
             ${avatarMarkup({
                 avatar_kind: comment.avatar_kind,
                 avatar_value: comment.avatar_value,
                 fullname: comment.fullname || comment.author,
                 username: comment.author
-            }, 32)}
+            }, nested ? 26 : 32)}
             <div class="comment-item__body">
                 <header class="comment-item__meta">
                     <strong>${escapeHtml(comment.fullname || comment.author)}</strong>
-                    <span>@${escapeHtml(comment.author)}</span>
                     <time>${escapeHtml(comment.created_at || '')}</time>
                 </header>
                 <div class="comment-item__text">${comment.body_html || ''}</div>
+                ${actions.length ? `<div class="comment-item__actions">${actions.join('')}</div>` : ''}
+                <div class="comment-replies">${renderList(comment.id, true)}</div>
             </div>
-        </article>`).join('');
+        </article>`;
+        }).join('');
+    };
+    const items = renderList(0, false);
+    const more = clip
+        ? `<button type="button" class="comment-see-more" data-thread-more="${id}">See more</button>`
+        : (expanded && roots.length > 2 ? `<button type="button" class="comment-see-more" data-thread-more="${id}">See less</button>` : '');
+    const total = (comments || []).length;
     el.innerHTML = `
-        <div class="comment-thread">${items || '<p class="comment-empty">No notes yet.</p>'}</div>
-        <button type="button" class="btn btn-secondary btn-sm" data-add-comment="${id}">Comment</button>`;
+        <button type="button" class="btn btn-primary btn-sm comment-new-btn" data-add-comment="${id}">New comment</button>
+        <div class="comment-thread${clip ? ' comment-thread--clip' : ''}">${items || '<p class="comment-empty">No notes yet.</p>'}</div>
+        ${more}`;
+    const badge = el.closest('.ur-test-block')?.querySelector('.ur-comment-count');
+    if (badge) {
+        badge.hidden = total === 0;
+        badge.textContent = total === 1 ? '1 comment' : `${total} comments`;
+    }
 }
 
 function applyCommand(cmd) {
@@ -256,7 +402,9 @@ async function ensureDirectory() {
 async function showMentions(query) {
     await ensureDirectory();
     const q = query.toLowerCase();
+    const me = currentUsername();
     const matches = directory.filter((user) => {
+        if (me && String(user.username).toLowerCase() === me) return false;
         const name = `${user.username} ${user.fullname || ''}`.toLowerCase();
         return name.includes(q);
     }).slice(0, 8);
@@ -270,7 +418,7 @@ async function showMentions(query) {
     menu.innerHTML = matches.map((user, index) => `
         <button type="button" class="rte-mention${index === 0 ? ' is-active' : ''}" data-mention="${escapeHtml(user.username)}">
             ${avatarMarkup(user, 24)}
-            <span><strong>${escapeHtml(user.fullname || user.username)}</strong><small>@${escapeHtml(user.username)}</small></span>
+            <span><strong>${escapeHtml(mentionLabel(user))}</strong></span>
         </button>`).join('');
 }
 
@@ -280,6 +428,29 @@ function hideMentions() {
         menu.hidden = true;
         menu.innerHTML = '';
     }
+}
+
+function mentionLabel(user) {
+    const name = String(user?.fullname || '').trim();
+    return name || user?.username || '';
+}
+
+export function revealComment(commentId) {
+    const id = String(commentId || '');
+    if (!/^\d+$/.test(id)) return;
+    document.querySelectorAll('.incident-comments').forEach((node) => {
+        const comments = node.__comments || [];
+        if (!comments.some((comment) => String(comment.id) === id)) return;
+        const key = String(node.dataset.incidentId || '');
+        if (key && !expandedThreads.has(key)) {
+            expandedThreads.add(key);
+            renderThread(node, comments);
+        }
+    });
+    const target = document.querySelector(`.comment-item[data-comment-id="${id}"]`);
+    if (!target) return;
+    target.classList.add('comment-item--focus');
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function insertMention(username) {
@@ -299,7 +470,8 @@ function insertMention(username) {
     span.className = 'mention';
     span.dataset.user = username;
     span.setAttribute('contenteditable', 'false');
-    span.textContent = `@${username}`;
+    const person = directory.find((user) => String(user.username).toLowerCase() === String(username).toLowerCase());
+    span.textContent = `@${mentionLabel(person) || username}`;
     range.insertNode(span);
     const space = document.createTextNode(' ');
     span.after(space);

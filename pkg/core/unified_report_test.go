@@ -32,3 +32,22 @@ func TestMergeReportTests_enrichesIncidentID(t *testing.T) {
 		t.Fatal("expected error logs from incident")
 	}
 }
+
+func TestMergeReportTests_matchesPrefixedNames(t *testing.T) {
+	primary := []TestCaseResult{
+		{Name: "[Cypress] TC-04 Checkout > Swag Labs", Status: "fail", Fingerprint: "from-junit"},
+	}
+	incidents := []TestCaseResult{
+		{Name: "[FLAKY] TC-04 Checkout > Swag Labs", Status: "flaky", Fingerprint: "from-incident", IncidentID: 7},
+	}
+	merged := mergeReportTests(primary, incidents)
+	if len(merged) != 1 {
+		t.Fatalf("len = %d", len(merged))
+	}
+	if merged[0].IncidentID != 7 {
+		t.Fatalf("incident_id = %d", merged[0].IncidentID)
+	}
+	if merged[0].Status != "flaky" {
+		t.Fatalf("status = %s", merged[0].Status)
+	}
+}
