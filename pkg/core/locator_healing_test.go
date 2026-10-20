@@ -314,6 +314,14 @@ func TestHealLocatorFromHTML_BrokenDataQA_FindsSubmitID(t *testing.T) {
 	}
 }
 
+func TestExtractLocator_SeleniumQuotedDataTestID(t *testing.T) {
+	msg := `NoSuchElementException: Message: no such element: Unable to locate element: {"method":"css selector","selector":"[data-testid="sign-in-button"]"}`
+	got := ExtractLocator(msg, "Selenium")
+	if got != `[data-testid="sign-in-button"]` {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestHealLocatorFromHTML_LogoutAfterLogin(t *testing.T) {
 	html := `<div class="example">
 		<h2>Secure Area</h2>

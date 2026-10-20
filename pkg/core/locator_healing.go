@@ -484,7 +484,7 @@ func ExtractLocator(errorMsg, hintFramework string) string {
 		}
 		if m := p.re.FindStringSubmatch(errorMsg); len(m) >= 2 {
 			loc := strings.TrimSpace(m[1])
-			if loc != "" {
+			if isUsableExtractedLocator(loc) {
 				return loc
 			}
 		}
@@ -495,13 +495,22 @@ func ExtractLocator(errorMsg, hintFramework string) string {
 		if p.framework == "generic" {
 			if m := p.re.FindStringSubmatch(errorMsg); len(m) >= 2 {
 				loc := strings.TrimSpace(m[1])
-				if loc != "" {
+				if isUsableExtractedLocator(loc) {
 					return loc
 				}
 			}
 		}
 	}
 	return ""
+}
+
+func isUsableExtractedLocator(s string) bool {
+	s = strings.TrimSpace(s)
+	if !isCompleteLocator(s) {
+		return false
+	}
+	return strings.HasPrefix(s, "#") || strings.HasPrefix(s, ".") || strings.HasPrefix(s, "[") ||
+		strings.Contains(strings.ToLower(s), "css=") || strings.Contains(strings.ToLower(s), "xpath=")
 }
 
 // ── Database model ────────────────────────────────────────────────────────────
