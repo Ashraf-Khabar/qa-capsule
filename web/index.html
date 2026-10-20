@@ -8,7 +8,7 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap">
-    <link rel="stylesheet" href="/style.css?v=1.0.32-no-self-mention">
+    <link rel="stylesheet" href="/style.css?v=1.0.33-encrypted-routes">
     <script>
         try {
             if (localStorage.getItem('sre-sidebar-collapsed') === '1') {
@@ -660,27 +660,7 @@
                         <select id="ci-team-id" class="login-input" style="margin-bottom: 20px;"></select>
 
                         <label class="form-label">2. Source System</label>
-                        <div class="ci-grid" style="margin-bottom: 20px;">
-                            <div class="ci-card active" onclick="selectCI('gitlab', this)">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ci-icon" style="color: #fc6d26;">
-                                    <path d="m22.65 14.39L12 22.13 1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 0 1 5.5 2a.43.43 0 0 1 .4.27l3.09 9.51h6.02l3.09-9.51a.43.43 0 0 1 .4-.27.42.42 0 0 1 .39.18l2.44 7.51 1.22 3.78a.84.84 0 0 1-.3.94Z"></path>
-                                </svg>
-                                GitLab CI
-                            </div>
-                            <div class="ci-card" onclick="selectCI('github', this)">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ci-icon" style="color: #c9d1d9;">
-                                    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path>
-                                    <path d="M9 18c-4.51 2-5-2-7-2"></path>
-                                </svg>
-                                GitHub Actions
-                            </div>
-                            <div class="ci-card" onclick="selectCI('jenkins', this)">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="ci-icon" style="color: #d33833;">
-                                    <path d="M12.28 15.65h-.54c-2.45 0-3.35 1.58-3.44 2.82h7.42c-.09-1.24-.98-2.82-3.44-2.82zm-4.34-1.81c-.55-1.25-1.77-1.82-2.93-1.82v-1.63c.48 0 .97-.13 1.34-.35.9-.53 1.25-1.57 1.37-2.34h1.61c-.04 1.1-.34 2.65-1.66 3.65.62.61 1.05 1.47 1.05 2.68v.17h-1.64v-.17c0-.8-.32-1.76-.92-2.31c.36.4.58.98.58 1.63v.49h1.2zm8.79 0v-.49c0-.65.22-1.23.58-1.63-.6.55-.92 1.51-.92 2.31v.17h-1.64v-.17c0-1.21.43-2.07 1.05-2.68-1.32-1-1.62-2.55-1.66-3.65h1.61c.12.77.47 1.81 1.37 2.34.37.22.86.35 1.34.35v1.63c-1.16 0-2.38.57-2.93 1.82zm-4.46-4.57c1.39 0 2.5-1.12 2.5-2.5V3.8c0-1.38-1.11-2.5-2.5-2.5s-2.5 1.12-2.5 2.5v2.97c0 1.38 1.11 2.5 2.5 2.5z" />
-                                </svg>
-                                Jenkins
-                            </div>
-                        </div>
+                        <div class="ci-grid" id="ci-grid" style="margin-bottom: 20px;"></div>
 
                         <div id="ci-config-form" style="padding-top: 10px; border-top: 1px solid var(--border-main);">
                             <label class="form-label" style="margin-top: 15px;">3. Pipeline Identifier</label>
@@ -746,7 +726,7 @@
                 <div class="hc-header">
                     <div class="hc-header__left">
                         <h1 class="hc-header__title">Self-Healing Hub</h1>
-                        <p class="hc-header__sub">AI scans the live page HTML and proposes the correct locator — Robot Framework, Playwright, Cypress and more.</p>
+                        <p class="hc-header__sub">One MCP turns on for the real cause — locator, assertion, timeout, network, stale element, or script — and the hub shows only that problem.</p>
                     </div>
                     <div class="hc-header__right">
                         <span id="healing-ai-chip" class="hc-chip hc-chip--off">
@@ -1255,7 +1235,7 @@
                             <option value="GBP">GBP</option>
                         </select>
                         <button class="btn-primary" style="width: 100%; margin-top: 12px;" onclick="saveFinOpsBaselines()">Save baseline</button>
-                        <p class="form-hint" style="margin-top: 12px;">Formulas and theory: <a href="#" class="text-link" onclick="switchView('about', null); showAboutTopic('finops_metrics'); return false;">Help Center → FinOps metrics</a>.</p>
+                        <p class="form-hint" style="margin-top: 12px;">Formulas and theory: <a href="#" class="text-link" onclick="window.__pendingAboutTopic='finops_metrics'; switchView('about', null); return false;">Help Center → FinOps metrics</a>.</p>
                     </div>
                 </div>
             </section>
@@ -1882,6 +1862,6 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-    <script type="module" src="app.js?v=1.0.32-no-self-mention"></script>
+    <script type="module" src="app.js?v=1.0.33-encrypted-routes"></script>
 </body>
 </html>

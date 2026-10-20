@@ -8,9 +8,11 @@ type InsightRow struct {
 	ProjectName   string    `json:"project_name"`
 	TestName      string    `json:"test_name"`
 	Status        string    `json:"status"`
-	ErrorCategory string    `json:"error_category"`
-	Summary       string    `json:"summary"`
-	MCPHealed     bool      `json:"mcp_healed"`
+	ErrorCategory  string    `json:"error_category"`
+	ActiveMCP      string    `json:"active_mcp"`
+	ActiveMCPLabel string    `json:"active_mcp_label"`
+	Summary        string    `json:"summary"`
+	MCPHealed      bool      `json:"mcp_healed"`
 	CreatedAt     time.Time `json:"created_at"`
 }
 
@@ -33,6 +35,10 @@ type Context struct {
 	CITags             map[string]string `json:"ci_tags"`
 	CreatedAt          string            `json:"created_at,omitempty"`
 	ErrorCategory      string            `json:"error_category"`
+	ActiveMCP          string            `json:"active_mcp"`
+	ActiveMCPLabel     string            `json:"active_mcp_label"`
+	ActiveMCPTool      string            `json:"active_mcp_tool"`
+	Problem            string            `json:"problem"`
 	SelectorHint       string            `json:"selector_hint,omitempty"`
 	SuggestedActions   []string          `json:"suggested_actions"`
 	MCPPrompt          string            `json:"mcp_prompt"`
@@ -43,6 +49,10 @@ type Proposal struct {
 	Code             string   `json:"code"`
 	Explanation      string   `json:"explanation"`
 	ErrorCategory    string   `json:"error_category"`
+	ActiveMCP        string   `json:"active_mcp"`
+	ActiveMCPLabel   string   `json:"active_mcp_label"`
+	ActiveMCPTool    string   `json:"active_mcp_tool"`
+	Problem          string   `json:"problem"`
 	SelectorHint     string   `json:"selector_hint,omitempty"`
 	SuggestedActions []string `json:"suggested_actions"`
 	MCPPrompt        string   `json:"mcp_prompt"`

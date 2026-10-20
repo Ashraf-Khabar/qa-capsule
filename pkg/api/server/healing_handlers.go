@@ -14,6 +14,7 @@ import (
 
 	aiPkg "github.com/SRE-Capsule/sre-capsule-community/pkg/ai"
 	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/healing"
 )
 
 func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, action string) {
@@ -153,14 +154,18 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 				healed, confidence, explanation = core.SuggestHealedLocator(originalLocator, framework)
 			}
 			healed, confidence, explanation = finalizeLocatorProposal(originalLocator, testSource, domSnapshot, framework, healed, confidence, explanation)
+			verdict := core.AssessLocatorPrecision(domSnapshot, originalLocator, healed, confidence)
+			if verdict.Verified {
+				confidence = verdict.Confidence
+			}
 
 			fixedCode := applyLocatorFixToSource(testSource, originalLocator, healed)
 			if fixedCode == "" {
 				fixedCode = buildHealedLocatorSnippet(originalLocator, healed, framework)
 			}
 			changeLines := buildLocatorChangeLines(testSource, fixedCode, originalLocator, healed)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			spec := healing.SpecialistFor(healing.CategoryLocator, testName, originalLocator)
+			resp := map[string]interface{}{
 				"code":              fixedCode,
 				"source_code":       testSource,
 				"explanation":       explanation,
@@ -168,13 +173,39 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 				"healed_locator":    healed,
 				"original_locator":  originalLocator,
 				"framework":         framework,
+				"error_category":    spec.ID,
+				"active_mcp":        spec.ID,
+				"active_mcp_label":  spec.Label,
+				"active_mcp_tool":   spec.Tool,
+				"problem":           spec.Problem,
 				"dom_used":          domUsed,
 				"dom_captured":      domSnapshot != "" && domUsed,
-				"dom_capture_hint":  core.DOMCaptureHint(framework),
-				"heal_method":       healMethodFromExplanation(explanation, domUsed),
+				"dom_verified":      verdict.Verified,
+				"precision":         verdict.Level,
+				"intent":            intentFromExplanation(explanation),
+				"heal_method":       "pending",
 				"change_lines":      changeLines,
 				"fix_highlights":    buildFixHighlights(testSource, fixedCode, healed),
-			})
+			}
+			method := "unconfirmed"
+			if verdict.Verified {
+				method = healMethodFromExplanation(explanation, domUsed)
+			} else if !domUsed {
+				method = "no_dom"
+			}
+			resp["heal_method"] = method
+			if strings.TrimSpace(healed) == "" {
+				resp["code"] = ""
+				resp["healed_locator"] = ""
+				resp["confidence"] = 0
+				resp["change_lines"] = []map[string]interface{}{}
+				resp["fix_highlights"] = []map[string]interface{}{}
+			}
+			if !domUsed {
+				resp["dom_capture_hint"] = "Locator MCP is active. The problem is this selector. This run did not store the page HTML, so a replacement cannot be confirmed."
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(resp)
 			return
 		}
 
@@ -183,45 +214,29 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 		if fileContent == "" {
 			fileContent = autoReadTestFile(id)
 		}
+		category := healing.ClassifyError(combinedErr)
+		if category == healing.CategoryLocator {
+			category = healing.CategoryScript
+		}
+		spec := healing.SpecialistFor(category, testName, "")
 		if core.AIService != nil {
 			ctx := r.Context()
 			code, explanation, err := core.AIService.ProposeFixFromIncidentID(ctx, id, fileContent)
 			if err == nil {
-				origLoc := core.ResolveOriginalLocator(combinedErr, testSource, framework)
-				if origLoc == "" {
-					origLoc = extractOriginalLocatorFromExplanation(explanation)
-				}
-				healedLoc := extractHealedLocatorFromExplanation(explanation)
-				if healedLoc == "" && code != "" && origLoc != "" {
-					healedLoc = inferHealedLocatorFromCode(code, origLoc)
-				}
-				resp := map[string]interface{}{
-					"code":        code,
-					"source_code": testSource,
-					"explanation": explanation,
-					"confidence":  0.8,
-					"dom_used":    domSnapshot != "",
-					"heal_method": healMethodFromExplanation(explanation, domSnapshot != ""),
-				}
-				if origLoc != "" {
-					resp["original_locator"] = origLoc
-				}
-				if healedLoc != "" {
-					resp["healed_locator"] = healedLoc
-				}
-				if origLoc != "" && healedLoc != "" {
-					resp["change_lines"] = buildLocatorChangeLines(testSource, code, origLoc, healedLoc)
-				}
-				if testSource != "" && origLoc != "" && healedLoc != "" {
-					if merged := applyLocatorFixToSource(testSource, origLoc, healedLoc); merged != "" {
-						code = merged
-						resp["code"] = code
-						resp["change_lines"] = buildLocatorChangeLines(testSource, code, origLoc, healedLoc)
-					}
-				}
-				resp["fix_highlights"] = buildFixHighlights(testSource, code, healedLoc)
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(resp)
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"code":             code,
+					"source_code":      testSource,
+					"explanation":      explanation,
+					"confidence":       0.8,
+					"error_category":   spec.ID,
+					"active_mcp":       spec.ID,
+					"active_mcp_label": spec.Label,
+					"active_mcp_tool":  spec.Tool,
+					"problem":          spec.Problem,
+					"dom_used":         false,
+					"heal_method":      "ai",
+				})
 				return
 			}
 		}
@@ -305,20 +320,9 @@ func aiLocatorHeal(f core.LocatorError, framework string) (healed string, confid
 		}
 	}
 
-	// 3. HTML scan (fast, deterministic) before calling the LLM.
-	if pageHTML != "" && f.OriginalLocator != "" {
-		if healed, conf, expl, ok := core.HealLocatorFromHTML(f.OriginalLocator, pageHTML); ok {
-			slog.Info("aiLocatorHeal: healed from HTML scan",
-				"incident_id", f.IncidentID,
-				"original", f.OriginalLocator,
-				"healed", healed,
-				"confidence", conf,
-			)
-			return healed, conf, expl
-		}
-	}
+	testSource := autoReadTestFile(f.IncidentID)
 
-	// 4. No HTML at all and no locator extracted → nothing useful to offer.
+	// No HTML and no locator: a guess would not be precise.
 	if f.OriginalLocator == "" && pageHTML == "" {
 		return core.SuggestHealedLocator(f.OriginalLocator, framework)
 	}
@@ -326,10 +330,10 @@ func aiLocatorHeal(f core.LocatorError, framework string) (healed string, confid
 	// Build a locator-healing prompt and call the AI.
 	cfg, err := core.AIService.GetConfig(context.Background())
 	if err != nil || !cfg.Enabled || cfg.Provider == aiPkg.ProviderDisabled {
-		return core.SuggestHealedLocator(f.OriginalLocator, framework)
+		return "", 0, ""
 	}
 
-	prompt := buildLocatorPrompt(f.OriginalLocator, framework, pageHTML, f.ErrorMessage)
+	prompt := buildLocatorPrompt(f.OriginalLocator, framework, pageHTML, f.ErrorMessage, f.TestName, testSource)
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
@@ -338,7 +342,7 @@ func aiLocatorHeal(f core.LocatorError, framework string) (healed string, confid
 	rawText, callErr := aiPkg.AnalyzeRaw(ctx, cfg, prompt)
 	if callErr != nil {
 		slog.Warn("aiLocatorHeal: LLM call failed", "incident_id", f.IncidentID, "err", callErr)
-		return core.SuggestHealedLocator(f.OriginalLocator, framework)
+		return "", 0, ""
 	}
 
 	slog.Info("aiLocatorHeal: LLM responded",
@@ -347,98 +351,207 @@ func aiLocatorHeal(f core.LocatorError, framework string) (healed string, confid
 		"response_preview", truncateStr(rawText, 200),
 	)
 
-	// Parse JSON response: {"healed_locator":"...","confidence":0.9,"explanation":"..."}
+	// Parse JSON response: {"intent":"...","healed_locator":"...","confidence":0.9,"explanation":"..."}
 	parsed := parseLocatorResponse(rawText)
 	if parsed.healed != "" {
-		// Reject LLM answers that repeat the broken selector or xpath variants of it.
-		if parsed.healed == f.OriginalLocator || core.IsEquivalentBrokenLocator(f.OriginalLocator, parsed.healed) {
-			slog.Warn("aiLocatorHeal: LLM returned equivalent broken selector",
-				"incident_id", f.IncidentID, "healed", parsed.healed)
-		} else if pageHTML != "" && !core.LocatorExistsInHTML(pageHTML, parsed.healed) {
-			slog.Warn("aiLocatorHeal: LLM selector not found in HTML, trying HTML scan",
-				"incident_id", f.IncidentID, "healed", parsed.healed)
-			if healed, conf, expl, ok := core.HealLocatorFromHTML(f.OriginalLocator, pageHTML); ok {
-				return healed, conf, expl
+		verdict := core.AssessLocatorPrecision(pageHTML, f.OriginalLocator, parsed.healed, parsed.confidence)
+		if verdict.Verified {
+			expl := strings.TrimSpace(parsed.explanation)
+			if parsed.intent != "" && !strings.Contains(strings.ToLower(expl), strings.ToLower(parsed.intent)) {
+				expl = "Intent: " + parsed.intent + ". " + expl
 			}
-		} else {
-			return parsed.healed, parsed.confidence, parsed.explanation
+			slog.Info("aiLocatorHeal: locator verified on page DOM",
+				"incident_id", f.IncidentID,
+				"intent", parsed.intent,
+				"healed", parsed.healed,
+				"precision", verdict.Level,
+				"matches", verdict.Matches,
+			)
+			return parsed.healed, verdict.Confidence, expl
 		}
+		slog.Warn("aiLocatorHeal: LLM selector rejected — not present on the page",
+			"incident_id", f.IncidentID, "healed", parsed.healed, "precision", verdict.Level)
 	}
-	if pageHTML != "" && f.OriginalLocator != "" {
-		if healed, conf, expl, ok := core.HealLocatorFromHTML(f.OriginalLocator, pageHTML); ok {
-			return healed, conf, expl
-		}
-	}
-	return core.SuggestHealedLocator(f.OriginalLocator, framework)
+	return "", 0, ""
 }
 
-// finalizeLocatorProposal merges AI/HTML/heuristic results and rejects same-as-broken answers.
+// finalizeLocatorProposal keeps a DOM-verified locator. Comments and keyword scans
+// are used only when the model did not return an element that exists on the page.
 func finalizeLocatorProposal(original, testSource, pageHTML, framework, healed string, confidence float64, explanation string) (string, float64, string) {
+	_ = framework
 	original = strings.TrimSpace(original)
-	if original == "" {
-		return healed, confidence, explanation
+	keep := func(h string, c float64, e string) (string, float64, string, bool) {
+		h = strings.TrimSpace(h)
+		if h == "" || core.LocatorSameAs(h, original) || core.IsEquivalentBrokenLocator(original, h) {
+			return "", 0, "", false
+		}
+		if pageHTML == "" {
+			return "", 0, "", false
+		}
+		v := core.AssessLocatorPrecision(pageHTML, original, h, c)
+		if !v.Verified {
+			return "", 0, "", false
+		}
+		return h, v.Confidence, e, true
 	}
-	if h, c, e, ok := core.ResolveHealedFromTestContext(testSource, original); ok && h != "" && !core.LocatorSameAs(h, original) {
+	if h, c, e, ok := keep(healed, confidence, explanation); ok {
 		return h, c, e
 	}
-	if pageHTML != "" {
-		if h, c, e, ok := core.HealLocatorFromHTML(original, pageHTML); ok && h != "" && !core.LocatorSameAs(h, original) && !core.IsEquivalentBrokenLocator(original, h) {
+	if pageHTML != "" && original != "" {
+		if h, c, e, ok := core.HealLocatorFromHTML(original, pageHTML); ok {
+			if h, c, e, kept := keep(h, c, e); kept {
+				return h, c, e
+			}
+		}
+	}
+	if h, c, e, ok := core.ResolveHealedFromTestContext(testSource, original); ok {
+		if h, c, e, kept := keep(h, c, e); kept {
 			return h, c, e
 		}
 	}
-	if healed != "" && !core.LocatorSameAs(healed, original) && !core.IsEquivalentBrokenLocator(original, healed) {
-		return healed, confidence, explanation
+	if pageHTML != "" {
+		return "", 0, "The page was read, but no unique element matched this step. No selector was applied."
 	}
-	h, c, e := core.SuggestHealedLocator(original, framework)
-	if h != "" && !core.LocatorSameAs(h, original) {
-		return h, c, e
-	}
-	return "", 0.15, "No reliable replacement found. Capture page DOM at failure time or document real/broken locators in test file comments."
+	return "", 0, "No page HTML was stored with this failure, so a selector cannot be confirmed."
 }
 
-func buildLocatorPrompt(original, framework, pageHTML, errorMsg string) string {
+func buildLocatorPrompt(original, framework, pageHTML, errorMsg, testName, testSource string) string {
 	var b strings.Builder
-	b.WriteString("You are an expert test automation engineer specializing in self-healing locators.\n\n")
-	b.WriteString("A UI test failed because the selector no longer exists on the page.\n")
-	b.WriteString("Your ONLY task: look at the page HTML below and find the correct replacement selector.\n\n")
-	b.WriteString("Rules:\n")
-	b.WriteString("- Inspect the HTML carefully. Find the element that matches the intent of the broken selector.\n")
-	b.WriteString("- Prefer: id attributes (#id), then data-testid, then ARIA role, then stable class.\n")
-	b.WriteString("- NEVER return the same broken selector as the fix.\n")
-	b.WriteString("- NEVER return an xpath/css variant of the same missing attribute (e.g. do NOT change data-qa='X' to xpath with data-qa='X').\n")
-	b.WriteString("- The healed_locator MUST exist in the page HTML below.\n")
-	b.WriteString("- Return ONLY a raw JSON object — no markdown, no explanation outside the JSON.\n\n")
-	b.WriteString(`{"healed_locator":"<selector found in HTML>","confidence":0.95,"explanation":"<one sentence: what element you found and why>"}`)
+	b.WriteString("You repair one broken UI selector. Precision matters more than a guess.\n\n")
+	b.WriteString("Do this in order:\n")
+	b.WriteString("1. Read the test name, the test source, and the error. Decide the action the test is trying to perform. Examples: submit the login form, type the username, open checkout, add the product to the cart.\n")
+	b.WriteString("2. Read the page context and the interactive elements taken from the live DOM. Find the single element that performs that action.\n")
+	b.WriteString("3. Ignore the broken selector as a target. A login step is still a login step when the old selector says submit-v1.\n")
+	b.WriteString("4. Copy healed_locator from a selector= value in the interactive list. Prefer #id, then [data-testid], [data-test], [data-qa], [name], [aria-label].\n")
+	b.WriteString("5. The selector must identify exactly one element. If several elements could match, or none clearly matches the action, return an empty healed_locator and confidence below 0.4.\n")
+	b.WriteString("6. Never return the broken selector, and never rewrite the same missing attribute (data-qa='X' must not become xpath with data-qa='X').\n")
+	b.WriteString("7. confidence above 0.85 is allowed only when one stable selector matches the action.\n")
+	b.WriteString("Return ONLY this JSON object, with no markdown:\n")
+	b.WriteString(`{"intent":"<the action, e.g. submit the login form>","healed_locator":"<selector copied from the list>","confidence":0.93,"explanation":"<which element on the page, and why it matches the action>"}`)
 	b.WriteString("\n\n")
 	fmt.Fprintf(&b, "Framework: %s\n", framework)
+	fmt.Fprintf(&b, "Test name: %s\n", testName)
 	fmt.Fprintf(&b, "Broken locator: %s\n", original)
-	fmt.Fprintf(&b, "Error message: %s\n\n", errorMsg)
+	if errorMsg != "" {
+		msg := errorMsg
+		if len(msg) > 1200 {
+			msg = msg[:1200]
+		}
+		fmt.Fprintf(&b, "Error message:\n%s\n", msg)
+	}
+	if src := excerptAroundLocator(testSource, original, 3500); src != "" {
+		b.WriteString("\n=== TEST SOURCE (intent) ===\n")
+		b.WriteString(src)
+		b.WriteString("\n=== END TEST SOURCE ===\n")
+	}
 	if pageHTML != "" {
-		if len(pageHTML) > 20000 {
-			pageHTML = pageHTML[:20000]
+		if ctx := pageContextLines(pageHTML); ctx != "" {
+			b.WriteString("\n=== PAGE CONTEXT ===\n")
+			b.WriteString(ctx)
+			b.WriteString("=== END PAGE CONTEXT ===\n")
 		}
-		if candidates := core.FormatInteractiveElements(pageHTML, 40); candidates != "" {
-			b.WriteString("=== INTERACTIVE ELEMENTS FOUND IN PAGE HTML ===\n")
-			b.WriteString("Pick the selector for the element that matches the broken locator's intent:\n")
+		if candidates := core.FormatInteractiveElements(pageHTML, 80); candidates != "" {
+			b.WriteString("\n=== INTERACTIVE ELEMENTS ON THE PAGE ===\n")
+			b.WriteString("Copy healed_locator from a selector= field. Choose the element that performs the action.\n")
 			b.WriteString(candidates)
-			b.WriteString("=== END INTERACTIVE ELEMENTS ===\n\n")
+			b.WriteString("=== END INTERACTIVE ELEMENTS ===\n")
 		}
-		b.WriteString("=== PAGE HTML AT TIME OF FAILURE ===\n")
-		b.WriteString(pageHTML)
+		html := pageHTML
+		if len(html) > 12000 {
+			html = html[:12000]
+		}
+		b.WriteString("\n=== PAGE HTML ===\n")
+		b.WriteString(html)
 		b.WriteString("\n=== END PAGE HTML ===\n")
-		b.WriteString("\nIMPORTANT: Your healed_locator MUST appear verbatim in the HTML or interactive elements list above.\n")
 	} else {
-		b.WriteString("WARNING: No page HTML was captured. ")
-		b.WriteString("Enable the DOM capture hook for your test framework (Cypress sre-capsule.js, Playwright sre-capsule-fixture, Robot dom_capture_listener, Selenium conftest). ")
-		b.WriteString("Suggest the most likely fix based on the broken selector name alone, with low confidence.\n")
+		b.WriteString("\nWARNING: No page HTML was captured. Return an empty healed_locator. Do not guess.\n")
 	}
 	return b.String()
+}
+
+func excerptAroundLocator(source, locator string, max int) string {
+	source = strings.TrimSpace(source)
+	if source == "" {
+		return ""
+	}
+	if max <= 0 || len(source) <= max {
+		return source
+	}
+	idx := -1
+	if locator != "" {
+		idx = strings.Index(source, locator)
+	}
+	if idx < 0 {
+		lower := strings.ToLower(source)
+		for _, hint := range []string{"login", "sign in", "checkout", "password", "username"} {
+			if i := strings.Index(lower, hint); i >= 0 {
+				idx = i
+				break
+			}
+		}
+	}
+	if idx < 0 {
+		idx = 0
+	}
+	start := idx - max/3
+	if start < 0 {
+		start = 0
+	}
+	end := start + max
+	if end > len(source) {
+		end = len(source)
+	}
+	return source[start:end]
+}
+
+func pageContextLines(html string) string {
+	var b strings.Builder
+	add := func(label, val string) {
+		val = strings.Join(strings.Fields(val), " ")
+		if val == "" {
+			return
+		}
+		if len(val) > 80 {
+			val = val[:80]
+		}
+		fmt.Fprintf(&b, "%s: %s\n", label, val)
+	}
+	if m := regexp.MustCompile(`(?i)<title[^>]*>([^<]+)</title>`).FindStringSubmatch(html); len(m) >= 2 {
+		add("title", m[1])
+	}
+	for i, m := range regexp.MustCompile(`(?i)<h[1-3][^>]*>([^<]{1,80})</h[1-3]>`).FindAllStringSubmatch(html, 6) {
+		if len(m) >= 2 {
+			add(fmt.Sprintf("heading%d", i+1), m[1])
+		}
+	}
+	for i, m := range regexp.MustCompile(`(?i)<label[^>]*>([^<]{1,80})</label>`).FindAllStringSubmatch(html, 8) {
+		if len(m) >= 2 {
+			add(fmt.Sprintf("label%d", i+1), m[1])
+		}
+	}
+	return b.String()
+}
+
+func intentFromExplanation(explanation string) string {
+	const prefix = "Intent: "
+	if !strings.HasPrefix(explanation, prefix) {
+		return ""
+	}
+	rest := strings.TrimSpace(explanation[len(prefix):])
+	if i := strings.Index(rest, ". "); i > 0 {
+		return strings.TrimSpace(rest[:i])
+	}
+	if len(rest) > 160 {
+		return rest[:160]
+	}
+	return rest
 }
 
 type locatorResult struct {
 	healed      string
 	confidence  float64
 	explanation string
+	intent      string
 }
 
 func parseLocatorResponse(raw string) locatorResult {
@@ -447,15 +560,16 @@ func parseLocatorResponse(raw string) locatorResult {
 		HealedLocator string  `json:"healed_locator"`
 		Confidence    float64 `json:"confidence"`
 		Explanation   string  `json:"explanation"`
+		Intent        string  `json:"intent"`
 	}
 	for _, blob := range aiPkg.ExtractJSONObjects(raw) {
 		if err := json.Unmarshal([]byte(blob), &parsed); err != nil {
 			continue
 		}
-		if strings.TrimSpace(parsed.HealedLocator) == "" {
+		if strings.TrimSpace(parsed.HealedLocator) == "" && strings.TrimSpace(parsed.Intent) == "" {
 			continue
 		}
-		return locatorResult{parsed.HealedLocator, parsed.Confidence, parsed.Explanation}
+		return locatorResult{parsed.HealedLocator, parsed.Confidence, parsed.Explanation, strings.TrimSpace(parsed.Intent)}
 	}
 	return locatorResult{}
 }
@@ -928,10 +1042,13 @@ func applyLocatorFixToSource(source, original, healed string) string {
 			changed = true
 		}
 	}
-	if !changed {
-		return source
+	if changed {
+		return strings.Join(lines, "\n")
 	}
-	return strings.Join(lines, "\n")
+	if original != "" && healed != "" && original != healed && strings.Contains(source, original) {
+		return strings.ReplaceAll(source, original, healed)
+	}
+	return source
 }
 
 // buildLocatorChangeLines lists before/after code lines for the locator swap.

@@ -137,6 +137,9 @@ func FindTestSourceInRepo(repoPath, testName string) string {
 	if len(tokens) == 0 {
 		return ""
 	}
+	// The full test name must appear in the file. A shared word such as
+	// "healing" or "selector" is not enough, or the app source is picked up.
+	primary := strings.ToLower(tokens[0])
 
 	const maxFiles = 800
 	scanned := 0
@@ -148,7 +151,8 @@ func FindTestSourceInRepo(repoPath, testName string) string {
 			if err != nil || d.IsDir() {
 				if d != nil && d.IsDir() {
 					base := d.Name()
-					if base == "node_modules" || base == ".git" || base == "vendor" || base == "dist" || base == "build" {
+					if base == "node_modules" || base == ".git" || base == "vendor" || base == "dist" || base == "build" ||
+					base == "web" || base == "pkg" || base == "cmd" || base == "docs" {
 						return filepath.SkipDir
 					}
 				}
@@ -167,8 +171,11 @@ func FindTestSourceInRepo(repoPath, testName string) string {
 			}
 			content := string(data)
 			lower := strings.ToLower(content)
-			score := 0
-			for _, tok := range tokens {
+			if !strings.Contains(lower, primary) {
+				return nil
+			}
+			score := len(primary)
+			for _, tok := range tokens[1:] {
 				if strings.Contains(lower, strings.ToLower(tok)) {
 					score += len(tok)
 				}

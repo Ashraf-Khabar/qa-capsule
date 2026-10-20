@@ -22,12 +22,13 @@ const FW = {
 const FW_DEF = { label: 'Unknown', color: '#7f8c8d' };
 
 const CAT = {
-    timeout:        { label: 'Timeout',   color: '#d4a017' },
-    locator:        { label: 'Locator',   color: '#c0392b' },
-    assertion:      { label: 'Assertion', color: '#e67e22' },
-    network:        { label: 'Network',   color: '#2980b9' },
-    script_failure: { label: 'Script',    color: '#8e44ad' },
-    unknown:        { label: 'Unknown',   color: '#95a5a6' },
+    timeout:        { label: 'Timeout',       mcp: 'Timeout MCP',       color: '#d4a017' },
+    locator:        { label: 'Locator',       mcp: 'Locator MCP',       color: '#c0392b' },
+    assertion:      { label: 'Assertion',     mcp: 'Assertion MCP',     color: '#e67e22' },
+    network:        { label: 'Network',       mcp: 'Network MCP',       color: '#2980b9' },
+    stale_element:  { label: 'Stale element', mcp: 'Stale element MCP', color: '#6d28d9' },
+    script_failure: { label: 'Script',        mcp: 'Script MCP',        color: '#8e44ad' },
+    unknown:        { label: 'Unknown',       mcp: 'Script MCP',        color: '#95a5a6' },
 };
 
 const fw  = r => FW[(r || '').toLowerCase().replace(/[^a-z]/g, '')] || FW_DEF;
@@ -217,9 +218,9 @@ function applyFixPreview(code, original, healed, explanation) {
     }).join('\n');
 }
 
-function highlightFixToken(line, token) {
+function highlightFixToken(line, token, precise) {
     if (!token || !line.includes(token)) return esc(line);
-    return line.split(token).map(esc).join(fixHighlightSpan(token, 'fix'));
+    return line.split(token).map(esc).join(fixHighlightSpan(token, precise ? 'verified' : 'fix'));
 }
 
 function getHighlightTokenForLine(lineIndex, line, srcLine, healed, original, data) {
@@ -237,12 +238,38 @@ function getHighlightTokenForLine(lineIndex, line, srcLine, healed, original, da
     return '';
 }
 
+function changedLineIndexes(sourceCode, displayCode) {
+    const src = String(sourceCode || '').replace(/\r\n/g, '\n').split('\n');
+    const dst = String(displayCode || '').replace(/\r\n/g, '\n').split('\n');
+    const out = [];
+    if (!String(sourceCode || '').trim()) {
+        dst.forEach((_, i) => out.push(i));
+        return out;
+    }
+    const n = Math.max(src.length, dst.length);
+    for (let i = 0; i < n; i++) {
+        if ((src[i] ?? '') !== (dst[i] ?? '')) out.push(i);
+    }
+    return out;
+}
+
 function renderHighlightedLines(displayCode, sourceCode, healed, original, data) {
-    const srcLines = (sourceCode || '').split('\n');
-    return displayCode.split('\n').map((line, i) => {
+    const srcLines = String(sourceCode || '').replace(/\r\n/g, '\n').split('\n');
+    const dstLines = String(displayCode || '').replace(/\r\n/g, '\n').split('\n');
+    const changed = new Set(changedLineIndexes(sourceCode, displayCode));
+    let start = 0;
+    let end = dstLines.length;
+    if (changed.size && dstLines.length > 40) {
+        const arr = [...changed].sort((a, b) => a - b);
+        start = Math.max(0, arr[0] - 3);
+        end = Math.min(dstLines.length, arr[arr.length - 1] + 4);
+    }
+    return dstLines.slice(start, end).map((line, j) => {
+        const i = start + j;
         const token = getHighlightTokenForLine(i, line, srcLines[i], healed, original, data);
-        const rowCls = token ? 'hc-code-line hc-code-line--fix' : 'hc-code-line';
-        const content = token ? highlightFixToken(line, token) : esc(line);
+        const isChange = changed.has(i);
+        const rowCls = isChange ? 'hc-code-line hc-code-line--verified' : 'hc-code-line';
+        const content = isChange && token ? highlightFixToken(line, token, true) : esc(line);
         return `<div class="${rowCls}"><span class="hc-code-line__n">${i + 1}</span><span class="hc-code-line__t">${content}</span></div>`;
     }).join('');
 }
@@ -252,14 +279,16 @@ function renderFixCodeBlock(code, data, id) {
     data = normalizeFixResponse(data);
     const expl = data?.explanation || '';
     const locs = resolveFixLocators(data);
-    const sourceCode = (data?.source_code || '').trim() || code;
+    const sourceCode = (data?.source_code || '').trim() || '';
     let displayCode = code;
-    if (locs.healed) {
+    if (locs.healed && sourceCode) {
         if (sourceCode === code || !code.includes(locs.healed)) {
             displayCode = applyFixPreview(sourceCode, locs.original, locs.healed, expl) || code;
         }
     }
-    const changes = renderChangeLines(data.change_lines, locs.original, locs.healed);
+    const changed = changedLineIndexes(sourceCode, displayCode);
+    if (!changed.length) return '';
+    const changes = renderChangeLines(data.change_lines, locs.original, locs.healed, true);
     const lines = renderHighlightedLines(displayCode, sourceCode, locs.healed, locs.original, data);
     return `<div class="hc-panel__code">
         <div class="hc-panel__code-head"><strong>Code fix</strong><button class="hc-panel__copy" onclick="window._copyFix(${id})">${ICON.copy} Copy</button></div>
@@ -315,14 +344,23 @@ function isDarkTheme() {
         || document.body.getAttribute('data-theme') === 'dark';
 }
 
+function isPreciseFix(data) {
+    return data?.precision === 'high' && !!data?.dom_verified;
+}
+
 function fixHighlightSpan(term, kind) {
     const dark = isDarkTheme();
-    const cls = kind === 'old' ? 'hc-tok hc-tok--old hc-code-fix-old' : 'hc-tok hc-tok--fix hc-code-fix-hl';
+    const verified = kind === 'verified';
+    const cls = kind === 'old'
+        ? 'hc-tok hc-tok--old hc-code-fix-old'
+        : (verified ? 'hc-tok hc-tok--verified hc-code-fix-hl' : 'hc-tok hc-tok--fix hc-code-fix-hl');
     const style = kind === 'old'
         ? (dark ? 'background:rgba(251,146,60,0.25);color:#fdba74;text-decoration:line-through;padding:1px 4px;border-radius:3px'
             : 'background:#ffedd5;color:#c2410c;text-decoration:line-through;padding:1px 4px;border-radius:3px')
         : (dark ? 'background:rgba(34,197,94,0.45);color:#dcfce7;font-weight:800;padding:1px 5px;border-radius:3px'
-            : 'background:#fecaca;color:#991b1b;font-weight:800;padding:1px 5px;border-radius:3px');
+            : (verified
+                ? 'background:#bbf7d0;color:#14532d;font-weight:800;padding:1px 5px;border-radius:3px'
+                : 'background:#fde68a;color:#92400e;font-weight:800;padding:1px 5px;border-radius:3px'));
     return `<span class="${cls}" style="${style}">${esc(term)}</span>`;
 }
 
@@ -395,7 +433,7 @@ function highlightLineTerms(line, planEntry) {
     return out;
 }
 
-function renderChangeLines(changeLines, original, healed) {
+function renderChangeLines(changeLines, original, healed, precise) {
     let rows = Array.isArray(changeLines) ? changeLines.filter(r => r?.before && r?.after) : [];
     if (!rows.length && original && healed && original !== healed) {
         rows = [{ before: original, after: healed }];
@@ -409,7 +447,7 @@ function renderChangeLines(changeLines, original, healed) {
                 <span class="hc-fix-change__tag">Before</span>
                 <code>${esc(r.before)}</code>
             </div>
-            <div class="hc-fix-change__row hc-fix-change__row--new">
+            <div class="hc-fix-change__row hc-fix-change__row--verified">
                 <span class="hc-fix-change__tag">After</span>
                 <code>${esc(r.after)}</code>
             </div>
@@ -541,6 +579,7 @@ function renderCard(r) {
             <div class="hc-row-meta">
                 <span class="hc-badge" style="${fwStyle}">${esc(f.label)}</span>
                 <span class="hc-badge" style="${catStyle}">${esc(c.label)}</span>
+                <span class="hc-badge hc-badge--mcp">${esc(r.active_mcp_label || c.mcp)}</span>
                 ${healed ? `<span class="hc-badge hc-badge--healed">${ICON.check}&nbsp;Healed</span>` : ''}
                 <span class="hc-id">#${id}</span>
             </div>
@@ -663,11 +702,13 @@ export async function copyMCPPrompt(id) {
 window.copyMCPPrompt = copyMCPPrompt;
 
 const HEAL_METHOD_LABEL = {
-    html_scan: 'HTML scan (page DOM parsed)',
-    ai_dom:    'AI + captured/live DOM',
+    html_scan: 'Matched on the page DOM',
+    ai_dom:    'AI read the test and the page',
     ai:        'AI analysis',
     rules:     'Rules (no DOM)',
     comments:  'Test file comments',
+    unconfirmed: 'Not confirmed on the page',
+    no_dom:    'Page HTML was not stored',
 };
 
 function formatConfidenceBadge(data, locs) {
@@ -677,11 +718,20 @@ function formatConfidenceBadge(data, locs) {
     const sameSelector = locs.original && locs.healed && locs.original === locs.healed;
     const noFix = !locs.healed || sameSelector;
     if (noFix) {
-        return { conf: 'low', label: `No fix found · ${methodLbl}`, pct: 0 };
+        const why = data.heal_method === 'no_dom'
+            ? 'Not confirmed — the page HTML was not stored with this failure'
+            : 'Not confirmed — the model will not guess a selector';
+        return { conf: 'low', precise: false, label: why, pct: 0 };
+    }
+    if (isPreciseFix(data)) {
+        return { conf: 'high', precise: true, label: `Verified on the page (${pct}%)`, pct };
+    }
+    if (data.precision === 'medium') {
+        return { conf: 'mid', precise: false, label: `Possible match (${pct}%) · not unique enough to apply blindly`, pct };
     }
     const conf = pct >= 70 ? 'high' : pct >= 45 ? 'mid' : 'low';
     const tier = pct >= 70 ? 'High confidence' : pct >= 45 ? 'Medium confidence' : 'Low confidence';
-    return { conf, label: `${tier} (${pct}%) · ${methodLbl}`, pct };
+    return { conf, precise: false, label: `${tier} (${pct}%) · ${methodLbl}`, pct };
 }
 
 function resolveDisplayCode(data) {
@@ -705,7 +755,7 @@ export async function openProposeFix(id) {
     // Toggle
     if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
-    panel.innerHTML = `<div class="hc-panel__loading"><span class="hc-panel__loading-icon" aria-hidden="true">${ICON.refresh}</span><span>Fetching live page DOM and querying AI…</span></div>`;
+    panel.innerHTML = `<div class="hc-panel__loading"><span class="hc-panel__loading-icon" aria-hidden="true">${ICON.refresh}</span><span>Finding where the failure comes from…</span></div>`;
 
     try {
         const { ok, data } = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/healing/propose`, {
@@ -723,11 +773,16 @@ export async function openProposeFix(id) {
         const locs = resolveFixLocators(fix);
         const badge = formatConfidenceBadge(fix, locs);
         const domOk = fix.dom_used;
+        const mcpId = fix.active_mcp || fix.error_category || '';
+        const locatorMCP = mcpId === 'locator' || (!mcpId && !!(locs.original || locs.healed));
+        const mcpLabel = fix.active_mcp_label || (CAT[mcpId] && CAT[mcpId].mcp) || '';
+        const problem = (fix.problem || '').trim();
 
-        // Locator diff row — use resolved locators (API + inference)
+        // Locator diff only when the locator MCP is the one that ran.
         let locRow = '';
-        if (locs.original || locs.healed) {
+        if (locatorMCP && (locs.original || locs.healed)) {
             const fixedDisplay = (locs.healed && locs.healed !== locs.original) ? locs.healed : '—';
+            const fixedClass = badge.precise ? 'hc-loc hc-loc--ok' : 'hc-loc hc-loc--hold';
             locRow = `
             <div class="hc-locrow">
                 <div class="hc-locrow__col">
@@ -737,34 +792,49 @@ export async function openProposeFix(id) {
                 <span class="hc-arrow">${ICON.arrow}</span>
                 <div class="hc-locrow__col">
                     <span class="hc-loclbl">Fixed selector</span>
-                    <code class="hc-loc hc-loc--ok">${esc(fixedDisplay)}</code>
+                    <code class="${fixedClass}">${esc(fixedDisplay)}</code>
                 </div>
                 <span class="hc-conf hc-conf--${badge.conf}">${esc(badge.label)}</span>
             </div>`;
         }
 
-        const domNote = !domOk
-            ? `<p class="hc-panel__dom-note">${esc(fix.dom_capture_hint || 'No page HTML was captured at failure time. Enable the DOM capture hook for your E2E framework (see tests/README.md).')}</p>`
+        const intent = locatorMCP ? (fix.intent || '').trim() : '';
+        const intentBlock = intent
+            ? `<div class="hc-intent${badge.precise ? ' hc-intent--ok' : ''}"><strong>What the test is doing</strong><p>${esc(intent)}</p></div>`
             : '';
 
-        const expl = fix.explanation
-            ? `<div class="hc-panel__expl"><strong>Explanation</strong><p>${esc(fix.explanation)}</p></div>`
+        const mcpBlock = (mcpLabel || problem)
+            ? `<div class="hc-mcp"><div class="hc-mcp__top"><span class="hc-mcp__dot" aria-hidden="true"></span><strong>${esc(mcpLabel || 'MCP')}</strong>${fix.active_mcp_tool ? `<code>${esc(fix.active_mcp_tool)}</code>` : ''}</div>${problem ? `<p>${esc(problem)}</p>` : ''}</div>`
             : '';
 
-        const code = fix.code ? renderFixCodeBlock(fix.code, fix, id) : '';
+        const domNote = locatorMCP && !domOk
+            ? `<p class="hc-panel__dom-note">${esc(fix.dom_capture_hint || 'Locator MCP is active. This run did not store the page HTML, so a replacement cannot be verified in green.')}</p>`
+            : '';
+
+        const explText = (fix.explanation || '').trim();
+        const expl = explText && explText !== problem
+            ? `<div class="hc-panel__expl"><strong>Explanation</strong><p>${esc(explText)}</p></div>`
+            : '';
+
+        const code = (locatorMCP || fix.code) && fix.code ? renderFixCodeBlock(fix.code, fix, id) : '';
         window[`__fixCode_${id}`] = resolveDisplayCode(fix);
 
         panel.innerHTML = `
         <div class="hc-panel__inner">
             <div class="hc-panel__head">
-                <span class="hc-panel__title">${ICON.star} AI Fix Proposal</span>
+                <span class="hc-panel__title">${ICON.star} ${esc(mcpLabel || 'AI Fix Proposal')}</span>
                 <button class="hc-panel__close" onclick="document.getElementById('fix-proposal-${id}').style.display='none'">${ICON.close}</button>
             </div>
+            ${mcpBlock}
             ${locRow}
+            ${intentBlock}
             ${domNote}
             ${expl}
             ${code}
         </div>`;
+        const changedRow = panel.querySelector('.hc-code-line--verified');
+        const box = panel.querySelector('.hc-code-lines');
+        if (box && changedRow) box.scrollTop = Math.max(0, changedRow.offsetTop - 8);
     } catch (e) {
         panel.innerHTML = `<div class="hc-panel__error">${esc(String(e))}</div>`;
     }

@@ -53,6 +53,31 @@ func TestFindTestSourceInRepo_WalksTestDirs(t *testing.T) {
 	}
 }
 
+func TestFindTestSourceInRepo_IgnoresAppSource(t *testing.T) {
+	root := t.TempDir()
+	web := filepath.Join(root, "web", "js")
+	testsDir := filepath.Join(root, "tests", "selenium-pytest")
+	if err := os.MkdirAll(web, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(testsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	app := "export function deleteHealingFailure() { /* healing selector */ }"
+	if err := os.WriteFile(filepath.Join(web, "healing.js"), []byte(app), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	py := "def test_broken_submit_selector_self_healing_demo(self, driver):\n    BROKEN_SUBMIT = '[data-testid=\"sign-in-button\"]'\n"
+	if err := os.WriteFile(filepath.Join(testsDir, "test_selenium_sample.py"), []byte(py), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	name := "[Selenium] tests.selenium-pytest.test_selenium_sample.TestFormAuthentication > test_broken_submit_selector_self_healing_demo"
+	got := FindTestSourceInRepo(root, name)
+	if !strings.Contains(got, "test_broken_submit_selector_self_healing_demo") || strings.Contains(got, "deleteHealingFailure") {
+		t.Fatalf("expected the selenium test, got %q", got)
+	}
+}
+
 func TestReadTestFileAtPaths_RelativePath(t *testing.T) {
 	root := t.TempDir()
 	sub := filepath.Join(root, "tests", "login")

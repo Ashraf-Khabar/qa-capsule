@@ -142,7 +142,7 @@ func notifyNewMentions(config *core.Config, r *http.Request, author string, inci
 		log.Printf("[MENTION] could not build a direct link: %v", err)
 		return
 	}
-	link := requestPublicBase(r) + "/l/" + token
+	link := requestPublicBase(r) + linkPath(token)
 	subject, body := mentionEmail(authorName, link)
 	cfg := config
 	for _, to := range recipients {

@@ -233,6 +233,8 @@ export function applyDefaultLandingView(prefs, role) {
     if (!role || !canAccessView(role, view)) return;
     if (window.__qaLandingViewApplied) return;
     window.__qaLandingViewApplied = true;
+    const here = window.location.pathname || '';
+    if (here.startsWith('/l/') || /^\/[a-z0-9]{4}\/[a-z0-9]{4}\/[^/]+$/.test(here)) return;
     const nav = document.querySelector(`.nav-item[onclick*="switchView('${view}'"]`);
     if (typeof window.switchView === 'function') window.switchView(view, nav);
 }

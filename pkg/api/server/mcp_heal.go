@@ -27,6 +27,7 @@ import (
 
 	aiPkg "github.com/SRE-Capsule/sre-capsule-community/pkg/ai"
 	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
+	"github.com/SRE-Capsule/sre-capsule-community/pkg/healing"
 )
 
 // HealResult is the structured payload returned by the heal_incident tool.
@@ -36,8 +37,16 @@ type HealResult struct {
 	Project    string `json:"project"`
 	Status     string `json:"status"`
 
-	// ErrorType classifies the failure: "locator", "script_failure", or "unknown".
+	// ErrorType classifies the failure: "locator", "assertion", "timeout", "network", "stale_element", "script_failure", or "unknown".
 	ErrorType string `json:"error_type"`
+	// ActiveMCP is the single specialist activated for this failure.
+	ActiveMCP string `json:"active_mcp"`
+	// ActiveMCPLabel is the specialist name shown in the hub.
+	ActiveMCPLabel string `json:"active_mcp_label"`
+	// ActiveMCPTool is the only MCP tool the agent should call.
+	ActiveMCPTool string `json:"active_mcp_tool"`
+	// Problem is the one-sentence diagnosis. Other failure modes are omitted.
+	Problem string `json:"problem"`
 	// Framework is the detected test framework (Playwright, Cypress, Robot, etc.).
 	Framework string `json:"framework"`
 
@@ -110,21 +119,26 @@ func mcpHealIncident(incidentID int64) (map[string]interface{}, error) {
 	combinedErr := errorMsg + "\n" + stackTrace
 	isLocator := core.IsLocatorFailure(combinedErr, stackTrace, testSource, testName)
 
-	errorType := "script_failure"
+	category := healing.ClassifyError(combinedErr)
 	if isLocator {
-		errorType = "locator"
+		category = healing.CategoryLocator
 	}
+	spec := healing.SpecialistFor(category, testName, "")
 
 	result := HealResult{
-		IncidentID: incidentID,
-		TestName:   testName,
-		Project:    projectName,
-		Status:     status,
-		ErrorType:  errorType,
-		Framework:  framework,
+		IncidentID:     incidentID,
+		TestName:       testName,
+		Project:        projectName,
+		Status:         status,
+		ErrorType:      spec.ID,
+		ActiveMCP:      spec.ID,
+		ActiveMCPLabel: spec.Label,
+		ActiveMCPTool:  spec.Tool,
+		Problem:        spec.Problem,
+		Framework:      framework,
 	}
 
-	// ── 3a. Locator path ──────────────────────────────────────────────────────
+	// ── 3a. Locator path — only the locator MCP runs ─────────────────────────
 	if isLocator {
 		return mcpHealLocator(result, errorMsg, consoleLogs, stackTrace)
 	}
@@ -143,6 +157,12 @@ func mcpHealLocator(base HealResult, errorMsg, consoleLogs, stackTrace string) (
 	// Extract the broken locator from error logs and/or the test source file.
 	originalLocator := core.ResolveOriginalLocator(combinedErr, testSource, base.Framework)
 	base.OriginalLocator = originalLocator
+	spec := healing.SpecialistFor(healing.CategoryLocator, base.TestName, originalLocator)
+	base.ActiveMCP = spec.ID
+	base.ActiveMCPLabel = spec.Label
+	base.ActiveMCPTool = spec.Tool
+	base.Problem = spec.Problem
+	base.ErrorType = spec.ID
 
 	// Extract the page HTML that the test listener captured (stdout, stderr, or failure text).
 	pageHTML := core.ExtractDOMSnapshotFromLogs(consoleLogs, stackTrace, errorMsg)
@@ -417,7 +437,11 @@ func mcpAIHealLocatorDirect(incidentID int64, originalLocator, framework, pageHT
 		pageHTML = core.ExtractDOMSnapshotFromLogs(consoleLogs, errorLogs, errorMsg)
 	}
 
-	prompt := buildLocatorPrompt(originalLocator, framework, pageHTML, f.ErrorMessage)
+	testSource := ""
+	if incidentID > 0 {
+		testSource = autoReadTestFile(incidentID)
+	}
+	prompt := buildLocatorPrompt(originalLocator, framework, pageHTML, f.ErrorMessage, f.TestName, testSource)
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
@@ -444,11 +468,19 @@ func mcpAIHealLocatorDirect(incidentID int64, originalLocator, framework, pageHT
 
 	parsed := parseLocatorResponse(rawText)
 	if parsed.healed != "" && parsed.healed != originalLocator {
-		if pageHTML == "" || core.LocatorExistsInHTML(pageHTML, parsed.healed) {
+		verdict := core.AssessLocatorPrecision(pageHTML, originalLocator, parsed.healed, parsed.confidence)
+		if verdict.Verified {
+			expl := parsed.explanation
+			if parsed.intent != "" && !strings.Contains(strings.ToLower(expl), strings.ToLower(parsed.intent)) {
+				expl = "Intent: " + parsed.intent + ". " + expl
+			}
 			return mcpTextResult(map[string]interface{}{
 				"healed_locator": parsed.healed,
-				"confidence":     parsed.confidence,
-				"explanation":    parsed.explanation,
+				"confidence":     verdict.Confidence,
+				"explanation":    expl,
+				"intent":         parsed.intent,
+				"precision":      verdict.Level,
+				"dom_verified":   true,
 				"ai_powered":     true,
 				"dom_used":       pageHTML != "",
 			}), nil

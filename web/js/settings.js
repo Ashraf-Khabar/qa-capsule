@@ -19,6 +19,46 @@ let activePluginsForRouting = [];
 let sreRoutingControlsBound = false;
 export let selectedCurrency = 'USD';
 
+const CI_SYSTEMS = [
+    { id: 'gitlab', label: 'GitLab CI', field: 'GitLab Repository Path', placeholder: 'group/project', logo: '/img/ci/gitlab.png' },
+    { id: 'github', label: 'GitHub Actions', field: 'GitHub Workflow File', placeholder: 'build-deploy.yml', logo: '/img/ci/github.png' },
+    { id: 'jenkins', label: 'Jenkins', field: 'Jenkins Job Name', placeholder: 'PROD-Deployment-Job', logo: '/img/ci/jenkins.png' },
+    { id: 'azure', label: 'Azure Pipelines', field: 'Azure DevOps Pipeline', placeholder: 'org/project/pipeline', logo: '/img/ci/azure.png' },
+    { id: 'circleci', label: 'CircleCI', field: 'CircleCI Project', placeholder: 'org/repo', logo: '/img/ci/circleci.svg' },
+    { id: 'bitbucket', label: 'Bitbucket Pipelines', field: 'Bitbucket Repository', placeholder: 'workspace/repo', logo: '/img/ci/bitbucket.png' },
+    { id: 'teamcity', label: 'TeamCity', field: 'TeamCity Build', placeholder: 'Project_Build', logo: '/img/ci/teamcity.png' },
+    { id: 'travis', label: 'Travis CI', field: 'Travis Repository', placeholder: 'org/repo', logo: '/img/ci/travis.svg' },
+    { id: 'buildkite', label: 'Buildkite', field: 'Buildkite Pipeline', placeholder: 'org/pipeline', logo: '/img/ci/buildkite.svg' },
+    { id: 'cloudbuild', label: 'Cloud Build', field: 'Cloud Build Trigger', placeholder: 'project/trigger', logo: '/img/ci/cloudbuild.png' },
+    { id: 'bamboo', label: 'Bamboo', field: 'Bamboo Plan Key', placeholder: 'PROJ-PLAN', logo: '/img/ci/bamboo.svg' },
+];
+
+function ciMeta(id) {
+    return CI_SYSTEMS.find((item) => item.id === id) || null;
+}
+
+export function renderCICards() {
+    const grid = document.getElementById('ci-grid');
+    if (!grid || grid.dataset.ready === '1') return;
+    grid.dataset.ready = '1';
+    grid.innerHTML = CI_SYSTEMS.map((ci) => `
+        <button type="button" class="ci-card${ci.id === 'gitlab' ? ' active' : ''}" data-ci="${ci.id}">
+            <img class="ci-icon" src="${ci.logo}" alt="" width="32" height="32" draggable="false">
+            <span>${ci.label}</span>
+        </button>`).join('');
+    grid.addEventListener('click', (event) => {
+        const card = event.target.closest('.ci-card');
+        if (!card) return;
+        selectCI(card.dataset.ci, card);
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderCICards);
+} else {
+    renderCICards();
+}
+
 export let analyticsChart = null;
 export let evolutionChart = null;
 
@@ -40,15 +80,10 @@ export function selectCI(ciName, element) {
     const dynamicField = document.getElementById('dynamic-ci-field');
     const specificInput = document.getElementById('ci-specific');
 
-    if (ciName === 'gitlab') {
-        dynamicField.querySelector('label').innerText = 'GitLab Repository Path';
-        specificInput.placeholder = 'group/project';
-    } else if (ciName === 'github') {
-        dynamicField.querySelector('label').innerText = 'GitHub Action Workflow ID';
-        specificInput.placeholder = 'build-deploy.yml';
-    } else if (ciName === 'jenkins') {
-        dynamicField.querySelector('label').innerText = 'Jenkins Job Name';
-        specificInput.placeholder = 'PROD-Deployment-Job';
+    const meta = ciMeta(ciName);
+    if (meta && dynamicField && specificInput) {
+        dynamicField.querySelector('label').innerText = meta.field;
+        specificInput.placeholder = meta.placeholder;
     }
 
     const baseUrl = window.location.origin;
@@ -107,7 +142,14 @@ function bindGatewayTableClicks() {
     });
 }
 
+function ciSystemCell(id) {
+    const meta = ciMeta(id);
+    if (!meta) return escapePluginHtml(id || '');
+    return `<span class="ci-system-pill"><img src="${meta.logo}" alt="" width="18" height="18">${escapePluginHtml(meta.label)}</span>`;
+}
+
 export function loadGatewaysData() {
+    renderCICards();
     bindSRERoutingControls();
     bindGatewayTableClicks();
     const tbody = document.getElementById('projects-table-body');
@@ -127,7 +169,7 @@ export function loadGatewaysData() {
             tbody.innerHTML = allProjects.map(p => `
                 <tr>
                     <td><strong>${escapePluginHtml(p.name)}</strong></td>
-                    <td class="ci-system-cell">${escapePluginHtml(p.ci_system)}</td>
+                    <td class="ci-system-cell">${ciSystemCell(p.ci_system)}</td>
                     <td><code class="secret-mask">••••••••••••</code></td>
                     <td>${workflowTableBadge(p)}</td>
                     <td class="data-table__actions">
@@ -186,7 +228,8 @@ export function editProject(projectId) {
     }
     renderSRERoutingList();
 
-    const ciCard = document.querySelector(`.ci-card[onclick*="'${p.ci_system}'"]`);
+    renderCICards();
+    const ciCard = document.querySelector(`.ci-card[data-ci="${p.ci_system}"]`);
     if (ciCard) selectCI(p.ci_system, ciCard);
 
     const apiKeyInput = document.getElementById('ci-api-key');

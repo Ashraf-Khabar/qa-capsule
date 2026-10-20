@@ -24,6 +24,7 @@ func registerCollaborationRoutes(config *core.Config) {
 	http.HandleFunc("/api/users/directory", jwtAuthMiddleware(config, "", handleUserDirectory))
 	http.HandleFunc("/api/me/avatar", jwtAuthMiddleware(config, "", handleMyAvatar))
 	http.HandleFunc("/api/incident-comments", jwtAuthMiddleware(config, "", handleIncidentCommentBatch))
+	http.HandleFunc("/api/links", jwtAuthMiddleware(config, "", handleMintLink))
 	http.HandleFunc("/api/links/", jwtAuthMiddleware(config, "", handleSecureLink))
 }
 

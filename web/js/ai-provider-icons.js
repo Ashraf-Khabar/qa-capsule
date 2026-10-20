@@ -1,6 +1,6 @@
 /**
  * AI provider metadata and brand logos for the configuration picker.
- * Logos use each vendor's real mark and brand colors, drawn on a white chip.
+ * Marks are PNG files in /img/llm (LobeHub icon set, MIT), shown on a white chip.
  */
 
 export const AI_PROVIDERS = [
@@ -101,7 +101,17 @@ export function iconAiInsight() {
     </svg>`;
 }
 
+const PNG_LOGOS = new Set([
+    'openai', 'anthropic', 'gemini', 'mistral', 'groq', 'openrouter', 'azure', 'ollama',
+    'deepseek', 'xai', 'cohere', 'together', 'fireworks', 'perplexity', 'cerebras',
+    'sambanova', 'nvidia', 'huggingface', 'github', 'qwen', 'moonshot', 'zhipu',
+    'minimax', 'lmstudio', 'cloudflare'
+]);
+
 export function logoForProvider(providerId) {
+    if (PNG_LOGOS.has(providerId)) {
+        return `<img class="ai-provider-logo" src="/img/llm/${providerId}.png" alt="" width="32" height="32" draggable="false">`;
+    }
     return LOGOS[providerId] || LOGOS.disabled;
 }
 
@@ -115,30 +125,5 @@ function logo(body) {
 
 const LOGOS = {
     disabled: logo('<circle cx="12" cy="12" r="8" fill="none" stroke="#94a3b8" stroke-width="1.6"/><path d="M8 16 16 8" stroke="#94a3b8" stroke-width="1.6"/>'),
-    openai: logo('<path fill="#000" d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.938 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.516 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.305a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855-5.833-3.387 2.015-1.164a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023-.142-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.229V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135-2.02-1.164a.08.08 0 0 1-.038-.057V6.843a4.5 4.5 0 0 1 7.375-3.453l-.142.08-4.778 2.758a.795.795 0 0 0-.393.681zm1.49-3.208 2.602-1.5 2.607 1.5v3l-2.597 1.5-2.607-1.5z"/>'),
-    anthropic: logo('<path fill="#D97757" d="M16.8 2.2 13.4 12h-2.2L14.6 2.2zm-6.2 0L7.2 12H5L8.4 2.2zM19.2 2.2 22 12h-2.3L17 2.2z"/>'),
-    gemini: logo('<defs><linearGradient id="sre-gemini" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#1a73e8"/><stop offset=".55" stop-color="#8ab4f8"/><stop offset="1" stop-color="#f4397c"/></linearGradient></defs><path fill="url(#sre-gemini)" d="M12 1.2c.2 4.6 2.4 7.2 6.8 8.4-4.4 1.1-6.6 3.8-6.8 8.4-.2-4.6-2.4-7.3-6.8-8.4C9.6 8.4 11.8 5.8 12 1.2z"/>'),
-    mistral: logo('<g fill="#F54E00"><path d="M3 3h4v4H3zm6 0h4v4H9zm6 0h4v4h-4zM3 9h4v4H3zm12 0h4v4h-4zM9 15h4v4H9zm6 0h4v4h-4z"/></g>'),
-    groq: logo('<path fill="#F55036" d="M12 2.2A9.8 9.8 0 1 0 21.8 12 9.8 9.8 0 0 0 12 2.2zm0 3.2A6.6 6.6 0 0 1 18.2 15h-2.3A4.4 4.4 0 1 0 12 16.4V18a7.6 7.6 0 0 1 0-15.2z"/><path fill="#111" d="M11 10.2h4.2v1.7H11z"/>'),
-    openrouter: logo('<path fill="#6467F2" d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path fill="#fff" d="M12 8.2 8.2 12 12 15.8 15.8 12z"/>'),
-    azure: logo('<path fill="#0078D4" d="M13.2 3.2 8.4 18.6h3.2l.8-2.4h4.7L18 18.6h3.1L16.4 3.2zm.9 10.2 1.5-4.6 1.5 4.6z"/><path fill="#50E6FF" d="M3 16.8 8.6 4.2h2.2L5.2 16.8z" opacity=".9"/>'),
-    ollama: logo('<path fill="#000" d="M8 4.5a2.4 2.4 0 0 0-1.6 4.1C5 9.4 4 11 4 13v6.5h2.2V13c0-1.2.8-2.2 2-2.4V20h2.1v-6.2c.5.2 1.1.3 1.7.3s1.2-.1 1.7-.3V20H16v-9.4c1.2.2 2 1.2 2 2.4v6.5H20.2V13c0-2-1-3.6-2.4-4.4A2.4 2.4 0 0 0 16 4.5a2.4 2.4 0 0 0-2 .9 2.4 2.4 0 0 0-2-.9 2.4 2.4 0 0 0-2 .9 2.4 2.4 0 0 0-2-.9z"/>'),
-    deepseek: logo('<path fill="#4D6BFE" d="M4 14c2-6 6-8 8-8 4 0 6 3 8 3 2 0 2-2 2-2-3 5-6 7-9 7-3 0-6-2-9-0z"/><circle cx="16.5" cy="8.5" r="1.3" fill="#4D6BFE"/>'),
-    xai: logo('<path fill="#000" d="M4 5h3.2l4.8 6.4L16.8 5H20l-6.4 8.2L20.2 19H17l-5-6.6L7 19H3.8l6.6-8.4z"/>'),
-    cohere: logo('<path fill="#FF7759" d="M8 4h5.2a6.2 6.2 0 0 1 0 12.4H8z"/><path fill="#39594D" d="M8 7.2h4.4a3 3 0 0 1 0 6H8z"/>'),
-    together: logo('<path fill="#000" d="M4 16.5 12 4l8 12.5h-3.2L12 9.2 7.2 16.5z"/><path fill="#000" d="M7 19h10v2H7z"/>'),
-    fireworks: logo('<path fill="#6D28D9" d="M12 2 14 8l6 .4-4.6 3.8L16.8 18 12 14.8 7.2 18l1.4-5.8L4 8.4 10 8z"/>'),
-    perplexity: logo('<path fill="#20808D" d="M12 2.2 13.4 8 18.8 5.6 15.2 10.2 21 12l-5.8 1.8 3.6 4.6-5.4-2.4L12 21.8 10.6 16l-5.4 2.4 3.6-4.6L3 12l5.8-1.8L5.2 5.6 10.6 8z"/>'),
-    cerebras: logo('<path fill="#F15A29" d="M7 5h8.2A5.8 5.8 0 0 1 15 16.6L9.2 19V5z"/><path fill="#fff" d="M9.4 8.2h4.2a2.6 2.6 0 0 1 0 5.2H9.4z"/>'),
-    sambanova: logo('<path fill="#EE3A43" d="M3 16c4-8 8-8 9-8s5 2 9 8c-4-3-6-3-9-3s-5 0-9 3z"/><path fill="#111" d="M3 18h18v1.6H3z"/>'),
-    nvidia: logo('<path fill="#76B900" d="M4 12c1.2-4 4.2-6.4 8-6.4s6.8 2.4 8 6.4c-1.2 4-4.2 6.4-8 6.4S5.2 16 4 12z"/><circle cx="12" cy="12" r="3.1" fill="#fff"/><circle cx="12" cy="12" r="1.5" fill="#76B900"/>'),
-    huggingface: logo('<circle cx="12" cy="12" r="9" fill="#FFD21E"/><circle cx="3.6" cy="13" r="1.5" fill="#FFD21E"/><circle cx="20.4" cy="13" r="1.5" fill="#FFD21E"/><circle cx="9" cy="11" r="1.1" fill="#111"/><circle cx="15" cy="11" r="1.1" fill="#111"/><path d="M8.6 14.4c.9 1.6 5.9 1.6 6.8 0" fill="none" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>'),
-    github: logo('<path fill="#181717" d="M12 .3C5.4.3 0 5.7 0 12.3c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2.1c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.8-1.6 8.2-6.1 8.2-11.4C24 5.7 18.6.3 12 .3z"/>'),
-    qwen: logo('<path fill="#615CED" d="M12 2.4 14.2 8l6 .6-4.6 3.6 1.4 5.8L12 14.8 6.9 18l1.4-5.8L3.8 8.6 9.8 8z"/><circle cx="12" cy="12" r="2" fill="#fff"/>'),
-    moonshot: logo('<circle cx="12" cy="12" r="8" fill="#111"/><path fill="#fff" d="M14.2 6.2a6 6 0 1 0 0 11.6 5 5 0 0 1 0-11.6z"/>'),
-    zhipu: logo('<path fill="#2563EB" d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path fill="#fff" d="M8 9.2h8l-3.2 2.2H16L9.2 16v-2.6L12.4 12H8z"/>'),
-    minimax: logo('<path fill="#111" d="M3 17 7.2 6h2.2L12 13.2 14.6 6h2.2L21 17h-2.3l-2-7.2L14.2 17h-2.2l-2.5-7.2L7.3 17z"/>'),
-    lmstudio: logo('<rect x="3" y="3" width="18" height="18" rx="5" fill="#7C5CFF"/><path d="M7 14.5c1.2-3 2.2-3 3.2 0 .8 2.2 1.6 2.2 2.4 0 1-3 2-3 3.2 0" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>'),
-    cloudflare: logo('<path fill="#F38020" d="M18.6 15.2H7.8a3.6 3.6 0 0 1-.4-7.2 4.8 4.8 0 0 1 9.2-1.1 3.1 3.1 0 0 1 2 8.3z"/><path fill="#FAAD3F" d="M8.2 16.8h9.2c.8 0 1.2.2 1.2.8H7.4c0-.6.4-.8.8-.8z"/>'),
-    custom: logo('<rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="#334155" stroke-width="1.6"/><path stroke="#334155" stroke-width="1.6" d="M7 12h4M8 10v4M15 10v4M16 12h.1"/>')
+    custom: logo('<rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="#334155" stroke-width="1.6"/><path stroke="#334155" stroke-width="1.6" d="M7 12h4M8 10v4M15 10v4"/>')
 };

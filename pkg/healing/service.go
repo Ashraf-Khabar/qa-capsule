@@ -61,7 +61,10 @@ func (s *Service) ListInsights(ctx context.Context, projectName string, limit in
 		}
 		row.MCPHealed = mcpHealed == 1
 		row.ErrorCategory = ClassifyError(errMsg)
-		row.Summary = buildSummary(row.ErrorCategory, row.TestName)
+		spec := SpecialistFor(row.ErrorCategory, row.TestName, "")
+		row.ActiveMCP = spec.ID
+		row.ActiveMCPLabel = spec.Label
+		row.Summary = spec.Problem
 		row.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", created)
 		out = append(out, row)
 	}
@@ -76,6 +79,7 @@ func (s *Service) BuildContext(incidentID int64) (*Context, error) {
 	}
 	combined := strings.TrimSpace(inc.ErrorMessage + "\n" + inc.StackTrace)
 	category := ClassifyError(combined)
+	spec := SpecialistFor(category, inc.TestName, "")
 	return &Context{
 		IncidentID:       inc.ID,
 		ProjectName:      inc.ProjectName,
@@ -94,6 +98,10 @@ func (s *Service) BuildContext(incidentID int64) (*Context, error) {
 		CITags:           s.buildCITags(inc.ProjectName, inc.PipelineRunID, inc.Browser, inc.OS, inc.Viewport),
 		CreatedAt:        inc.CreatedAt,
 		ErrorCategory:    category,
+		ActiveMCP:        spec.ID,
+		ActiveMCPLabel:   spec.Label,
+		ActiveMCPTool:    spec.Tool,
+		Problem:          spec.Problem,
 		SelectorHint:     extractSelectorHint(combined),
 		SuggestedActions: SuggestedActions(category),
 		MCPPrompt:        buildMCPPrompt(incidentID, category),
@@ -114,8 +122,12 @@ func (s *Service) ProposeFix(incidentID int64, fileContent string) (*Proposal, e
 	}
 	return &Proposal{
 		Code:             code,
-		Explanation:      buildProposalExplanation(ctx.ErrorCategory, ctx.TestName, fileContent),
+		Explanation:      ctx.Problem,
 		ErrorCategory:    ctx.ErrorCategory,
+		ActiveMCP:        ctx.ActiveMCP,
+		ActiveMCPLabel:   ctx.ActiveMCPLabel,
+		ActiveMCPTool:    ctx.ActiveMCPTool,
+		Problem:          ctx.Problem,
 		SelectorHint:     ctx.SelectorHint,
 		SuggestedActions: ctx.SuggestedActions,
 		MCPPrompt:        ctx.MCPPrompt,

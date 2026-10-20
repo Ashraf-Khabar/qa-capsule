@@ -8,6 +8,7 @@ const (
 	CategoryAssertion    = "assertion"
 	CategoryNetwork      = "network"
 	CategoryStaleElement = "stale_element"
+	CategoryScript       = "script_failure"
 	CategoryUnknown      = "unknown"
 )
 
@@ -33,6 +34,10 @@ func ClassifyError(err string) string {
 	case strings.Contains(lower, "econnrefused"), strings.Contains(lower, "network"), strings.Contains(lower, "fetch failed"),
 		strings.Contains(lower, "connection refused"), strings.Contains(lower, "502"), strings.Contains(lower, "503"):
 		return CategoryNetwork
+	case strings.Contains(lower, "syntaxerror"), strings.Contains(lower, "referenceerror"),
+		strings.Contains(lower, "typeerror"), strings.Contains(lower, "indentationerror"),
+		strings.Contains(lower, "traceback (most recent call last)"):
+		return CategoryScript
 	default:
 		return CategoryUnknown
 	}
@@ -87,43 +92,14 @@ func extractSelectorHint(err string) string {
 	return ""
 }
 
-func buildSummary(category, testName string) string {
-	switch category {
-	case CategoryTimeout:
-		return "Timeout failure on \"" + testName + "\" — stabilize waits or target service."
-	case CategoryLocator:
-		return "Locator/element failure on \"" + testName + "\" — review selectors and DOM timing."
-	case CategoryStaleElement:
-		return "Stale element on \"" + testName + "\" — re-query after DOM updates."
-	case CategoryAssertion:
-		return "Assertion failure on \"" + testName + "\" — verify expected vs actual."
-	case CategoryNetwork:
-		return "Network/upstream failure on \"" + testName + "\" — check CI env and dependencies."
-	default:
-		return "Failure on \"" + testName + "\" — use MCP context to propose a minimal fix."
-	}
-}
-
 func buildMCPPrompt(incidentID int64, category string) string {
+	spec := SpecialistFor(category, "", "")
+	id := formatInt(incidentID)
 	return strings.TrimSpace(strings.Join([]string{
-		"Self-heal this CI test failure using SRE Capsule MCP tools.",
-		"1. Call get_incident_context with incident_id=" + formatInt(incidentID) + ".",
-		"2. Read the test source file from the repo (infer path from stack trace).",
-		"3. Apply the smallest correct fix for category \"" + category + "\" (framework-agnostic).",
-		"4. Optionally call create_remediation_pr after review.",
+		spec.Problem,
+		spec.Label + " is active. Call only " + spec.Tool + " with incident_id=" + id + ".",
+		"Fix only that problem. Leave every other step unchanged.",
 	}, "\n"))
-}
-
-func buildProposalExplanation(category, testName string, fileContent string) string {
-	actions := SuggestedActions(category)
-	base := "Self-healing context for \"" + testName + "\" (" + category + "). "
-	if len(actions) > 0 {
-		base += actions[0]
-	}
-	if strings.TrimSpace(fileContent) == "" {
-		base += " Paste source file content in propose request or open the test file in your IDE via MCP."
-	}
-	return base
 }
 
 func truncate(s string, n int) string {

@@ -206,7 +206,7 @@ func mcpToolDefinitions() []map[string]interface{} {
 			// or extracts the captured page DOM, calls the configured AI provider,
 			// and returns a structured fix with a plain-English explanation.
 			"name":        "heal_incident",
-			"description": "Full AI-powered self-healing for one incident. Classifies the failure (locator vs script), reads the test file or captured page DOM automatically, calls Groq/Gemini/OpenAI, and returns the corrected locator or corrected code with a detailed explanation and next steps.",
+			"description": "Classifies one incident and activates only the matching MCP (locator, assertion, timeout, network, stale element, or script). Returns that problem and its fix. Other specialists stay idle.",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{

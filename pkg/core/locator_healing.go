@@ -215,26 +215,26 @@ func ResolveHealedFromTestContext(testSource, original string) (healed string, c
 }
 
 var (
-	robotVarAssignRe    = regexp.MustCompile(`(?m)^\$\{(\w+)\}\s+(.+)$`)
-	robotActionRe       = regexp.MustCompile(`(?m)^\s*(Click|Fill Text|Get Element|Tap|Type Text|Wait For Elements State)\s+(\S+)`)
-	pwLocatorSQRe       = regexp.MustCompile(`(?:page\.)?locator\(\s*'([^']*)'\s*\)`)
-	pwLocatorDQRe       = regexp.MustCompile(`(?:page\.)?locator\(\s*"([^"]*)"\s*\)`)
-	pwGetByRoleRe       = regexp.MustCompile(`getByRole\s*\(\s*['"](\w+)['"]`)
-	pwGetByTestIdSQRe   = regexp.MustCompile(`getByTestId\s*\(\s*'([^']*)'`)
-	pwGetByTestIdDQRe   = regexp.MustCompile(`getByTestId\s*\(\s*"([^"]*)"`)
-	pwGetByLabelSQRe    = regexp.MustCompile(`getByLabel\s*\(\s*'([^']*)'`)
-	pwGetByLabelDQRe    = regexp.MustCompile(`getByLabel\s*\(\s*"([^"]*)"`)
-	cyGetSQRe           = regexp.MustCompile(`cy\.get\(\s*'([^']*)'\s*\)`)
-	cyGetDQRe           = regexp.MustCompile(`cy\.get\(\s*"([^"]*)"\s*\)`)
-	cyContainsSQRe      = regexp.MustCompile(`cy\.contains\s*\(\s*'([^']*)'`)
-	cyContainsDQRe      = regexp.MustCompile(`cy\.contains\s*\(\s*"([^"]*)"`)
-	cypressConstRe      = regexp.MustCompile(`(?m)^const\s+(\w+)\s*=\s*['"]([^'"]+)['"]`)
-	cypressGetVarRe     = regexp.MustCompile(`cy\.get\(\s*([A-Z_][A-Z0-9_]*)\s*\)`)
-	seleniumPyBySQRe    = regexp.MustCompile(`find_element\s*\(\s*By\.\w+\s*,\s*'([^']*)'`)
-	seleniumPyByDQRe    = regexp.MustCompile(`find_element\s*\(\s*By\.\w+\s*,\s*"([^"]*)"`)
-	seleniumJavaBySQRe  = regexp.MustCompile(`findElement\s*\(\s*By\.\w+\(\s*'([^']*)'\s*\)`)
-	seleniumJavaByDQRe  = regexp.MustCompile(`findElement\s*\(\s*By\.\w+\(\s*"([^"]*)"\s*\)`)
-	seleniumFindByRe    = regexp.MustCompile(`@FindBy\s*\([^)]*['"]([^'"]+)['"]`)
+	robotVarAssignRe      = regexp.MustCompile(`(?m)^\$\{(\w+)\}\s+(.+)$`)
+	robotActionRe         = regexp.MustCompile(`(?m)^\s*(Click|Fill Text|Get Element|Tap|Type Text|Wait For Elements State)\s+(\S+)`)
+	pwLocatorSQRe         = regexp.MustCompile(`(?:page\.)?locator\(\s*'([^']*)'\s*\)`)
+	pwLocatorDQRe         = regexp.MustCompile(`(?:page\.)?locator\(\s*"([^"]*)"\s*\)`)
+	pwGetByRoleRe         = regexp.MustCompile(`getByRole\s*\(\s*['"](\w+)['"]`)
+	pwGetByTestIdSQRe     = regexp.MustCompile(`getByTestId\s*\(\s*'([^']*)'`)
+	pwGetByTestIdDQRe     = regexp.MustCompile(`getByTestId\s*\(\s*"([^"]*)"`)
+	pwGetByLabelSQRe      = regexp.MustCompile(`getByLabel\s*\(\s*'([^']*)'`)
+	pwGetByLabelDQRe      = regexp.MustCompile(`getByLabel\s*\(\s*"([^"]*)"`)
+	cyGetSQRe             = regexp.MustCompile(`cy\.get\(\s*'([^']*)'\s*\)`)
+	cyGetDQRe             = regexp.MustCompile(`cy\.get\(\s*"([^"]*)"\s*\)`)
+	cyContainsSQRe        = regexp.MustCompile(`cy\.contains\s*\(\s*'([^']*)'`)
+	cyContainsDQRe        = regexp.MustCompile(`cy\.contains\s*\(\s*"([^"]*)"`)
+	cypressConstRe        = regexp.MustCompile(`(?m)^const\s+(\w+)\s*=\s*['"]([^'"]+)['"]`)
+	cypressGetVarRe       = regexp.MustCompile(`cy\.get\(\s*([A-Z_][A-Z0-9_]*)\s*\)`)
+	seleniumPyBySQRe      = regexp.MustCompile(`find_element\s*\(\s*By\.\w+\s*,\s*'([^']*)'`)
+	seleniumPyByDQRe      = regexp.MustCompile(`find_element\s*\(\s*By\.\w+\s*,\s*"([^"]*)"`)
+	seleniumJavaBySQRe    = regexp.MustCompile(`findElement\s*\(\s*By\.\w+\(\s*'([^']*)'\s*\)`)
+	seleniumJavaByDQRe    = regexp.MustCompile(`findElement\s*\(\s*By\.\w+\(\s*"([^"]*)"\s*\)`)
+	seleniumFindByRe      = regexp.MustCompile(`@FindBy\s*\([^)]*['"]([^'"]+)['"]`)
 	pythonPageLocatorSQRe = regexp.MustCompile(`page\.(?:locator|get_by_\w+)\(\s*'([^']*)'`)
 	pythonPageLocatorDQRe = regexp.MustCompile(`page\.(?:locator|get_by_\w+)\(\s*"([^"]*)"`)
 )
@@ -245,6 +245,9 @@ func ExtractLocatorFromTestSource(source, framework string) string {
 	source = strings.TrimSpace(source)
 	if source == "" {
 		return ""
+	}
+	if loc := extractBrokenConstant(source); loc != "" {
+		return loc
 	}
 	fw := strings.ToLower(framework)
 
@@ -303,6 +306,26 @@ func ExtractLocatorFromTestSource(source, framework string) string {
 	} {
 		if m := re.FindStringSubmatch(source); len(m) >= 2 && looksLikeBrokenSelector(m[1]) {
 			return m[1]
+		}
+	}
+	return ""
+}
+
+var brokenAssignRe = regexp.MustCompile(`(?m)\bBROKEN_[A-Z0-9_]+\s*=\s*(?:'([^']*)'|"([^"]*)")`)
+
+// extractBrokenConstant reads BROKEN_* = 'selector' assignments used by the demo suites.
+func extractBrokenConstant(source string) string {
+	for _, m := range brokenAssignRe.FindAllStringSubmatch(source, -1) {
+		val := ""
+		if len(m) > 1 {
+			val = m[1]
+		}
+		if val == "" && len(m) > 2 {
+			val = m[2]
+		}
+		val = strings.TrimSpace(val)
+		if looksLikeBrokenSelector(val) {
+			return val
 		}
 	}
 	return ""
@@ -682,9 +705,11 @@ func ExtractDOMSnapshotFromLogs(consoleLogs, errorLogs, errorMessage string) str
 // ── HTML-aware locator healing (no LLM) ───────────────────────────────────────
 
 var (
-	interactiveVoidTagRe  = regexp.MustCompile(`(?i)<(input|textarea|select)\b([^>]*)/?>`)
-	interactiveButtonRe   = regexp.MustCompile(`(?i)<button\b([^>]*)>([^<]*)</button\s*>`)
-	interactiveAnchorRe   = regexp.MustCompile(`(?i)<a\b([^>]*)>([^<]*)</a\s*>`)
+	interactiveVoidTagRe = regexp.MustCompile(`(?i)<(input|textarea|select)\b([^>]*)/?>`)
+	interactiveButtonRe  = regexp.MustCompile(`(?is)<button\b([^>]*)>(.*?)</button>`)
+	tagStripRe           = regexp.MustCompile(`(?s)<[^>]*>`)
+	interactiveAnchorRe  = regexp.MustCompile(`(?is)<a\b([^>]*)>(.*?)</a>`)
+	attrHrefRe           = regexp.MustCompile(`(?i)\bhref\s*=\s*["']([^"']+)["']`)
 	attrIDRe             = regexp.MustCompile(`(?i)\bid\s*=\s*["']([^"']+)["']`)
 	attrNameRe           = regexp.MustCompile(`(?i)\bname\s*=\s*["']([^"']+)["']`)
 	attrTypeRe           = regexp.MustCompile(`(?i)\btype\s*=\s*["']([^"']+)["']`)
@@ -692,18 +717,21 @@ var (
 	attrDataTestRe       = regexp.MustCompile(`(?i)\bdata-test\s*=\s*["']([^"']+)["']`)
 	attrDataQARe         = regexp.MustCompile(`(?i)\bdata-qa\s*=\s*["']([^"']+)["']`)
 	attrAriaLabelRe      = regexp.MustCompile(`(?i)\baria-label\s*=\s*["']([^"']+)["']`)
+	attrPlaceholderRe    = regexp.MustCompile(`(?i)\bplaceholder\s*=\s*["']([^"']+)["']`)
 )
 
 type domElement struct {
-	tag       string
-	id        string
-	name      string
-	typ       string
-	testID    string
-	dataTest  string
-	dataQA    string
-	ariaLabel string
-	text      string
+	tag         string
+	id          string
+	name        string
+	typ         string
+	testID      string
+	dataTest    string
+	dataQA      string
+	ariaLabel   string
+	placeholder string
+	href        string
+	text        string
 }
 
 func attrFirst(re *regexp.Regexp, s string) string {
@@ -724,15 +752,17 @@ func ParseInteractiveElements(html string) []domElement {
 	add := func(tag, attrs, text string) {
 		tag = strings.ToLower(tag)
 		el := domElement{
-			tag:       tag,
-			id:        attrFirst(attrIDRe, attrs),
-			name:      attrFirst(attrNameRe, attrs),
-			typ:       attrFirst(attrTypeRe, attrs),
-			testID:    attrFirst(attrTestIDRe, attrs),
-			dataTest:  attrFirst(attrDataTestRe, attrs),
-			dataQA:    attrFirst(attrDataQARe, attrs),
-			ariaLabel: attrFirst(attrAriaLabelRe, attrs),
-			text:      strings.TrimSpace(text),
+			tag:         tag,
+			id:          attrFirst(attrIDRe, attrs),
+			name:        attrFirst(attrNameRe, attrs),
+			typ:         attrFirst(attrTypeRe, attrs),
+			testID:      attrFirst(attrTestIDRe, attrs),
+			dataTest:    attrFirst(attrDataTestRe, attrs),
+			dataQA:      attrFirst(attrDataQARe, attrs),
+			ariaLabel:   attrFirst(attrAriaLabelRe, attrs),
+			placeholder: attrFirst(attrPlaceholderRe, attrs),
+			href:        attrFirst(attrHrefRe, attrs),
+			text:        strings.TrimSpace(text),
 		}
 		key := el.tag + "|" + el.id + "|" + el.testID + "|" + el.dataTest + "|" + el.dataQA + "|" + el.name
 		if seen[key] {
@@ -748,12 +778,12 @@ func ParseInteractiveElements(html string) []domElement {
 	}
 	for _, m := range interactiveButtonRe.FindAllStringSubmatch(html, -1) {
 		if len(m) >= 3 {
-			add("button", m[1], m[2])
+			add("button", m[1], strings.TrimSpace(tagStripRe.ReplaceAllString(m[2], " ")))
 		}
 	}
 	for _, m := range interactiveAnchorRe.FindAllStringSubmatch(html, -1) {
 		if len(m) >= 3 {
-			add("a", m[1], m[2])
+			add("a", m[1], strings.TrimSpace(tagStripRe.ReplaceAllString(m[2], " ")))
 		}
 	}
 	return out
@@ -781,6 +811,9 @@ func FormatInteractiveElements(html string, max int) string {
 		if el.testID != "" {
 			parts = append(parts, "data-testid="+el.testID)
 		}
+		if el.dataTest != "" {
+			parts = append(parts, "data-test="+el.dataTest)
+		}
 		if el.dataQA != "" {
 			parts = append(parts, "data-qa="+el.dataQA)
 		}
@@ -790,11 +823,20 @@ func FormatInteractiveElements(html string, max int) string {
 		if el.typ != "" {
 			parts = append(parts, "type="+el.typ)
 		}
+		if el.placeholder != "" {
+			parts = append(parts, "placeholder="+truncateDOMText(el.placeholder, 40))
+		}
 		if el.ariaLabel != "" {
 			parts = append(parts, "aria-label="+el.ariaLabel)
 		}
+		if el.href != "" {
+			parts = append(parts, "href="+el.href)
+		}
 		if el.text != "" {
 			parts = append(parts, "text="+truncateDOMText(el.text, 40))
+		}
+		if sel := elementToSelector(el); sel != "" && sel != el.tag {
+			parts = append(parts, "selector="+sel)
 		}
 		b.WriteString("- ")
 		b.WriteString(strings.Join(parts, " | "))
@@ -811,9 +853,122 @@ func truncateDOMText(s string, n int) string {
 	return s[:n] + "…"
 }
 
+// CanonicalSelector strips framework prefixes so css=[data-test="x"] and [data-test="x"] compare equally.
+func CanonicalSelector(selector string) string {
+	s := strings.TrimSpace(selector)
+	lower := strings.ToLower(s)
+	for _, p := range []string{"css=", "xpath=", "id="} {
+		if strings.HasPrefix(lower, p) {
+			return strings.TrimSpace(s[len(p):])
+		}
+	}
+	return s
+}
+
+// LocatorPrecision is how reliable a proposed selector is against captured page HTML.
+type LocatorPrecision struct {
+	Verified   bool
+	Level      string
+	Confidence float64
+	Matches    int
+}
+
+// AssessLocatorPrecision checks that a replacement exists on the page and is unique.
+// High means one stable selector (id, data-test, data-testid, data-qa, name, aria-label).
+func AssessLocatorPrecision(html, original, healed string, modelConfidence float64) LocatorPrecision {
+	healed = strings.TrimSpace(healed)
+	out := LocatorPrecision{Level: "low", Confidence: 0.2}
+	if healed == "" || LocatorSameAs(healed, original) || IsEquivalentBrokenLocator(original, healed) {
+		return out
+	}
+	if strings.TrimSpace(html) == "" {
+		conf := modelConfidence
+		if conf <= 0 || conf > 0.4 {
+			conf = 0.35
+		}
+		out.Confidence = conf
+		return out
+	}
+	matches := countSelectorHits(html, healed)
+	out.Matches = matches
+	if matches < 1 || !LocatorExistsInHTML(html, healed) {
+		out.Confidence = 0.2
+		return out
+	}
+	out.Verified = true
+	stable := isStableSelector(healed)
+	switch {
+	case matches == 1 && stable:
+		out.Level = "high"
+		conf := modelConfidence
+		if conf < 0.9 {
+			conf = 0.93
+		}
+		if conf > 0.97 {
+			conf = 0.97
+		}
+		out.Confidence = conf
+	case matches == 1:
+		out.Level = "medium"
+		conf := modelConfidence
+		if conf <= 0 || conf > 0.62 {
+			conf = 0.58
+		}
+		out.Confidence = conf
+	default:
+		out.Level = "medium"
+		out.Confidence = 0.5
+	}
+	return out
+}
+
+func isStableSelector(selector string) bool {
+	sel := strings.ToLower(CanonicalSelector(selector))
+	if strings.HasPrefix(sel, "#") && len(sel) > 1 {
+		return true
+	}
+	for _, attr := range []string{"data-testid", "data-test", "data-qa", "name=", "aria-label", "placeholder="} {
+		if strings.Contains(sel, attr) {
+			return true
+		}
+	}
+	// A login page often has one submit control and no test id. That control is
+	// stable when it is the only match.
+	if sel == `button[type="submit"]` || sel == `input[type="submit"]` {
+		return true
+	}
+	return strings.HasPrefix(sel, `a[href="`) && strings.HasSuffix(sel, `"]`) && !strings.Contains(sel, "*")
+}
+
+func countSelectorHits(html, selector string) int {
+	sel := CanonicalSelector(selector)
+	if html == "" || sel == "" {
+		return 0
+	}
+	lower := strings.ToLower(html)
+	if strings.HasPrefix(sel, "#") {
+		id := strings.ToLower(sel[1:])
+		if id == "" {
+			return 0
+		}
+		return strings.Count(lower, `id="`+id+`"`) + strings.Count(lower, `id='`+id+`'`)
+	}
+	re := regexp.MustCompile(`\[([^=\]]+)=["']([^"']+)["']\]`)
+	if m := re.FindStringSubmatch(sel); len(m) >= 3 {
+		attr := strings.ToLower(strings.TrimSpace(m[1]))
+		val := strings.ToLower(strings.TrimSpace(m[2]))
+		return strings.Count(lower, attr+`="`+val+`"`) + strings.Count(lower, attr+`='`+val+`'`)
+	}
+	needle := strings.ToLower(sel)
+	if needle == "" {
+		return 0
+	}
+	return strings.Count(lower, needle)
+}
+
 // LocatorExistsInHTML returns true when key parts of a CSS selector appear in the HTML.
 func LocatorExistsInHTML(html, selector string) bool {
-	selector = strings.TrimSpace(selector)
+	selector = CanonicalSelector(selector)
 	if html == "" || selector == "" {
 		return false
 	}
@@ -915,6 +1070,9 @@ func elementToSelector(el domElement) string {
 	if el.ariaLabel != "" {
 		return `[aria-label="` + el.ariaLabel + `"]`
 	}
+	if el.tag == "a" && el.href != "" && !strings.HasPrefix(el.href, "#") {
+		return `a[href="` + el.href + `"]`
+	}
 	return el.tag
 }
 
@@ -923,9 +1081,12 @@ func scoreElement(el domElement, tagHint string, keywords []string) int {
 	if tagHint != "" && el.tag == tagHint {
 		score += 3
 	}
-	blob := strings.ToLower(el.id + " " + el.name + " " + el.typ + " " + el.testID + " " + el.dataTest + " " + el.dataQA + " " + el.ariaLabel + " " + el.text)
+	blob := strings.ToLower(el.id + " " + el.name + " " + el.typ + " " + el.testID + " " + el.dataTest + " " + el.dataQA + " " + el.ariaLabel + " " + el.href + " " + el.text)
 	for _, kw := range keywords {
 		if kw != "" && strings.Contains(blob, kw) {
+			score += 2
+		}
+		if kw != "" && el.href != "" && strings.Contains(strings.ToLower(el.href), kw) {
 			score += 2
 		}
 	}
@@ -968,6 +1129,9 @@ func HealLocatorFromHTML(originalLocator, html string) (healed string, confidenc
 		}
 	}
 	if bestScore < 4 {
+		if sel := uniqueSubmitSelector(els, originalLocator); sel != "" && LocatorExistsInHTML(html, sel) {
+			return sel, 0.93, "The page has one submit control for this sign-in step. Use " + sel + ".", true
+		}
 		return "", 0, "", false
 	}
 
@@ -991,6 +1155,44 @@ func HealLocatorFromHTML(originalLocator, html string) (healed string, confidenc
 		healed, best.tag, best.id, best.typ,
 	)
 	return healed, confidence, explanation, true
+}
+
+func isSubmitIntent(original string) bool {
+	lower := strings.ToLower(original)
+	for _, word := range []string{"sign-in", "signin", "sign_in", "login", "log-in", "submit"} {
+		if strings.Contains(lower, word) {
+			return true
+		}
+	}
+	return false
+}
+
+// uniqueSubmitSelector returns the only submit control when the broken locator
+// is a sign-in or submit button and the page does not give that control an id.
+func uniqueSubmitSelector(els []domElement, original string) string {
+	if !isSubmitIntent(original) {
+		return ""
+	}
+	buttons, inputs := 0, 0
+	for _, el := range els {
+		if !strings.EqualFold(el.typ, "submit") {
+			continue
+		}
+		switch el.tag {
+		case "button":
+			buttons++
+		case "input":
+			inputs++
+		}
+	}
+	switch {
+	case buttons == 1 && inputs == 0:
+		return `button[type="submit"]`
+	case inputs == 1 && buttons == 0:
+		return `input[type="submit"]`
+	default:
+		return ""
+	}
 }
 
 // ── Internal helpers ──────────────────────────────────────────────────────────

@@ -22,9 +22,10 @@ import { setupAutocomplete } from './js/autocomplete.js';
 import { initTheme, applyTheme } from './js/ui.js';
 import { initI18n, t, setLocale, applyI18n } from './js/i18n.js';
 import { initCommentUI, openResolveComposer, hydrateOpenComments } from './js/comments.js';
+import { publishSecureLink, secureLinkTokenFromPath } from './js/links.js';
 
 // EXPORT GLOBALLY FOR HTML INLINE HANDLERS
-Object.assign(window, { notify, showConfirmModal, showPromptModal, closeModal, toggleTheme, initSidebar, toggleSidebar, parseJwt, performLogout, fetchWithAuth, applyTheme, t, setLocale, applyI18n, openResolveComposer, hydrateOpenComments });
+Object.assign(window, { notify, showConfirmModal, showPromptModal, closeModal, toggleTheme, initSidebar, toggleSidebar, parseJwt, performLogout, fetchWithAuth, applyTheme, t, setLocale, applyI18n, openResolveComposer, hydrateOpenComments, publishSecureLink });
 
 // Bind all module functions to the window so HTML 'onclick' can find them
 for (const [key, value] of Object.entries(iam)) {
@@ -1319,6 +1320,9 @@ window.checkAuth = function () {
     document.getElementById('app-container').style.display = 'flex';
 
     pingApiServer().then(() => {
+        const linkToken = secureLinkTokenFromPath(window.location.pathname || '');
+        const linkMatch = linkToken ? [null, linkToken] : null;
+        if (linkMatch) window.__openingSecureLink = true;
         window.applyPermissions();
         if (window.bootstrapDashboardRangeFromPreferences) window.bootstrapDashboardRangeFromPreferences();
         window.restoreDashboardTimeRange();
@@ -1326,7 +1330,6 @@ window.checkAuth = function () {
 
         if (payload.role === 'admin') window.loadUsers();
 
-        const linkMatch = (window.location.pathname || '').match(/^\/l\/([^/]+)$/);
         if (linkMatch && window.openSecureLink) {
             window.openSecureLink(decodeURIComponent(linkMatch[1]));
         } else if (document.getElementById('view-dashboard').classList.contains('active')) {
@@ -1352,6 +1355,10 @@ window.checkAuth = function () {
         }
         if (document.getElementById('view-ingestion').classList.contains('active') && hasMinRole(payload.role, 'lead')) {
             if (window.loadGatewaysData) window.loadGatewaysData();
+        }
+        if (!linkMatch && window.publishSecureLink) {
+            const active = document.querySelector('.view-section.active')?.id?.replace(/^view-/, '') || 'dashboard';
+            window.publishSecureLink({ kind: 'view', view: active === 'about' ? 'about' : active, topic: active === 'about' ? (window.__aboutTopic || 'overview') : '' });
         }
         window.connectWebSocket();
     });
@@ -1461,6 +1468,10 @@ window.switchView = function (id, el) {
         if (window.loadAboutView) window.loadAboutView();
     }
     if (id === 'profile' && window.loadProfileView) window.loadProfileView();
+
+    if (!window.__openingSecureLink && id !== 'about' && window.publishSecureLink) {
+        window.publishSecureLink({ kind: 'view', view: id === 'rca' ? 'healing' : id });
+    }
 
     if (typeof window.applyI18n === 'function') window.applyI18n();
 }

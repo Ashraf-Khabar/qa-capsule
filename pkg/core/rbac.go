@@ -148,6 +148,52 @@ func CanPatchExecutionFlags(role string) bool {
 	return HasMinRole(role, RoleLead)
 }
 
+// CanAccessOperations is the telemetry dashboard and pipeline reports. Platform Admin uses Workspaces instead.
+func CanAccessOperations(role string) bool {
+	return NormalizeRole(role) != RoleAdmin
+}
+
+// CanViewAIUsage is the AI & MCP guide (operations roles).
+func CanViewAIUsage(role string) bool {
+	r := NormalizeRole(role)
+	return r == RoleLead || r == RoleManager || r == RoleObserver
+}
+
+// CanAccessDORA is the executive DORA dashboard (Manager only).
+func CanAccessDORA(role string) bool {
+	return IsManager(role)
+}
+
+// CanAccessView mirrors the web navigation guard for encrypted page links.
+func CanAccessView(role, view string) bool {
+	switch view {
+	case "dashboard", "unified-report":
+		return CanAccessOperations(role)
+	case "about", "profile":
+		return true
+	case "finops":
+		return CanAccessFinOps(role)
+	case "organizations":
+		return CanManageTeams(role)
+	case "management", "settings":
+		return CanManageIAM(role)
+	case "plugins":
+		return CanAccessPlugins(role)
+	case "ingestion":
+		return CanManageProjects(role)
+	case "healing", "rca":
+		return CanViewHealing(role)
+	case "ai-config":
+		return CanConfigureAI(role)
+	case "ai-usage":
+		return CanViewAIUsage(role)
+	case "dora":
+		return CanAccessDORA(role)
+	default:
+		return false
+	}
+}
+
 // CanConfigureAI allows changing LLM provider settings (Manager only).
 func CanConfigureAI(role string) bool {
 	return NormalizeRole(role) == RoleManager

@@ -4,6 +4,7 @@
 import { fetchWithAuth, parseApiJson } from './api.js';
 import { notify } from './ui.js';
 import { hydrateOpenComments, revealComment } from './comments.js';
+import { publishSecureLink } from './links.js';
 
 function escapeHtml(s) {
     return String(s || '')
@@ -327,6 +328,7 @@ export async function openReport(groupId, event) {
         }
         root.innerHTML = renderReportHtml(data);
         await hydrateOpenComments();
+        publishSecureLink({ kind: 'report', project: group.project_name, run_id: group.pipeline_run_id });
     } catch (e) {
         root.innerHTML = `<div class="unified-report-error">
             <p>${escapeHtml(e.message || 'Report load failed')}</p>
@@ -352,6 +354,7 @@ export async function openReportByRun(project, runId, commentId) {
         root.innerHTML = renderReportHtml(data);
         await hydrateOpenComments();
         if (commentId) revealComment(commentId);
+        else publishSecureLink({ kind: 'report', project, run_id: runId });
     } catch (e) {
         root.innerHTML = `<div class="unified-report-error">
             <p>${escapeHtml(e.message || 'Report load failed')}</p>
@@ -362,16 +365,33 @@ export async function openReportByRun(project, runId, commentId) {
 }
 
 export async function openSecureLink(token) {
-    if (!token) return;
+    if (!token) {
+        window.__openingSecureLink = false;
+        return;
+    }
+    window.__openingSecureLink = true;
     try {
         const res = await fetchWithAuth(`/api/links/${encodeURIComponent(token)}`);
         const { data } = await parseApiJson(res);
         if (!res.ok) {
             throw new Error((data && data.error) || 'This link is not valid');
         }
+        if (data.kind === 'view') {
+            const view = data.view === 'rca' ? 'healing' : data.view;
+            if (view === 'about') window.__pendingAboutTopic = data.topic || 'overview';
+            const nav = document.querySelector(`.nav-item[onclick*="switchView('${view}'"]`);
+            if (typeof window.switchView === 'function') window.switchView(view, nav);
+            return;
+        }
+        if (data.kind === 'report') {
+            await openReportByRun(data.project_name, data.pipeline_run_id, 0);
+            return;
+        }
         await openReportByRun(data.project_name, data.pipeline_run_id, data.comment_id);
     } catch (e) {
         notify(e.message || 'This link is not valid', 'error');
+    } finally {
+        window.__openingSecureLink = false;
     }
 }
 

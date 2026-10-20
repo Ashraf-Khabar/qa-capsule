@@ -3,9 +3,35 @@ package server
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 )
+
+func appOrStaticHandler() http.Handler {
+	static := staticWebHandler()
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			static.ServeHTTP(w, r)
+			return
+		}
+		a, b, token, ok := splitDynamicLink(r.URL.Path)
+		if !ok {
+			static.ServeHTTP(w, r)
+			return
+		}
+		wantA, wantB := linkShards(token)
+		if a != wantA || b != wantB {
+			static.ServeHTTP(w, r)
+			return
+		}
+		if _, err := openLink(token, time.Now()); err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		serveAppIndex(w, r)
+	})
+}
 
 func staticWebHandler() http.Handler {
 	fs := http.FileServer(http.Dir("./web"))

@@ -314,6 +314,72 @@ func TestHealLocatorFromHTML_BrokenDataQA_FindsSubmitID(t *testing.T) {
 	}
 }
 
+func TestHealLocatorFromHTML_LogoutAfterLogin(t *testing.T) {
+	html := `<div class="example">
+		<h2>Secure Area</h2>
+		<h4 class="subheader">Welcome to the Secure Area. When you are done click logout below.</h4>
+		<a class="button secondary radius" href="/logout"><i class="icon-2x icon-signout"> Logout</i></a>
+	</div>`
+	original := `[data-testid="logout-button"]`
+	healed, _, _, ok := HealLocatorFromHTML(original, html)
+	if !ok || healed != `a[href="/logout"]` {
+		t.Fatalf("healed=%q ok=%v", healed, ok)
+	}
+	got := AssessLocatorPrecision(html, original, healed, 0.9)
+	if !got.Verified || got.Level != "high" || got.Matches != 1 {
+		t.Fatalf("expected a unique logout link, got %+v", got)
+	}
+}
+
+func TestHealLocatorFromHTML_SignInButtonWithIcon(t *testing.T) {
+	html := `<form>
+		<input type="text" name="username" id="username" />
+		<input type="password" name="password" id="password" />
+		<button class="radius" type="submit"><i class="fa fa-2x fa-sign-in"> Login</i></button>
+	</form>`
+	original := `[data-testid="sign-in-button"]`
+	healed, conf, _, ok := HealLocatorFromHTML(original, html)
+	if !ok || healed != `button[type="submit"]` {
+		t.Fatalf("healed=%q ok=%v conf=%v", healed, ok, conf)
+	}
+	got := AssessLocatorPrecision(html, original, healed, conf)
+	if !got.Verified || got.Level != "high" || got.Matches != 1 {
+		t.Fatalf("expected a unique green submit selector, got %+v", got)
+	}
+}
+
+func TestAssessLocatorPrecision_LoginButtonIsHigh(t *testing.T) {
+	html := `<html><head><title>Login</title></head><body>
+		<h1>Sign in</h1>
+		<input data-test="username" placeholder="Username">
+		<input data-test="password" type="password" placeholder="Password">
+		<button id="login" data-test="login-button" type="submit">Login</button>
+		<button data-test="cancel">Cancel</button>
+	</body></html>`
+	got := AssessLocatorPrecision(html, `button[data-qa="submit-v1"]`, `[data-test="login-button"]`, 0.99)
+	if !got.Verified || got.Level != "high" || got.Matches != 1 {
+		t.Fatalf("expected a unique verified login selector, got %+v", got)
+	}
+	if got.Confidence < 0.9 || got.Confidence > 0.97 {
+		t.Fatalf("expected capped high confidence, got %v", got.Confidence)
+	}
+	missing := AssessLocatorPrecision(html, `button[data-qa="submit-v1"]`, `#missing`, 0.99)
+	if missing.Verified || missing.Level != "low" {
+		t.Fatalf("expected missing selector to be rejected, got %+v", missing)
+	}
+	list := FormatInteractiveElements(html, 10)
+	if !strings.Contains(list, "data-test=login-button") || !strings.Contains(list, "selector=") {
+		t.Fatalf("interactive list missing login selector:\n%s", list)
+	}
+}
+
+func TestLocatorExistsInHTML_CSSDataTest(t *testing.T) {
+	html := `<button data-test="login-button">Login</button>`
+	if !LocatorExistsInHTML(html, `css=[data-test="login-button"]`) {
+		t.Fatal("expected css= data-test selector to match the page")
+	}
+}
+
 func TestLocatorExistsInHTML_IDSelector(t *testing.T) {
 	html := `<button id="submit" type="submit">Go</button>`
 	if !LocatorExistsInHTML(html, "#submit") {

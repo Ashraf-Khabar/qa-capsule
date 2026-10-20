@@ -1,6 +1,6 @@
 name: E2E Tests | Selenium + Pytest
 
-# Manual workflow — the-internet.herokuapp.com login with broken locator for MCP self-healing.
+# Manual workflow — login succeeds, then logout uses a broken locator for MCP self-healing.
 on:
   workflow_dispatch:
 

@@ -152,7 +152,7 @@ func Start(initialConfig core.Config) {
 	registerChartRoutes(config)
 	registerSystemRoutes(config)
 
-	// Opaque comment links (/l/<token>) serve the app. The token is not a file path.
+	// Legacy /l/<token> and dynamic /XXXX/YYYY/<hash> both serve the app shell.
 	http.HandleFunc("/l/", serveAppIndex)
 
 	// Favicon (browsers request /favicon.ico by default)
@@ -161,7 +161,7 @@ func Start(initialConfig core.Config) {
 	})
 
 	// Serve static frontend files (HTML uncached so Docker rebuilds show new UI immediately)
-	http.Handle("/", staticWebHandler())
+	http.Handle("/", appOrStaticHandler())
 
 	log.Printf("[SERVER] Started on port %s", config.Server.Port)
 	log.Fatal(http.ListenAndServe(":"+config.Server.Port, securityHeadersMiddleware(http.DefaultServeMux)))

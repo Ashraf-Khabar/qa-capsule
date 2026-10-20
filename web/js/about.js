@@ -168,7 +168,8 @@ export function loadAboutView() {
             </button>`;
             }).join('');
     }
-    showAboutTopic('overview');
+    showAboutTopic(window.__pendingAboutTopic || 'overview');
+    window.__pendingAboutTopic = '';
 }
 
 export function showAboutTopic(key) {
@@ -185,12 +186,16 @@ export function showAboutTopic(key) {
             <div class="about-breadcrumb">${topic.breadcrumb}</div>
             ${topic.html}`;
     }
+    window.__aboutTopic = key;
+    if (!window.__openingSecureLink && window.publishSecureLink) {
+        window.publishSecureLink({ kind: 'view', view: 'about', topic: key });
+    }
 }
 
 /** Open Help Center from workflow editor (?) */
 export function openWorkflowHelpTopic() {
+    window.__pendingAboutTopic = 'workflow';
     if (typeof window.switchView === 'function') {
         window.switchView('about', document.querySelector('.nav-item[onclick*="about"]'));
     }
-    showAboutTopic('workflow');
 }
