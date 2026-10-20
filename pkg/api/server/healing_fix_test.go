@@ -25,6 +25,38 @@ func TestApplyLocatorFixToSource_PythonBrokenConstant(t *testing.T) {
 	if !strings.Contains(got, `button[type='submit']`) || strings.Contains(got, `sign-in-button`) {
 		t.Fatalf("expected the broken selector replaced, got:\n%s", got)
 	}
+	if !strings.Contains(got, `driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()`) {
+		t.Fatalf("expected the call site rewritten, got:\n%s", got)
+	}
+}
+
+func TestApplyLocatorFixToSource_PythonLogoutShowsTheCallLine(t *testing.T) {
+	source := "BROKEN_LOGOUT = '[data-testid=\"logout-button\"]'\n" +
+		"def test_broken_logout_after_login_self_healing_demo(self, driver):\n" +
+		"    driver.find_element(By.CSS_SELECTOR, BROKEN_LOGOUT).click()\n"
+	original := `[data-testid="logout-button"]`
+	healed := `a[href="/logout"]`
+	got := applyLocatorFixToSource(source, original, healed)
+	if !strings.Contains(got, `BROKEN_LOGOUT = 'a[href="/logout"]'`) {
+		t.Fatalf("constant not updated:\n%s", got)
+	}
+	if !strings.Contains(got, `driver.find_element(By.CSS_SELECTOR, 'a[href="/logout"]').click()`) {
+		t.Fatalf("call site not updated:\n%s", got)
+	}
+	lines := buildLocatorChangeLines(source, got, original, healed)
+	var sawCall bool
+	for _, row := range lines {
+		after, _ := row["after"].(string)
+		if strings.Contains(after, `find_element`) && strings.Contains(after, healed) {
+			sawCall = true
+			if row["line"] != 3 {
+				t.Fatalf("expected the click on line 3, got %#v", row)
+			}
+		}
+	}
+	if !sawCall {
+		t.Fatalf("change lines missing the find_element edit: %#v", lines)
+	}
 }
 
 func TestBuildLocatorPrompt_IncludesTestIntentAndPage(t *testing.T) {

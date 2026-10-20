@@ -228,6 +228,7 @@ function getHighlightTokenForLine(lineIndex, line, srcLine, healed, original, da
     for (const h of (Array.isArray(data?.fix_highlights) ? data.fix_highlights : [])) {
         if (Number(h.line) === lineNo) return (h.token || healed || '').trim();
     }
+    if (healed && line.includes(healed)) return healed;
     const action = line.match(LOCATOR_ACTION_RE) || line.match(FILL_ACTION_RE);
     if (!action || !healed) return '';
     const tok = action[2].trim();
@@ -288,10 +289,11 @@ function renderFixCodeBlock(code, data, id) {
     }
     const changed = changedLineIndexes(sourceCode, displayCode);
     if (!changed.length) return '';
-    const changes = renderChangeLines(data.change_lines, locs.original, locs.healed, true);
+    const changes = renderChangeLines(data.change_lines, locs.original, locs.healed, true, data.source_path);
     const lines = renderHighlightedLines(displayCode, sourceCode, locs.healed, locs.original, data);
+    const path = String(data.source_path || '').trim();
     return `<div class="hc-panel__code">
-        <div class="hc-panel__code-head"><strong>Code fix</strong></div>
+        <div class="hc-panel__code-head"><strong>Code fix</strong>${path ? `<span> ${esc(path)}</span>` : ''}</div>
         ${changes}
         <div class="hc-code-lines" role="presentation">${lines}</div>
     </div>`;
@@ -433,25 +435,38 @@ function highlightLineTerms(line, planEntry) {
     return out;
 }
 
-function renderChangeLines(changeLines, original, healed, precise) {
+function renderChangeLines(changeLines, original, healed, precise, sourcePath) {
     let rows = Array.isArray(changeLines) ? changeLines.filter(r => r?.before && r?.after) : [];
     if (!rows.length && original && healed && original !== healed) {
         rows = [{ before: original, after: healed }];
     }
     if (!rows.length) return '';
+    const callRe = /find_element|locator\s*\(|cy\.get|^\s*Click\b/i;
+    rows = [...rows].sort((a, b) => {
+        const sa = callRe.test(a.after || a.before || '') ? 0 : 1;
+        const sb = callRe.test(b.after || b.before || '') ? 0 : 1;
+        return sa - sb;
+    });
+    const where = String(sourcePath || '').trim();
     return `<div class="hc-fix-changes">
-        <div class="hc-fix-changes__head">What changes</div>
-        ${rows.map(r => `
+        <div class="hc-fix-changes__head">What changes${where ? ` · ${esc(where)}` : ''}</div>
+        ${rows.map(r => {
+            const lineNo = Number(r.line) > 0 ? `Line ${Number(r.line)}` : 'Change';
+            const after = healed && String(r.after).includes(healed)
+                ? highlightFixToken(r.after, healed, precise)
+                : esc(r.after);
+            return `
         <div class="hc-fix-change">
             <div class="hc-fix-change__row hc-fix-change__row--old">
-                <span class="hc-fix-change__tag">Before</span>
+                <span class="hc-fix-change__tag">${esc(lineNo)} before</span>
                 <code>${esc(r.before)}</code>
             </div>
             <div class="hc-fix-change__row hc-fix-change__row--verified">
-                <span class="hc-fix-change__tag">After</span>
-                <code>${esc(r.after)}</code>
+                <span class="hc-fix-change__tag">${esc(lineNo)} after</span>
+                <code>${after}</code>
             </div>
-        </div>`).join('')}
+        </div>`;
+        }).join('')}
     </div>`;
 }
 

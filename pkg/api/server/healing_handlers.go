@@ -61,11 +61,16 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 		// Load the incident to determine the failure type before choosing a strategy.
 		var errMsg, consoleLogs, errorLogs, framework, testName string
 		if core.DB != nil {
-			core.DB.QueryRow(
+			// incidents has no framework column. Selecting it made Scan fail
+			// and dropped the stored error and the captured page HTML.
+			if err := core.DB.QueryRow(
 				`SELECT COALESCE(error_message,''), COALESCE(console_logs,''),
-				        COALESCE(error_logs,''), COALESCE(framework,''), COALESCE(name,'')
+				        COALESCE(error_logs,''), COALESCE(name,'')
 				 FROM incidents WHERE id = ?`, id,
-			).Scan(&errMsg, &consoleLogs, &errorLogs, &framework, &testName)
+			).Scan(&errMsg, &consoleLogs, &errorLogs, &testName); err != nil {
+				slog.Warn("propose-fix: could not load incident", "incident_id", id, "err", err)
+			}
+			framework = detectFramework(testName, errorLogs, errMsg)
 		}
 
 		// Diagnostic logs — visible in the server console to help triage issues.
@@ -168,6 +173,7 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 			resp := map[string]interface{}{
 				"code":              fixedCode,
 				"source_code":       testSource,
+				"source_path":       extractFileFromStackTrace(combinedErr),
 				"explanation":       explanation,
 				"confidence":        confidence,
 				"healed_locator":    healed,
@@ -993,6 +999,20 @@ func buildFixHighlights(before, after, healed string) []map[string]interface{} {
 			}
 		}
 	}
+	if len(out) == 0 {
+		for i := 0; i < max; i++ {
+			var b, a string
+			if i < len(bLines) {
+				b = bLines[i]
+			}
+			if i < len(aLines) {
+				a = aLines[i]
+			}
+			if a != "" && b != a && strings.Contains(a, healed) {
+				add(i + 1)
+			}
+		}
+	}
 	return out
 }
 
@@ -1068,10 +1088,75 @@ func applyLocatorFixToSource(source, original, healed string) string {
 		}
 	}
 	if changed {
-		return strings.Join(lines, "\n")
+		source = strings.Join(lines, "\n")
 	}
-	if original != "" && healed != "" && original != healed && strings.Contains(source, original) {
-		return strings.ReplaceAll(source, original, healed)
+	source = rewriteLocatorCallSites(source, original, healed)
+	if original != "" && healed != "" && original != healed {
+		source = replaceQuotedSelector(source, original, healed)
+	}
+	return source
+}
+
+// selectorQuote wraps a CSS selector in the quote style that keeps it valid.
+func selectorQuote(s string) string {
+	switch {
+	case strings.Contains(s, `'`) && !strings.Contains(s, `"`):
+		return `"` + s + `"`
+	default:
+		return `'` + s + `'`
+	}
+}
+
+var assignedSelectorRes = []*regexp.Regexp{
+	regexp.MustCompile(`(?m)^\s*(?:const|let|var)?\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*'([^']*)'`),
+	regexp.MustCompile(`(?m)^\s*(?:const|let|var)?\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"([^"]*)"`),
+}
+
+func namesHoldingSelector(source, original string) []string {
+	var names []string
+	seen := map[string]bool{}
+	for _, re := range assignedSelectorRes {
+		for _, m := range re.FindAllStringSubmatch(source, -1) {
+			if len(m) < 3 || m[2] != original || seen[m[1]] {
+				continue
+			}
+			seen[m[1]] = true
+			names = append(names, m[1])
+		}
+	}
+	return names
+}
+
+// rewriteLocatorCallSites replaces a variable that holds the broken selector
+// inside find_element, locator, and cy.get calls.
+func rewriteLocatorCallSites(source, original, healed string) string {
+	if source == "" || original == "" || healed == "" || original == healed {
+		return source
+	}
+	quoted := selectorQuote(healed)
+	for _, name := range namesHoldingSelector(source, original) {
+		q := regexp.QuoteMeta(name)
+		for _, re := range []*regexp.Regexp{
+			regexp.MustCompile(`(find_element(?:s)?\s*\(\s*By\.\w+\s*,\s*)` + q + `(\s*\))`),
+			regexp.MustCompile(`((?:page\.)?locator\s*\(\s*)` + q + `(\s*\))`),
+			regexp.MustCompile(`(cy\.get\s*\(\s*)` + q + `(\s*\))`),
+		} {
+			source = re.ReplaceAllString(source, `${1}`+quoted+`${2}`)
+		}
+	}
+	return source
+}
+
+func replaceQuotedSelector(source, original, healed string) string {
+	quoted := selectorQuote(healed)
+	for _, q := range []string{`'`, `"`} {
+		needle := q + original + q
+		if strings.Contains(source, needle) {
+			source = strings.ReplaceAll(source, needle, quoted)
+		}
+	}
+	if strings.Contains(source, original) {
+		source = strings.ReplaceAll(source, original, healed)
 	}
 	return source
 }
@@ -1122,7 +1207,6 @@ func buildLocatorChangeLines(source, proposedCode, original, healed string) []ma
 		if len(codeLines) > max {
 			max = len(codeLines)
 		}
-		actionRe := regexp.MustCompile(`(?im)^\s*(?:Click|Get Element|Tap|Wait For Elements State)\s+\S+`)
 		for i := 0; i < max; i++ {
 			before := ""
 			after := ""
@@ -1132,7 +1216,7 @@ func buildLocatorChangeLines(source, proposedCode, original, healed string) []ma
 			if i < len(codeLines) {
 				after = codeLines[i]
 			}
-			if before != after && actionRe.MatchString(before) && actionRe.MatchString(after) {
+			if before != after && strings.TrimSpace(after) != "" && strings.Contains(after, healed) {
 				add(before, after, i+1)
 			}
 		}
