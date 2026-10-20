@@ -22,13 +22,13 @@ const FW = {
 const FW_DEF = { label: 'Unknown', color: '#7f8c8d' };
 
 const CAT = {
-    timeout:        { label: 'Timeout',       mcp: 'Timeout MCP',       color: '#d4a017' },
-    locator:        { label: 'Locator',       mcp: 'Locator MCP',       color: '#c0392b' },
-    assertion:      { label: 'Assertion',     mcp: 'Assertion MCP',     color: '#e67e22' },
-    network:        { label: 'Network',       mcp: 'Network MCP',       color: '#2980b9' },
-    stale_element:  { label: 'Stale element', mcp: 'Stale element MCP', color: '#6d28d9' },
-    script_failure: { label: 'Script',        mcp: 'Script MCP',        color: '#8e44ad' },
-    unknown:        { label: 'Unknown',       mcp: 'Script MCP',        color: '#95a5a6' },
+    timeout:        { label: 'Timeout',       mcp: 'Timeout',       color: '#d4a017' },
+    locator:        { label: 'Locator',       mcp: 'Locator',       color: '#c0392b' },
+    assertion:      { label: 'Assertion',     mcp: 'Assertion',     color: '#e67e22' },
+    network:        { label: 'Network',       mcp: 'Network',       color: '#2980b9' },
+    stale_element:  { label: 'Stale element', mcp: 'Stale element', color: '#6d28d9' },
+    script_failure: { label: 'Script',        mcp: 'Script',        color: '#8e44ad' },
+    unknown:        { label: 'Unknown',       mcp: 'Script',        color: '#95a5a6' },
 };
 
 const fw  = r => FW[(r || '').toLowerCase().replace(/[^a-z]/g, '')] || FW_DEF;
@@ -291,7 +291,7 @@ function renderFixCodeBlock(code, data, id) {
     const changes = renderChangeLines(data.change_lines, locs.original, locs.healed, true);
     const lines = renderHighlightedLines(displayCode, sourceCode, locs.healed, locs.original, data);
     return `<div class="hc-panel__code">
-        <div class="hc-panel__code-head"><strong>Code fix</strong><button class="hc-panel__copy" onclick="window._copyFix(${id})">${ICON.copy} Copy</button></div>
+        <div class="hc-panel__code-head"><strong>Code fix</strong></div>
         ${changes}
         <div class="hc-code-lines" role="presentation">${lines}</div>
     </div>`;
@@ -529,6 +529,15 @@ export async function loadHealingInsights() {
         return;
     }
     body.innerHTML = rows.map(r => renderCard(r)).join('');
+    const pending = Number(window.__pendingProposeId || 0);
+    if (pending) {
+        window.__pendingProposeId = 0;
+        const card = document.getElementById(`hc-card-${pending}`);
+        if (card) {
+            card.scrollIntoView({ block: 'center' });
+            openProposeFix(pending);
+        }
+    }
 }
 window.loadHealingInsights = loadHealingInsights;
 
@@ -593,12 +602,10 @@ function renderCard(r) {
             <!-- Action bar -->
             <div class="hc-card__actions">
                 ${canMgr ? `
-                <button class="hc-btn-fix" title="AI scans live page and proposes the corrected selector" onclick="window.openProposeFix(${id})">
+                <button class="hc-btn-fix" title="Find the cause and show the fix on this incident" onclick="window.openProposeFix(${id})">
                     ${ICON.fix} Propose Fix
                 </button>
                 <div class="hc-icon-group">
-                    <button class="hc-icon-btn" title="View context" onclick="window.openHealingContext(${id})">${ICON.context}</button>
-                    <button class="hc-icon-btn" title="Copy MCP prompt" onclick="window.copyMCPPrompt(${id})">${ICON.copy}</button>
                     ${canDel ? `<button class="hc-icon-btn hc-icon-btn--danger" title="Delete failure" onclick="window.deleteHealingFailure(${id})">${ICON.trash}</button>` : ''}
                 </div>` : (canDel ? `
                 <div class="hc-icon-group">
@@ -679,27 +686,12 @@ export function deleteHealingFailure(id) {
 }
 window.deleteHealingFailure = deleteHealingFailure;
 
-/* ── Context / copy prompt ────────────────────────────────────────────── */
-export async function openHealingContext(id) {
-    const { ok, data } = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/healing/context`));
-    if (!ok || !data) { notify('Failed to load context.', 'error'); return; }
-    window.__lastHealingContext = data;
-    const info = [data.error_category && `Category: ${data.error_category}`, data.selector_hint && `Selector: ${data.selector_hint}`].filter(Boolean).join(' · ');
-    notify(info || 'Context loaded.', 'info');
-}
-window.openHealingContext = openHealingContext;
-
-export async function copyMCPPrompt(id) {
-    let ctx = window.__lastHealingContext;
-    if (!ctx || ctx.incident_id !== id) {
-        const { ok, data } = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/healing/context`));
-        if (!ok || !data) { notify('Failed to build prompt.', 'error'); return; }
-        ctx = data;
-    }
-    const text = ctx.mcp_prompt || `Use get_incident_context with incident_id=${id} and propose a minimal fix.`;
-    try { await navigator.clipboard.writeText(text); notify('Prompt copied.', 'success'); } catch { notify(text, 'info'); }
-}
-window.copyMCPPrompt = copyMCPPrompt;
+window.openProposeFromSheet = (id) => {
+    window.__pendingProposeId = id;
+    if (typeof window.closeExecutionSheet === 'function') window.closeExecutionSheet();
+    const nav = document.querySelector('.nav-item[onclick*="healing"]');
+    if (typeof window.switchView === 'function') window.switchView('healing', nav);
+};
 
 const HEAL_METHOD_LABEL = {
     html_scan: 'Matched on the page DOM',
@@ -804,11 +796,11 @@ export async function openProposeFix(id) {
             : '';
 
         const mcpBlock = (mcpLabel || problem)
-            ? `<div class="hc-mcp"><div class="hc-mcp__top"><span class="hc-mcp__dot" aria-hidden="true"></span><strong>${esc(mcpLabel || 'MCP')}</strong>${fix.active_mcp_tool ? `<code>${esc(fix.active_mcp_tool)}</code>` : ''}</div>${problem ? `<p>${esc(problem)}</p>` : ''}</div>`
+            ? `<div class="hc-mcp"><div class="hc-mcp__top"><span class="hc-mcp__dot" aria-hidden="true"></span><strong>${esc(mcpLabel || 'Cause')}</strong></div>${problem ? `<p>${esc(problem)}</p>` : ''}</div>`
             : '';
 
         const domNote = locatorMCP && !domOk
-            ? `<p class="hc-panel__dom-note">${esc(fix.dom_capture_hint || 'Locator MCP is active. This run did not store the page HTML, so a replacement cannot be verified in green.')}</p>`
+            ? `<p class="hc-panel__dom-note">${esc(fix.dom_capture_hint || 'This run did not store the page HTML, so a replacement cannot be verified.')}</p>`
             : '';
 
         const explText = (fix.explanation || '').trim();
@@ -817,6 +809,7 @@ export async function openProposeFix(id) {
             : '';
 
         const code = (locatorMCP || fix.code) && fix.code ? renderFixCodeBlock(fix.code, fix, id) : '';
+        const saved = fix.recorded ? `<p class="hc-panel__dom-note">Saved under Locator Interventions.</p>` : '';
         window[`__fixCode_${id}`] = resolveDisplayCode(fix);
 
         panel.innerHTML = `
@@ -830,8 +823,10 @@ export async function openProposeFix(id) {
             ${intentBlock}
             ${domNote}
             ${expl}
+            ${saved}
             ${code}
         </div>`;
+        if (fix.recorded) loadLocatorInterventions();
         const changedRow = panel.querySelector('.hc-code-line--verified');
         const box = panel.querySelector('.hc-code-lines');
         if (box && changedRow) box.scrollTop = Math.max(0, changedRow.offsetTop - 8);
@@ -840,10 +835,6 @@ export async function openProposeFix(id) {
     }
 }
 window.openProposeFix = openProposeFix;
-window._copyFix = id => {
-    const c = window[`__fixCode_${id}`] || '';
-    navigator.clipboard.writeText(c).then(() => notify('Copied.', 'success'), () => notify(c, 'info'));
-};
 
 /* ── Locator interventions ────────────────────────────────────────────── */
 export async function loadLocatorInterventions() {
@@ -858,7 +849,7 @@ export async function loadLocatorInterventions() {
     const rows = Array.isArray(data) ? data : [];
     _count('healing-stat-interventions', rows.length);
 
-    if (!rows.length) { el.innerHTML = `<div class="hc-empty">No locator interventions yet. Use MCP heal_incident or Propose fix on an incident to record one.</div>`; return; }
+    if (!rows.length) { el.innerHTML = `<div class="hc-empty">No confirmed locators yet. Propose Fix saves a selector here when it is unique on the page.</div>`; return; }
     el.innerHTML = rows.map(h => renderItv(h)).join('');
 }
 window.loadLocatorInterventions = loadLocatorInterventions;

@@ -26,16 +26,27 @@ export function initCommentUI() {
         if (event.target.closest('button, select, input')) event.preventDefault();
     });
     toolbar?.addEventListener('click', (event) => {
+        const swatch = event.target.closest('[data-color]');
+        if (swatch) {
+            applyColor(swatch.dataset.color);
+            closePops();
+            return;
+        }
+        const emoji = event.target.closest('[data-emoji]');
+        if (emoji) {
+            insertEmoji(emoji.dataset.emoji);
+            closePops();
+            return;
+        }
+        const popBtn = event.target.closest('[data-pop]');
+        if (popBtn) {
+            togglePop(popBtn.dataset.pop);
+            return;
+        }
         const btn = event.target.closest('[data-cmd]');
         if (!btn) return;
+        closePops();
         applyCommand(btn.dataset.cmd);
-    });
-    document.getElementById('rte-color')?.addEventListener('input', (event) => {
-        focusEditor();
-        document.execCommand('foreColor', false, event.target.value);
-    });
-    document.getElementById('rte-size')?.addEventListener('change', (event) => {
-        wrapSelection((text) => `<span style="font-size:${event.target.value}">${text}</span>`);
     });
     const editor = document.getElementById('rte-editor');
     editor?.addEventListener('input', onEditorInput);
@@ -47,6 +58,7 @@ export function initCommentUI() {
         insertMention(item.dataset.mention);
     });
     document.addEventListener('click', (event) => {
+        if (!event.target.closest('.rte-popwrap')) closePops();
         const more = event.target.closest('[data-thread-more]');
         if (more) {
             event.preventDefault();
@@ -131,6 +143,7 @@ function openComposer(action) {
     hideMentions();
     const modal = document.getElementById('comment-modal');
     if (modal) modal.hidden = false;
+    closePops();
     ensureDirectory();
     editor?.focus();
 }
@@ -139,6 +152,7 @@ function closeCommentModal() {
     const modal = document.getElementById('comment-modal');
     if (modal) modal.hidden = true;
     pendingAction = null;
+    closePops();
     hideMentions();
 }
 
@@ -331,6 +345,8 @@ function applyCommand(cmd) {
     if (cmd === 'bold') document.execCommand('bold');
     if (cmd === 'italic') document.execCommand('italic');
     if (cmd === 'underline') document.execCommand('underline');
+    if (cmd === 'ul') document.execCommand('insertUnorderedList');
+    if (cmd === 'ol') document.execCommand('insertOrderedList');
     if (cmd === 'code') wrapSelection((text) => `<code>${text}</code>`);
     if (cmd === 'pre') {
         const editor = document.getElementById('rte-editor');
@@ -338,6 +354,84 @@ function applyCommand(cmd) {
         document.execCommand('insertHTML', false, `<pre><code>${escapeHtml(selected)}</code></pre>`);
         editor?.focus();
     }
+}
+
+function togglePop(name) {
+    const pop = document.getElementById(name === 'emoji' ? 'rte-emoji-pop' : 'rte-color-pop');
+    const opening = !!pop?.hidden;
+    closePops();
+    if (!opening || !pop) return;
+    pop.hidden = false;
+    document.querySelector(`[data-pop="${name}"]`)?.setAttribute('aria-expanded', 'true');
+}
+
+function closePops() {
+    document.querySelectorAll('.rte-pop').forEach((pop) => {
+        pop.hidden = true;
+    });
+    document.querySelectorAll('[data-pop]').forEach((btn) => {
+        btn.setAttribute('aria-expanded', 'false');
+    });
+}
+
+function applyColor(color) {
+    focusEditor();
+    document.execCommand('styleWithCSS', false, false);
+    if (color === 'default') {
+        clearTextColor();
+    } else if (/^#[0-9a-fA-F]{6}$/.test(color || '')) {
+        document.execCommand('foreColor', false, color);
+    } else {
+        return;
+    }
+    const ink = color === 'default' ? '' : color.toLowerCase();
+    document.querySelectorAll('.rte-swatch').forEach((swatch) => {
+        swatch.classList.toggle('is-active', swatch.dataset.color === (ink || 'default'));
+    });
+    const mark = document.querySelector('.rte-color-mark');
+    if (mark) mark.style.setProperty('--rte-ink', ink || 'var(--text-main)');
+}
+
+function clearTextColor() {
+    const editor = document.getElementById('rte-editor');
+    document.execCommand('foreColor', false, '#010101');
+    if (!editor) return;
+    editor.querySelectorAll('font, span').forEach((node) => {
+        if (!node.isConnected || paintedColor(node) !== '#010101') return;
+        let parent = node.parentElement;
+        while (parent && parent !== editor && (parent.nodeName === 'FONT' || parent.nodeName === 'SPAN')) {
+            if (parent.classList.contains('mention') || parent.dataset.user) break;
+            if (parent.nodeName === 'FONT') parent.removeAttribute('color');
+            else parent.style.color = '';
+            const next = parent.parentElement;
+            if (!parent.getAttribute('color') && !parent.getAttribute('style')?.trim() && !parent.className) unwrapNode(parent);
+            parent = next;
+        }
+        if (!node.isConnected) return;
+        if (node.nodeName === 'FONT') node.removeAttribute('color');
+        else node.style.color = '';
+        if (!node.classList.contains('mention') && !node.dataset.user && !node.getAttribute('color') && !node.getAttribute('style')?.trim() && !node.className) {
+            unwrapNode(node);
+        }
+    });
+}
+
+function paintedColor(node) {
+    if (node.nodeName === 'FONT') return normalizeColor(node.color);
+    return normalizeColor(node.style?.color);
+}
+
+function unwrapNode(node) {
+    const parent = node.parentNode;
+    if (!parent) return;
+    while (node.firstChild) parent.insertBefore(node.firstChild, node);
+    parent.removeChild(node);
+}
+
+function insertEmoji(emoji) {
+    if (!emoji) return;
+    focusEditor();
+    document.execCommand('insertText', false, emoji);
 }
 
 function wrapSelection(htmlForText) {
@@ -486,28 +580,43 @@ function insertMention(username) {
 function serializeEditor(root) {
     if (!root) return [];
     const blocks = [];
-    const walk = (node, marks) => {
+    const walk = (node, marks, into) => {
         if (node.nodeType === Node.TEXT_NODE) {
-            if (node.textContent) blocks.push({ t: node.textContent, ...marks });
+            if (node.textContent) into.push({ t: node.textContent, ...marks });
             return;
         }
         if (node.nodeType !== Node.ELEMENT_NODE) return;
+        if (node.nodeName === 'UL' || node.nodeName === 'OL') {
+            const kind = node.nodeName === 'OL' ? 'ol' : 'ul';
+            node.childNodes.forEach((child) => {
+                if (child.nodeName !== 'LI') return;
+                const item = [];
+                child.childNodes.forEach((grand) => walk(grand, marks, item));
+                if (!item.some((block) => (block.t && block.t.trim()) || block.mention || (block.pre && block.pre.trim()))) return;
+                item[0].item = true;
+                item.forEach((block) => {
+                    block.li = kind;
+                    into.push(block);
+                });
+            });
+            return;
+        }
         if (node.nodeName === 'BR') {
-            blocks.push({ br: true });
+            into.push({ br: true });
             return;
         }
         if (node.classList?.contains('mention')) {
-            blocks.push({ mention: node.dataset.user || '' });
+            into.push({ mention: node.dataset.user || '' });
             return;
         }
         if (node.nodeName === 'PRE') {
-            blocks.push({ pre: node.innerText || '' });
+            into.push({ pre: node.innerText || '' });
             return;
         }
         if (node.nodeName === 'DIV' || node.nodeName === 'P') {
-            if (blocks.length > 0) blocks.push({ br: true });
+            if (into.length > 0) into.push({ br: true });
             const blockMarks = { ...marks };
-            node.childNodes.forEach((child) => walk(child, blockMarks));
+            node.childNodes.forEach((child) => walk(child, blockMarks, into));
             return;
         }
         const next = { ...marks };
@@ -525,9 +634,9 @@ function serializeEditor(root) {
             if (color) next.color = color;
             if (SIZE_OK.test(node.style.fontSize)) next.size = node.style.fontSize;
         }
-        node.childNodes.forEach((child) => walk(child, next));
+        node.childNodes.forEach((child) => walk(child, next, into));
     };
-    root.childNodes.forEach((child) => walk(child, {}));
+    root.childNodes.forEach((child) => walk(child, {}, blocks));
     return blocks.map((block) => {
         const clean = {};
         if (block.t != null && block.mention == null && block.pre == null && !block.br) clean.t = block.t;
@@ -540,6 +649,8 @@ function serializeEditor(root) {
         if (block.pre) clean.pre = block.pre;
         if (block.mention) clean.mention = block.mention;
         if (block.br) clean.br = true;
+        if (block.li === 'ul' || block.li === 'ol') clean.li = block.li;
+        if (block.item) clean.item = true;
         return clean;
     }).filter((block) => block.t != null || block.pre || block.mention || block.br);
 }

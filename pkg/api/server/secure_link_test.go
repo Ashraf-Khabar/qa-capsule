@@ -40,21 +40,28 @@ func TestLinkPath_UsesTwoShardsPlusTheHash(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := linkPath(token)
-	a, b, got, ok := splitDynamicLink(path)
+	path := linkPath(secureLink{K: "comment"}, token)
+	if path != "/review/id="+token {
+		t.Fatalf("comment path = %s", path)
+	}
+	got, ok := namedLinkToken(path)
 	if !ok || got != token {
-		t.Fatalf("path %s did not split", path)
+		t.Fatalf("review path did not split: %s", path)
 	}
-	wantA, wantB := linkShards(token)
-	if a != wantA || b != wantB {
-		t.Fatalf("shards = %s/%s, want %s/%s", a, b, wantA, wantB)
+	dash := linkPath(secureLink{K: "view", V: "dashboard"}, token)
+	if dash != "/dashboard/"+token {
+		t.Fatalf("dashboard path = %s", dash)
 	}
-	if strings.Contains(path, "/l/") || strings.Count(path, "/") != 3 {
-		t.Fatalf("path is not /XXXX/YYYY/hash: %s", path)
+	dora := linkPath(secureLink{K: "view", V: "dora"}, token)
+	if dora != "/dora/"+token || !pathMatchesLink("/DORA/"+token, secureLink{K: "view", V: "dora"}, token) {
+		t.Fatalf("dora path = %s", dora)
 	}
-	other := linkPath(token + "x")
-	if other == path {
-		t.Fatal("different tokens produced the same path")
+	if pathMatchesLink("/management/"+token, secureLink{K: "view", V: "dora"}, token) {
+		t.Fatal("a DORA hash was accepted on /management")
+	}
+	about := linkPath(secureLink{K: "view", V: "about", T: "overview"}, token)
+	if about != "/about/overview/"+token {
+		t.Fatalf("about path = %s", about)
 	}
 }
 

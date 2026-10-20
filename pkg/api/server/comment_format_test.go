@@ -32,6 +32,26 @@ func TestRenderCommentBlocks_FormatsAndEscapes(t *testing.T) {
 	}
 }
 
+func TestRenderCommentBlocks_Lists(t *testing.T) {
+	html, ok := RenderCommentBlocks([]CommentBlock{
+		{T: "one", Li: "ol", Item: true},
+		{T: "<two>", B: true, Li: "ol", Item: true, Color: "#3b82f6"},
+		{T: "dot", Li: "ul", Item: true},
+		{T: " after"},
+	})
+	if !ok {
+		t.Fatal("expected content")
+	}
+	want := `<ol><li>one</li><li><span style="color:#3b82f6;"><strong>&lt;two&gt;</strong></span></li></ol><ul><li>dot</li></ul> after`
+	if html != want {
+		t.Fatalf("lists:\n got %s\nwant %s", html, want)
+	}
+	bad, ok := RenderCommentBlocks([]CommentBlock{{T: "x", Li: "script", Item: true}})
+	if !ok || strings.Contains(bad, "<script") || strings.Contains(bad, "<li>") {
+		t.Fatalf("list kind must stay ul or ol: %s", bad)
+	}
+}
+
 func TestRenderCommentBlocks_Empty(t *testing.T) {
 	if _, ok := RenderCommentBlocks(nil); ok {
 		t.Fatal("nil blocks should be empty")

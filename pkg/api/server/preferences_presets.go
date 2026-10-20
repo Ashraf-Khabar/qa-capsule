@@ -138,7 +138,7 @@ func normalizeThemeMode(v string) string {
 
 func normalizeThemePalette(v string) string {
 	switch strings.ToLower(strings.TrimSpace(v)) {
-	case "default", "ocean", "graphite", "ops", "terminal", "solarized":
+	case "default", "ocean", "graphite", "ops", "terminal", "solarized", "nord", "aurora", "sand", "crimson":
 		return strings.ToLower(v)
 	default:
 		return "default"

@@ -17,7 +17,11 @@ export const THEME_PALETTES = [
     { id: 'graphite', label: 'Graphite Ops', swatch: ['#52525b', '#18181b'] },
     { id: 'ops', label: 'Incident Command', swatch: ['#f59e0b', '#0c1222'] },
     { id: 'terminal', label: 'Terminal', swatch: ['#22c55e', '#0a0f0a'] },
-    { id: 'solarized', label: 'Solarized', swatch: ['#268bd2', '#002b36'] }
+    { id: 'solarized', label: 'Solarized', swatch: ['#268bd2', '#002b36'] },
+    { id: 'nord', label: 'Nord', swatch: ['#88c0d0', '#2e3440'] },
+    { id: 'aurora', label: 'Aurora', swatch: ['#a78bfa', '#160b24'] },
+    { id: 'sand', label: 'Sand', swatch: ['#e7c27a', '#1c1610'] },
+    { id: 'crimson', label: 'Crimson', swatch: ['#fb7185', '#1a0b10'] }
 ];
 
 let systemThemeListenerBound = false;

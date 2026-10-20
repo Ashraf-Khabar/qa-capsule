@@ -8,7 +8,7 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap">
-    <link rel="stylesheet" href="/style.css?v=1.0.33-encrypted-routes">
+    <link rel="stylesheet" href="/style.css?v=1.0.37-healing-flow">
     <script>
         try {
             if (localStorage.getItem('sre-sidebar-collapsed') === '1') {
@@ -207,82 +207,92 @@
 
             <div class="nav-section-label role-workspace" data-i18n="nav.section.workspaces">WORKSPACES</div>
             <div class="nav-item role-workspace" onclick="switchView('organizations', this)" data-tooltip="Workspaces">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18"></path>
+                    <path d="M5 21V7l7-4 7 4v14"></path>
+                    <path d="M9 21v-5h6v5"></path>
                 </svg><span class="nav-text" data-i18n="nav.workspaces">Workspaces</span>
             </div>
             <div class="nav-section-label role-non-admin" style="margin-top: 10px;" data-i18n="nav.section.operations">OPERATIONS</div>
             <div class="nav-item role-non-admin active" onclick="switchView('dashboard', this)" data-tooltip="Dashboard">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="3" y1="9" x2="21" y2="9"></line>
-                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 15a8 8 0 1 1 16 0"></path>
+                    <path d="M12 15l4-4"></path>
+                    <path d="M8 19h8"></path>
                 </svg><span class="nav-text" data-i18n="nav.dashboard">Dashboard</span>
             </div>
             <div class="nav-section-label role-manager-only" style="margin-top: 10px;" data-i18n="nav.section.executive">EXECUTIVE</div>
             <div class="nav-item role-manager-only" onclick="switchView('dora', this)" data-tooltip="DORA Dashboard">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 17 8 12 12 15 21 6"></polyline>
+                    <polyline points="15 6 21 6 21 12"></polyline>
                 </svg><span class="nav-text" data-i18n="nav.dora">DORA Dashboard</span>
             </div>
             <div class="nav-section-label role-manager-only" style="margin-top: 10px;" data-i18n="nav.section.finops">FINOPS</div>
             <div class="nav-item role-manager-only" onclick="switchView('finops', this)" data-tooltip="FinOps Intelligence">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="1" x2="12" y2="23"></line>
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <ellipse cx="12" cy="6" rx="8" ry="3"></ellipse>
+                    <path d="M4 6v4c0 1.7 3.6 3 8 3s8-1.3 8-3V6"></path>
+                    <path d="M4 10v4c0 1.7 3.6 3 8 3s8-1.3 8-3v-4"></path>
                 </svg><span class="nav-text" data-i18n="nav.finops">FinOps Intelligence</span>
             </div>
             <div class="nav-section-label role-non-admin" style="margin-top: 10px;" data-i18n="nav.section.intelligence">INTELLIGENCE</div>
             <div class="nav-item role-non-admin" onclick="switchView('healing', this)" data-tooltip="Self-Healing Hub">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 2a7 7 0 0 1 7 7c0 3-2 5-2 5H7s-2-2-2-5a7 7 0 0 1 7-7z"></path>
-                    <path d="M9 18h6"></path><path d="M10 22h4"></path>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12h4l2.5-6 4 12L16 12h5"></path>
                 </svg><span class="nav-text" data-i18n="nav.healing">Self-Healing Hub</span>
             </div>
-            <div class="nav-item role-non-admin" onclick="switchView('ai-usage', this)" data-tooltip="AI & MCP Guide">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
-                <span class="nav-text">AI &amp; MCP Guide</span>
+            <div class="nav-item role-non-admin" onclick="switchView('ai-usage', this)" data-tooltip="AI status">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3l1.4 4.2L18 8.5l-4.6 1.3L12 14l-1.4-4.2L6 8.5l4.6-1.3z"></path>
+                    <path d="M18 14l.7 2.1L21 16.8l-2.3.7L18 20l-.7-2.5-2.3-.7 2.3-.7z"></path>
+                </svg>
+                <span class="nav-text">AI status</span>
             </div>
             <div class="nav-item role-manager-only" onclick="switchView('ai-config', this)" data-tooltip="AI Configuration">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                    <path d="M4.93 4.93a10 10 0 0 0 0 14.14"></path>
-                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                    <path d="M8.46 8.46a5 5 0 0 0 0 7.07"></path>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="7" x2="20" y2="7"></line>
+                    <line x1="4" y1="12" x2="20" y2="12"></line>
+                    <line x1="4" y1="17" x2="20" y2="17"></line>
+                    <circle cx="8" cy="7" r="2"></circle>
+                    <circle cx="15" cy="12" r="2"></circle>
+                    <circle cx="10" cy="17" r="2"></circle>
                 </svg><span class="nav-text" data-i18n="nav.aiConfig">AI &amp; MCP Config</span>
             </div>
             <div class="nav-section-label role-non-admin" style="margin-top: 10px;" data-i18n="nav.section.help">HELP CENTER</div>
             <div class="nav-item role-non-admin" onclick="switchView('about', this)" data-tooltip="Help Center">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                 </svg><span class="nav-text" data-i18n="nav.help">Help Center</span>
             </div>
 
             <div class="nav-section-label role-lead" style="margin-top: 10px;" data-i18n="nav.section.infrastructure">INFRASTRUCTURE</div>
             <div class="nav-item role-lead" onclick="switchView('ingestion', this)" data-tooltip="CI/CD Gateways">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="6" cy="6" r="2"></circle>
+                    <circle cx="6" cy="18" r="2"></circle>
+                    <circle cx="18" cy="12" r="2"></circle>
+                    <path d="M8 6h4a4 4 0 0 1 4 4"></path>
+                    <path d="M8 18h4a4 4 0 0 0 4-4"></path>
                 </svg><span class="nav-text" data-i18n="nav.gateways">CI/CD Gateways</span>
             </div>
             <div class="nav-item role-lead" onclick="switchView('plugins', this)" data-tooltip="Plugin Engine">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 2v6"></path>
+                    <path d="M15 2v6"></path>
+                    <path d="M7 8h10v4a5 5 0 0 1-10 0V8z"></path>
+                    <path d="M12 17v5"></path>
                 </svg><span class="nav-text" data-i18n="nav.plugins">Plugin Engine</span>
             </div>
 
             <div class="nav-section-label admin-only" style="margin-top: 10px;" data-i18n="nav.section.security">SECURITY</div>
             <div class="nav-item admin-only" onclick="switchView('management', this)" data-tooltip="IAM Access">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                    <circle cx="9" cy="12" r="2"></circle>
+                    <path d="M14 10h4"></path>
+                    <path d="M14 14h3"></path>
                 </svg><span class="nav-text" data-i18n="nav.iam">IAM Access</span>
             </div>
             <div class="nav-item" onclick="switchView('profile', this)" data-tooltip="My Account">
@@ -726,15 +736,15 @@
                 <div class="hc-header">
                     <div class="hc-header__left">
                         <h1 class="hc-header__title">Self-Healing Hub</h1>
-                        <p class="hc-header__sub">One MCP turns on for the real cause — locator, assertion, timeout, network, stale element, or script — and the hub shows only that problem.</p>
+                        <p class="hc-header__sub">Propose Fix names the cause — locator, assertion, timeout, network, stale element, or script — and shows only that problem.</p>
                     </div>
                     <div class="hc-header__right">
                         <span id="healing-ai-chip" class="hc-chip hc-chip--off">
                             <span class="hc-dot"></span>AI loading…
                         </span>
-                        <button class="hc-btn-configure" onclick="window.switchView && window.switchView('ai-usage', null)">
+                        <button class="hc-btn-configure role-manager-only" onclick="window.switchView && window.switchView('ai-config', document.querySelector('.nav-item[onclick*=ai-config]'))">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                            Configure AI &amp; MCP
+                            AI Configuration
                         </button>
                     </div>
                 </div>
@@ -753,7 +763,7 @@
                     <div class="hc-stat-sep"></div>
                     <div class="hc-stat hc-stat--info">
                         <span class="hc-stat__val" id="healing-stat-mcp-ready">—</span>
-                        <span class="hc-stat__lbl">MCP-ready</span>
+                        <span class="hc-stat__lbl">Ready to fix</span>
                     </div>
                     <div class="hc-stat-sep"></div>
                     <div class="hc-stat hc-stat--pass">
@@ -799,7 +809,7 @@
                         <div class="hc-section__left">
                             <span class="hc-section__dot hc-section__dot--heal"></span>
                             <h2 class="hc-section__title">Locator Interventions</h2>
-                            <span class="hc-section__hint">Healed selectors recorded via MCP or Propose fix</span>
+                            <span class="hc-section__hint">Selectors saved when Propose Fix confirms a unique match on the page</span>
                         </div>
                         <button class="hc-ctrl-btn" onclick="window.loadLocatorInterventions && window.loadLocatorInterventions()">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.08-1.96"/></svg>
@@ -811,12 +821,12 @@
 
             </section>
 
-            <!-- AI & MCP GUIDE (all operations roles — read-only) -->
+            <!-- AI status (read-only). Credentials live in AI Configuration. -->
             <section id="view-ai-usage" class="view-section intelligence-view">
                 <div class="aipage-header">
                     <div class="aipage-header__text">
-                        <h1 class="intelligence-view__title">AI &amp; MCP Guide</h1>
-                        <p class="intelligence-view__subtitle">Use Self-Healing Hub and MCP agents. Provider credentials are configured by your Manager in <strong>AI Configuration</strong>.</p>
+                        <h1 class="intelligence-view__title">AI status</h1>
+                        <p class="intelligence-view__subtitle">The model Self-Healing uses. A manager changes the provider and the key in <strong>AI Configuration</strong>.</p>
                     </div>
                     <span id="ai-usage-status-badge" class="intel-badge intel-badge--manual">Loading…</span>
                 </div>
@@ -835,43 +845,13 @@
                         <span class="aipage-status-label">AI enabled</span>
                         <span class="aipage-status-value" id="ai-usage-enabled">—</span>
                     </div>
-                    <div class="aipage-status-sep"></div>
-                    <div class="aipage-status-item">
-                        <span class="aipage-status-label">MCP token</span>
-                        <span class="aipage-status-value" id="ai-usage-mcp">—</span>
-                    </div>
                 </div>
                 <div class="data-card">
-                    <h3 class="aipage-row__title" style="margin:0 0 8px;">How to use AI healing</h3>
-                    <p class="aipage-row__desc" style="margin:0 0 12px;">Open <strong>Self-Healing Hub</strong>, select a failure, click <strong>Propose fix</strong>. AI analyzes error logs, captured page HTML, and test source comments to suggest the correct locator or code patch — for locators, timeouts, assertions, and script errors.</p>
-                    <button type="button" class="btn-secondary" onclick="switchView('healing', document.querySelector('.nav-item[onclick*=healing]'))">Open Self-Healing Hub</button>
-                </div>
-                <div class="data-card aipage-mcp-card">
-                    <div class="aipage-mcp-header">
-                        <div>
-                            <h3 class="aipage-row__title" style="margin:0 0 4px;">MCP Server (deploy on your infrastructure)</h3>
-                            <p class="aipage-row__desc" style="margin:0;">SRE Capsule exposes MCP at <code id="ai-usage-mcp-url">…/mcp</code>. Deploy the server on a VM, Kubernetes cluster, or cloud host — IDE agents connect over HTTPS with a Bearer token.</p>
-                        </div>
-                    </div>
-                    <div class="aipage-mcp-grid">
-                        <div class="aipage-mcp-col">
-                            <p class="aipage-mcp-col__title">Connect an agent</p>
-                            <p class="aipage-mcp-col__desc">Use Cursor, Claude Desktop, or any MCP client. Set URL to your SRE Capsule host + <code>/mcp</code> and header <code>Authorization: Bearer &lt;token&gt;</code>.</p>
-                            <button type="button" class="btn-secondary" style="margin-top:12px;" onclick="window.copyMCPAgentConfig && window.copyMCPAgentConfig()">Copy MCP connection config</button>
-                        </div>
-                        <div class="aipage-mcp-col">
-                            <p class="aipage-mcp-col__title">Open-source MCP tools</p>
-                            <p class="aipage-mcp-col__desc">Built-in tools: <code>heal_incident</code>, <code>get_incident_context</code>, <code>record_healing_intervention</code>, <code>detect_locator_failures</code>. Compatible with the MCP spec — chain with community servers (filesystem, git, browser) in your agent.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="data-card">
-                    <h3 class="aipage-row__title" style="margin:0 0 12px;">Available MCP tools</h3>
-                    <div class="ai-tools-grid">
-                        <div class="ai-tool-card"><div class="ai-tool-card__name">heal_incident</div><div class="ai-tool-card__desc">Full AI healing for one incident (locator or script).</div><div class="ai-tool-card__badge ai-tool-card__badge--write">HEAL</div></div>
-                        <div class="ai-tool-card"><div class="ai-tool-card__name">get_incident_context</div><div class="ai-tool-card__desc">Logs, framework, DOM snapshot, category.</div><div class="ai-tool-card__badge">READ</div></div>
-                        <div class="ai-tool-card"><div class="ai-tool-card__name">record_healing_intervention</div><div class="ai-tool-card__desc">Persist original → healed locator with confidence.</div><div class="ai-tool-card__badge ai-tool-card__badge--write">WRITE</div></div>
-                        <div class="ai-tool-card"><div class="ai-tool-card__name">detect_locator_failures</div><div class="ai-tool-card__desc">List broken selectors for a CI run.</div><div class="ai-tool-card__badge">READ</div></div>
+                    <h3 class="aipage-row__title" style="margin:0 0 8px;">Where the model runs</h3>
+                    <p class="aipage-row__desc" style="margin:0 0 12px;">Open <strong>Self-Healing Hub</strong> and click <strong>Propose Fix</strong> on a failure. The result stays on that incident. A locator is saved under Locator Interventions only when it matches one element on the page.</p>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button type="button" class="btn-secondary" onclick="switchView('healing', document.querySelector('.nav-item[onclick*=healing]'))">Open Self-Healing Hub</button>
+                        <button type="button" class="btn-primary role-manager-only" onclick="switchView('ai-config', document.querySelector('.nav-item[onclick*=ai-config]'))">AI Configuration</button>
                     </div>
                 </div>
             </section>
@@ -883,7 +863,7 @@
                 <div class="aipage-header">
                     <div class="aipage-header__text">
                         <h1 class="intelligence-view__title">AI Configuration</h1>
-                        <p class="intelligence-view__subtitle">Manager-only: LLM provider, API key, timeouts. Operators use <strong>AI &amp; MCP Guide</strong> and Self-Healing Hub.</p>
+                        <p class="intelligence-view__subtitle">Provider, API key, and timeouts for Propose Fix. The result appears in Self-Healing Hub.</p>
                     </div>
                     <span id="ai-status-badge" class="intel-badge intel-badge--manual">Loading…</span>
                 </div>
@@ -903,11 +883,6 @@
                     <div class="aipage-status-item">
                         <span class="aipage-status-label">API Key</span>
                         <span class="aipage-status-value" id="ai-kpi-apikey">—</span>
-                    </div>
-                    <div class="aipage-status-sep"></div>
-                    <div class="aipage-status-item">
-                        <span class="aipage-status-label">MCP Token</span>
-                        <span class="aipage-status-value" id="ai-kpi-mcp-token">—</span>
                     </div>
                 </div>
 
@@ -1029,28 +1004,6 @@
                         </div>
                     </div>
 
-                </div>
-
-                <!-- MCP server deployment & custom tools (Manager) -->
-                <div class="data-card aipage-mcp-card">
-                    <div class="aipage-mcp-header">
-                        <div>
-                            <h3 class="aipage-row__title" style="margin:0 0 4px;">MCP Server deployment</h3>
-                            <p class="aipage-row__desc" style="margin:0;">Run SRE Capsule on a dedicated server (VM, Docker, K8s). MCP endpoint: <code id="mcp-server-url">…/mcp</code>. Set <code>SRECAPSULE_MCP_TOKEN</code> on the server; agents connect via HTTPS Bearer auth.</p>
-                        </div>
-                    </div>
-                    <div class="aipage-mcp-grid">
-                        <div class="aipage-mcp-col">
-                            <p class="aipage-mcp-col__title">Server token</p>
-                            <p id="mcp-token-status" class="aipage-mcp-col__status"></p>
-                            <p class="aipage-mcp-col__desc" style="margin-top:8px;">Env: <code>SRECAPSULE_MCP_TOKEN</code> or <code>telemetry.webhook_token</code> in config.yaml.</p>
-                        </div>
-                        <div class="aipage-mcp-col">
-                            <p class="aipage-mcp-col__title">Extend with custom MCP</p>
-                            <p class="aipage-mcp-col__desc">Register additional tools in your agent alongside SRE Capsule MCP (e.g. filesystem, git, Playwright MCP). Use <code>heal_incident</code> as the primary self-healing entry point; community servers: <a href="https://github.com/modelcontextprotocol/servers" class="text-link" target="_blank" rel="noopener">modelcontextprotocol/servers</a>.</p>
-                            <button type="button" class="btn-secondary" style="margin-top:14px;" onclick="window.copyMCPAgentConfig && window.copyMCPAgentConfig()">Copy connection snippet</button>
-                        </div>
-                    </div>
                 </div>
 
             </section>
@@ -1374,7 +1327,7 @@
                                                 <option value="dora">DORA Metrics</option>
                                                 <option value="plugins">Plugin Engine</option>
                                                 <option value="healing">Self-Healing Hub</option>
-                                                <option value="ai-config">AI &amp; MCP Configuration</option>
+                                                <option value="ai-config">AI Configuration</option>
                                                 <option value="about">Help Center</option>
                                             </select>
                                             <p class="form-field-hint">Opened after sign-in when your role allows access.</p>
@@ -1469,6 +1422,22 @@
                                                 <span class="theme-palette-preview" style="--swatch-a:#268bd2;--swatch-b:#002b36"></span>
                                                 <span class="theme-palette-label" data-i18n="account.palette.solarized">Solarized</span>
                                             </button>
+                                            <button type="button" class="theme-palette-chip" data-theme-palette="nord" title="Nord">
+                                                <span class="theme-palette-preview" style="--swatch-a:#88c0d0;--swatch-b:#2e3440"></span>
+                                                <span class="theme-palette-label" data-i18n="account.palette.nord">Nord</span>
+                                            </button>
+                                            <button type="button" class="theme-palette-chip" data-theme-palette="aurora" title="Aurora">
+                                                <span class="theme-palette-preview" style="--swatch-a:#a78bfa;--swatch-b:#160b24"></span>
+                                                <span class="theme-palette-label" data-i18n="account.palette.aurora">Aurora</span>
+                                            </button>
+                                            <button type="button" class="theme-palette-chip" data-theme-palette="sand" title="Sand">
+                                                <span class="theme-palette-preview" style="--swatch-a:#e7c27a;--swatch-b:#1c1610"></span>
+                                                <span class="theme-palette-label" data-i18n="account.palette.sand">Sand</span>
+                                            </button>
+                                            <button type="button" class="theme-palette-chip" data-theme-palette="crimson" title="Crimson">
+                                                <span class="theme-palette-preview" style="--swatch-a:#fb7185;--swatch-b:#1a0b10"></span>
+                                                <span class="theme-palette-label" data-i18n="account.palette.crimson">Crimson</span>
+                                            </button>
                                         </div>
                                         <div class="pref-sync-fields" aria-hidden="true">
                                             <select id="pref-theme-palette">
@@ -1478,6 +1447,10 @@
                                                 <option value="ops">Incident Command</option>
                                                 <option value="terminal">Terminal</option>
                                                 <option value="solarized">Solarized</option>
+                                                <option value="nord">Nord</option>
+                                                <option value="aurora">Aurora</option>
+                                                <option value="sand">Sand</option>
+                                                <option value="crimson">Crimson</option>
                                             </select>
                                         </div>
                                     </div>
@@ -1837,18 +1810,51 @@
                     <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
                     <button type="button" data-cmd="italic" title="Italic"><span style="font-family:Georgia,serif;font-style:italic">I</span></button>
                     <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
-                    <label class="rte-color">Color <input type="color" id="rte-color" value="#2563eb" aria-label="Text color"></label>
-                    <label class="rte-size">Size
-                        <select id="rte-size" aria-label="Font size">
-                            <option value="12px">12</option>
-                            <option value="14px" selected>14</option>
-                            <option value="16px">16</option>
-                            <option value="18px">18</option>
-                            <option value="20px">20</option>
-                            <option value="24px">24</option>
-                            <option value="28px">28</option>
-                        </select>
-                    </label>
+                    <div class="rte-popwrap">
+                        <button type="button" class="rte-pop-btn" data-pop="color" title="Text color" aria-expanded="false" aria-controls="rte-color-pop">
+                            <span class="rte-color-mark" aria-hidden="true">A</span>
+                        </button>
+                        <div id="rte-color-pop" class="rte-pop rte-colors" hidden role="group" aria-label="Text color">
+                            <button type="button" class="rte-swatch rte-swatch--default is-active" data-color="default" title="Default" aria-label="Default text color">A</button>
+                            <button type="button" class="rte-swatch" data-color="#ef4444" style="background:#ef4444" title="Red" aria-label="Red"></button>
+                            <button type="button" class="rte-swatch" data-color="#f97316" style="background:#f97316" title="Orange" aria-label="Orange"></button>
+                            <button type="button" class="rte-swatch" data-color="#eab308" style="background:#eab308" title="Yellow" aria-label="Yellow"></button>
+                            <button type="button" class="rte-swatch" data-color="#22c55e" style="background:#22c55e" title="Green" aria-label="Green"></button>
+                            <button type="button" class="rte-swatch" data-color="#3b82f6" style="background:#3b82f6" title="Blue" aria-label="Blue"></button>
+                            <button type="button" class="rte-swatch" data-color="#a855f7" style="background:#a855f7" title="Purple" aria-label="Purple"></button>
+                        </div>
+                    </div>
+                    <div class="rte-popwrap">
+                        <button type="button" class="rte-pop-btn" data-pop="emoji" title="Emoji" aria-expanded="false" aria-controls="rte-emoji-pop">😀</button>
+                        <div id="rte-emoji-pop" class="rte-pop rte-emojis" hidden role="group" aria-label="Emoji">
+                            <button type="button" class="rte-emoji" data-emoji="😀">😀</button>
+                            <button type="button" class="rte-emoji" data-emoji="😁">😁</button>
+                            <button type="button" class="rte-emoji" data-emoji="😂">😂</button>
+                            <button type="button" class="rte-emoji" data-emoji="🙂">🙂</button>
+                            <button type="button" class="rte-emoji" data-emoji="😉">😉</button>
+                            <button type="button" class="rte-emoji" data-emoji="😊">😊</button>
+                            <button type="button" class="rte-emoji" data-emoji="😍">😍</button>
+                            <button type="button" class="rte-emoji" data-emoji="🤔">🤔</button>
+                            <button type="button" class="rte-emoji" data-emoji="👍">👍</button>
+                            <button type="button" class="rte-emoji" data-emoji="👎">👎</button>
+                            <button type="button" class="rte-emoji" data-emoji="👏">👏</button>
+                            <button type="button" class="rte-emoji" data-emoji="🙏">🙏</button>
+                            <button type="button" class="rte-emoji" data-emoji="👀">👀</button>
+                            <button type="button" class="rte-emoji" data-emoji="💡">💡</button>
+                            <button type="button" class="rte-emoji" data-emoji="🔥">🔥</button>
+                            <button type="button" class="rte-emoji" data-emoji="✨">✨</button>
+                            <button type="button" class="rte-emoji" data-emoji="✅">✅</button>
+                            <button type="button" class="rte-emoji" data-emoji="❌">❌</button>
+                            <button type="button" class="rte-emoji" data-emoji="⚠️">⚠️</button>
+                            <button type="button" class="rte-emoji" data-emoji="🐛">🐛</button>
+                            <button type="button" class="rte-emoji" data-emoji="🚀">🚀</button>
+                            <button type="button" class="rte-emoji" data-emoji="📌">📌</button>
+                            <button type="button" class="rte-emoji" data-emoji="⏳">⏳</button>
+                            <button type="button" class="rte-emoji" data-emoji="🎉">🎉</button>
+                        </div>
+                    </div>
+                    <button type="button" data-cmd="ul" title="Bullet list">•</button>
+                    <button type="button" data-cmd="ol" title="Numbered list">1.</button>
                     <button type="button" data-cmd="code" title="Inline code">&lt;/&gt;</button>
                     <button type="button" data-cmd="pre" title="Code block">{ }</button>
                 </div>
@@ -1862,6 +1868,6 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-    <script type="module" src="app.js?v=1.0.33-encrypted-routes"></script>
+    <script type="module" src="app.js?v=1.0.37-healing-flow"></script>
 </body>
 </html>

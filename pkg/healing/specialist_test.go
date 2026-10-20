@@ -7,7 +7,7 @@ import (
 
 func TestSpecialistFor_ActivatesOnlyTheMatchingMCP(t *testing.T) {
 	locator := SpecialistFor(CategoryLocator, "TC-04", `[data-test="proceed-to-payment"]`)
-	if locator.Label != "Locator MCP" || locator.Tool != "record_healing_intervention" {
+	if locator.Label != "Locator" || locator.Tool != "record_healing_intervention" {
 		t.Fatalf("locator specialist = %+v", locator)
 	}
 	if locator.Problem == "" || !strings.Contains(locator.Problem, "proceed-to-payment") {
@@ -15,7 +15,7 @@ func TestSpecialistFor_ActivatesOnlyTheMatchingMCP(t *testing.T) {
 	}
 
 	assertion := SpecialistFor(CategoryAssertion, "TC-02", "")
-	if assertion.Label != "Assertion MCP" || assertion.Tool == "record_healing_intervention" {
+	if assertion.Label != "Assertion" || assertion.Tool == "record_healing_intervention" {
 		t.Fatalf("assertion specialist = %+v", assertion)
 	}
 	if strings.Contains(strings.ToLower(assertion.Problem), "locator") {
@@ -23,7 +23,7 @@ func TestSpecialistFor_ActivatesOnlyTheMatchingMCP(t *testing.T) {
 	}
 
 	timeout := SpecialistFor(CategoryTimeout, "TC-01", "")
-	if timeout.Label != "Timeout MCP" {
+	if timeout.Label != "Timeout" {
 		t.Fatalf("timeout specialist = %+v", timeout)
 	}
 }

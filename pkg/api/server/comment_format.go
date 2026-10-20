@@ -21,6 +21,8 @@ type CommentBlock struct {
 	Color        string `json:"color,omitempty"`
 	Size         string `json:"size,omitempty"`
 	Br           bool   `json:"br,omitempty"`
+	Li           string `json:"li,omitempty"`
+	Item         bool   `json:"item,omitempty"`
 }
 
 var (
@@ -41,9 +43,41 @@ func RenderCommentBlocks(blocks []CommentBlock) (string, bool) {
 	}
 	var b strings.Builder
 	textRunes := 0
+	listKind := ""
+	liOpen := false
+	closeList := func() {
+		if liOpen {
+			b.WriteString("</li>")
+			liOpen = false
+		}
+		if listKind != "" {
+			b.WriteString("</" + listKind + ">")
+			listKind = ""
+		}
+	}
 	for _, block := range blocks {
 		if textRunes > 8000 {
 			break
+		}
+		kind := ""
+		if block.Li == "ul" || block.Li == "ol" {
+			kind = block.Li
+		}
+		if kind == "" {
+			closeList()
+		} else {
+			if listKind != kind {
+				closeList()
+				b.WriteString("<" + kind + ">")
+				listKind = kind
+			}
+			if block.Item || !liOpen {
+				if liOpen {
+					b.WriteString("</li>")
+				}
+				b.WriteString("<li>")
+				liOpen = true
+			}
 		}
 		if block.Br {
 			b.WriteString("<br>")
@@ -85,36 +119,41 @@ func RenderCommentBlocks(blocks []CommentBlock) (string, bool) {
 			text = truncateRunes(text, 2000)
 		}
 		textRunes += utf8.RuneCountInString(text)
-		inner := html.EscapeString(text)
-		if block.Code {
-			inner = "<code>" + inner + "</code>"
-		}
-		if block.B {
-			inner = "<strong>" + inner + "</strong>"
-		}
-		if block.I {
-			inner = "<em>" + inner + "</em>"
-		}
-		if block.U {
-			inner = "<u>" + inner + "</u>"
-		}
-		style := ""
-		if commentColorRe.MatchString(block.Color) {
-			style += "color:" + block.Color + ";"
-		}
-		if commentSizeRe.MatchString(block.Size) {
-			style += "font-size:" + block.Size + ";"
-		}
-		if style != "" {
-			inner = `<span style="` + style + `">` + inner + `</span>`
-		}
-		b.WriteString(inner)
+		b.WriteString(renderInline(block, text))
 	}
+	closeList()
 	out := strings.TrimSpace(b.String())
 	if out == "" || textRunes == 0 {
 		return "", false
 	}
 	return out, true
+}
+
+func renderInline(block CommentBlock, text string) string {
+	inner := html.EscapeString(text)
+	if block.Code {
+		inner = "<code>" + inner + "</code>"
+	}
+	if block.B {
+		inner = "<strong>" + inner + "</strong>"
+	}
+	if block.I {
+		inner = "<em>" + inner + "</em>"
+	}
+	if block.U {
+		inner = "<u>" + inner + "</u>"
+	}
+	style := ""
+	if commentColorRe.MatchString(block.Color) {
+		style += "color:" + block.Color + ";"
+	}
+	if commentSizeRe.MatchString(block.Size) {
+		style += "font-size:" + block.Size + ";"
+	}
+	if style != "" {
+		inner = `<span style="` + style + `">` + inner + `</span>`
+	}
+	return inner
 }
 
 // applyMentionLabels sets the visible name for each @mention.

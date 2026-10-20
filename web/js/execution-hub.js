@@ -312,11 +312,8 @@ export async function openExecutionSheet(detail) {
 
     const role = parseJwt(localStorage.getItem('sre-jwt'))?.role;
     let actionHtml = '';
-    if (detail.incidentId > 0 && canViewHealing(role)) {
-        actionHtml += `<button type="button" class="btn btn-secondary btn-sm" onclick="copyMCPPrompt(${detail.incidentId})">Copy MCP prompt</button>`;
-    }
     if (detail.incidentId > 0 && canManageHealing(role)) {
-        actionHtml += `<button type="button" class="btn btn-secondary btn-sm" onclick="openHealingContext(${detail.incidentId})">Healing context</button>`;
+        actionHtml += `<button type="button" class="btn btn-secondary btn-sm" onclick="openProposeFromSheet(${detail.incidentId})">Propose fix</button>`;
     }
     actionHtml += `<button type="button" class="btn btn-secondary btn-sm" onclick="closeExecutionSheet()">Close</button>`;
     actions.innerHTML = actionHtml;

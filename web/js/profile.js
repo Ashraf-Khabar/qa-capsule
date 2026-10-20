@@ -3,6 +3,7 @@
  * Personal account settings and persisted user preferences
  */
 import { fetchWithAuth, parseJwt, parseApiJson } from './api.js';
+import { secureLinkTokenFromPath } from './links.js';
 import { notify, applyThemeAppearance, previewThemeFromForm } from './ui.js';
 import { roleLabel, normalizeRole, canAccessView } from './roles.js';
 import { setSelectedCurrency } from './settings.js';
@@ -233,8 +234,7 @@ export function applyDefaultLandingView(prefs, role) {
     if (!role || !canAccessView(role, view)) return;
     if (window.__qaLandingViewApplied) return;
     window.__qaLandingViewApplied = true;
-    const here = window.location.pathname || '';
-    if (here.startsWith('/l/') || /^\/[a-z0-9]{4}\/[a-z0-9]{4}\/[^/]+$/.test(here)) return;
+    if (secureLinkTokenFromPath(window.location.pathname || '')) return;
     const nav = document.querySelector(`.nav-item[onclick*="switchView('${view}'"]`);
     if (typeof window.switchView === 'function') window.switchView(view, nav);
 }

@@ -1492,7 +1492,6 @@ export async function loadAIConfig() {
     const statusRes = await fetchWithAuth('/api/ai/status');
     const { ok: sok, data: sdata } = await parseApiJson(statusRes);
     _updateAIStatusBadge(sok && sdata ? sdata : null);
-    _updateMCPSection(sok && sdata ? sdata : null);
 }
 
 export async function saveAIConfig() {
@@ -1625,48 +1624,6 @@ function _updateAIStatusBadge(data) {
     }
 }
 
-function _mcpTokenLabel(data) {
-    if (data?.mcp_token_set) return { text: 'Configured', color: 'var(--success-text)' };
-    return { text: 'Optional (local)', color: 'var(--text-subtle)' };
-}
-
-function _updateMCPSection(data) {
-    const urlEl = document.getElementById('mcp-server-url');
-    if (urlEl) urlEl.textContent = `${window.location.origin}/mcp`;
-
-    const tokenEl = document.getElementById('mcp-token-status');
-    if (tokenEl) {
-        if (data?.mcp_token_set) {
-            tokenEl.innerHTML = '<span style="color:var(--success-text);font-weight:600;">Token configured</span> &mdash; the MCP endpoint is protected.';
-        } else {
-            tokenEl.innerHTML = '<span style="color:var(--text-subtle);font-weight:600;">Not set</span> &mdash; optional for local demo. Set <code>SRECAPSULE_MCP_TOKEN</code> or <code>telemetry.webhook_token</code> in production.';
-        }
-    }
-
-    const kpiToken = document.getElementById('ai-kpi-mcp-token');
-    if (kpiToken) {
-        const mcp = _mcpTokenLabel(data);
-        kpiToken.textContent = mcp.text;
-        kpiToken.style.color = mcp.color;
-    }
-}
-
-window.copyMCPAgentConfig = function() {
-    const origin = window.location.origin;
-    const config = JSON.stringify({
-        mcpServers: {
-            'sre-capsule': {
-                url: `${origin}/mcp`,
-                headers: { Authorization: 'Bearer <SRECAPSULE_MCP_TOKEN>' },
-            },
-        },
-    }, null, 2);
-    navigator.clipboard.writeText(config).then(
-        () => notify('MCP connection config copied to clipboard.', 'success'),
-        () => notify(config, 'info'),
-    );
-};
-
 export async function loadAIUsageView() {
     const res = await fetchWithAuth('/api/ai/status');
     const { ok, data } = await parseApiJson(res);
@@ -1680,16 +1637,10 @@ export async function loadAIUsageView() {
         set('ai-usage-provider', data.provider || 'disabled');
         set('ai-usage-model', data.model || '—');
         set('ai-usage-enabled', data.enabled ? 'Yes' : 'No');
-        const mcp = _mcpTokenLabel(data);
-        const mcpEl = document.getElementById('ai-usage-mcp');
-        if (mcpEl) {
-            mcpEl.textContent = mcp.text;
-            mcpEl.style.color = mcp.color;
-        }
+    } else if (badge) {
+        badge.textContent = 'AI off';
+        badge.className = 'intel-badge intel-badge--manual';
     }
-    const urlEl = document.getElementById('ai-usage-mcp-url');
-    if (urlEl) urlEl.textContent = `${window.location.origin}/mcp`;
-    _updateMCPSection(ok ? data : null);
 }
 
 window.loadAIUsageView = loadAIUsageView;

@@ -15,6 +15,15 @@ func appOrStaticHandler() http.Handler {
 			static.ServeHTTP(w, r)
 			return
 		}
+		if token, ok := namedLinkToken(r.URL.Path); ok {
+			link, err := openLink(token, time.Now())
+			if err != nil || !pathMatchesLink(r.URL.Path, link, token) {
+				http.NotFound(w, r)
+				return
+			}
+			serveAppIndex(w, r)
+			return
+		}
 		a, b, token, ok := splitDynamicLink(r.URL.Path)
 		if !ok {
 			static.ServeHTTP(w, r)

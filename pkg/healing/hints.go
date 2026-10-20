@@ -75,9 +75,9 @@ func SuggestedActions(category string) []string {
 		}
 	default:
 		return []string{
-			"Use MCP get_incident_context with this incident_id for full telemetry.",
-			"Inspect stack trace and console logs to locate the failing step in source.",
-			"Apply the smallest fix; re-run the single failing test in CI before full suite.",
+			"Open Propose Fix on this incident to see the cause and the suggested change.",
+			"Inspect the stack trace and console logs to locate the failing step.",
+			"Apply the smallest fix, then re-run the failing test.",
 		}
 	}
 }

@@ -64,9 +64,80 @@ func sealLink(link secureLink) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(sealed), nil
 }
 
-// linkShards are two short segments bound to the token. They change with every
-// link and are checked before the page is served, so the address is
-// /XXXX/YYYY/<security hash> rather than one fixed /l/ prefix.
+// linkPath is the address bar form: the page name, then the security hash.
+// Records use /review/id=<hash> so the id is never a sequential number.
+func linkPath(link secureLink, token string) string {
+	switch link.K {
+	case "comment", "report":
+		return "/review/id=" + token
+	case "view":
+		if link.V == "about" && link.T != "" {
+			return "/about/" + link.T + "/" + token
+		}
+		return "/" + viewSlug(link.V) + "/" + token
+	default:
+		return "/l/" + token
+	}
+}
+
+func viewSlug(view string) string {
+	switch view {
+	case "organizations":
+		return "workspaces"
+	case "ingestion":
+		return "gateways"
+	case "ai-usage":
+		return "ai"
+	case "rca", "healing":
+		return "healing"
+	case "unified-report":
+		return "review"
+	default:
+		return view
+	}
+}
+
+func knownViewSlug(slug string) bool {
+	switch strings.ToLower(slug) {
+	case "dashboard", "management", "dora", "finops", "healing", "ai", "ai-usage", "ai-config",
+		"workspaces", "organizations", "gateways", "ingestion", "plugins", "settings", "profile", "about", "review":
+		return true
+	default:
+		return false
+	}
+}
+
+// namedLinkToken reads /dashboard/<hash>, /about/<topic>/<hash>, and /review/id=<hash>.
+func namedLinkToken(path string) (string, bool) {
+	path = strings.Trim(path, "/")
+	if path == "" || strings.Contains(path, ".") {
+		return "", false
+	}
+	lower := strings.ToLower(path)
+	if strings.HasPrefix(lower, "review/id=") {
+		token := path[len("review/id="):]
+		if token != "" && !strings.Contains(token, "/") {
+			return token, true
+		}
+		return "", false
+	}
+	parts := strings.Split(path, "/")
+	if len(parts) == 2 && knownViewSlug(parts[0]) {
+		return parts[1], true
+	}
+	if len(parts) == 3 && strings.EqualFold(parts[0], "about") && linkTopicRe.MatchString(parts[1]) {
+		return parts[2], true
+	}
+	return "", false
+}
+
+func pathMatchesLink(requestPath string, link secureLink, token string) bool {
+	got := strings.TrimRight(requestPath, "/")
+	want := strings.TrimRight(linkPath(link, token), "/")
+	return strings.EqualFold(got, want)
+}
+
+// linkShards are kept so older /xxxx/yyyy/<hash> bookmarks still open.
 func linkShards(token string) (string, string) {
 	mac := hmac.New(sha256.New, linkKey())
 	_, _ = mac.Write([]byte(token))
@@ -80,11 +151,6 @@ func linkShards(token string) (string, string) {
 		return string(out)
 	}
 	return encode(sum[0:4]), encode(sum[4:8])
-}
-
-func linkPath(token string) string {
-	a, b := linkShards(token)
-	return "/" + a + "/" + b + "/" + token
 }
 
 func splitDynamicLink(path string) (string, string, string, bool) {
@@ -195,7 +261,7 @@ func handleMintLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"token": token, "path": linkPath(token)})
+	json.NewEncoder(w).Encode(map[string]string{"token": token, "path": linkPath(link, token)})
 }
 
 func handleSecureLink(w http.ResponseWriter, r *http.Request) {

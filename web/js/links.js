@@ -1,15 +1,23 @@
 /**
- * Encrypted navigation. The address is /XXXX/YYYY/<hash>. Page names and record
- * ids stay inside the hash, not in the two segments.
+ * Navigation addresses name the page, then carry the security hash.
+ * /dashboard/<hash>  /management/<hash>  /dora/<hash>  /review/id=<hash>
  */
 import { fetchWithAuth, parseApiJson } from './api.js';
 
 const minted = new Map();
 let navSeq = 0;
 
-/** Token from /XXXX/YYYY/<hash> or the older /l/<hash> form. */
+const PAGE_SLUG = /^(dashboard|management|dora|finops|healing|ai|ai-usage|ai-config|workspaces|organizations|gateways|ingestion|plugins|settings|profile|about|review)$/i;
+
+/** Token from /dashboard/<hash>, /review/id=<hash>, or an older address. */
 export function secureLinkTokenFromPath(pathname) {
     const path = pathname || '/';
+    const review = path.match(/^\/review\/id=([^/]+)$/i);
+    if (review) return decodeURIComponent(review[1]);
+    const about = path.match(/^\/about\/[a-z0-9_]+\/([^/]+)$/i);
+    if (about && !about[1].includes('.')) return decodeURIComponent(about[1]);
+    const page = path.match(/^\/([a-z0-9-]+)\/([^/]+)$/i);
+    if (page && PAGE_SLUG.test(page[1]) && !page[2].includes('.')) return decodeURIComponent(page[2]);
     const legacy = path.match(/^\/l\/([^/]+)$/);
     if (legacy) return decodeURIComponent(legacy[1]);
     const dynamic = path.match(/^\/([a-z0-9]{4})\/([a-z0-9]{4})\/([^/]+)$/);
@@ -47,7 +55,7 @@ async function mintToken(dest) {
     return pending;
 }
 
-/** Put the current screen on /XXXX/YYYY/<hash>. */
+/** Put the current screen on /<page>/<hash> or /review/id=<hash>. */
 export async function publishSecureLink(dest) {
     if (window.__openingSecureLink || !dest?.kind) return;
     const seq = ++navSeq;

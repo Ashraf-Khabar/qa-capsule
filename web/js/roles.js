@@ -215,7 +215,7 @@ export function accessDeniedMessage(viewId) {
         healing: 'Self-Healing Hub',
         rca: 'Self-Healing Hub',
         'ai-config': 'AI Configuration',
-        'ai-usage': 'AI & MCP Guide',
+        'ai-usage': 'AI status',
         dora: 'DORA Dashboard'
     };
     const name = labels[viewId] || viewId;

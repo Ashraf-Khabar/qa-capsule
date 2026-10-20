@@ -200,9 +200,11 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 				resp["confidence"] = 0
 				resp["change_lines"] = []map[string]interface{}{}
 				resp["fix_highlights"] = []map[string]interface{}{}
+			} else if verdict.Verified && verdict.Level == "high" {
+				resp["recorded"] = saveConfirmedLocator(id, framework, originalLocator, healed, explanation, confidence)
 			}
 			if !domUsed {
-				resp["dom_capture_hint"] = "Locator MCP is active. The problem is this selector. This run did not store the page HTML, so a replacement cannot be confirmed."
+				resp["dom_capture_hint"] = "The problem is this selector. This run did not store the page HTML, so a replacement cannot be confirmed."
 			}
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(resp)
@@ -273,6 +275,29 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+// saveConfirmedLocator stores a selector that was unique on the captured page.
+// A second Propose Fix for the same replacement does not add another row.
+func saveConfirmedLocator(incidentID int64, framework, original, healed, explanation string, confidence float64) bool {
+	if core.DB == nil || strings.TrimSpace(healed) == "" || core.LocatorSameAs(healed, original) {
+		return false
+	}
+	var existing int
+	if err := core.DB.QueryRow(
+		`SELECT COUNT(*) FROM locator_healings WHERE incident_id = ? AND healed_locator = ?`,
+		incidentID, healed,
+	).Scan(&existing); err == nil && existing > 0 {
+		_, _ = core.DB.Exec(`UPDATE incidents SET mcp_healed = 1 WHERE id = ?`, incidentID)
+		return true
+	}
+	var runID string
+	_ = core.DB.QueryRow(`SELECT COALESCE(pipeline_run_id, '') FROM incidents WHERE id = ?`, incidentID).Scan(&runID)
+	if _, err := core.RecordLocatorHealing(incidentID, runID, framework, original, healed, explanation, "propose_fix", confidence); err != nil {
+		slog.Warn("propose-fix: could not save locator intervention", "incident_id", incidentID, "err", err)
+		return false
+	}
+	return true
 }
 
 // aiLocatorHeal uses Groq/Gemini to find the real locator from the page DOM.
