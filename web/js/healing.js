@@ -2,7 +2,7 @@
  * Self-Healing Hub
  */
 import { fetchWithAuth, parseApiJson, parseJwt } from './api.js';
-import { notify } from './ui.js';
+import { notify, showConfirmModal } from './ui.js';
 import { canManageHealing, canDeleteIncidents } from './roles.js';
 
 let currentRole = '';
@@ -825,6 +825,18 @@ export async function openProposeFix(id) {
 
         const code = (locatorMCP || fix.code) && fix.code ? renderFixCodeBlock(fix.code, fix, id) : '';
         const saved = fix.recorded ? `<p class="hc-panel__dom-note">Saved under Locator Interventions.</p>` : '';
+        const role = currentRole || parseJwt(localStorage.getItem('sre-jwt'))?.role || '';
+        const canApply = badge.precise && locs.healed && locs.healed !== locs.original
+            && fix.source_path && canManageHealing(role);
+        const canRerun = badge.precise && String(fix.source_path || '').endsWith('.py') && canManageHealing(role);
+        const applyBlock = (canApply || canRerun)
+            ? `<div class="hc-panel__actions">
+                ${canApply ? `<button type="button" class="btn btn-primary btn-sm" id="hc-apply-${id}">Apply to test</button>` : ''}
+                ${canRerun ? `<button type="button" class="btn btn-sm" id="hc-rerun-${id}">Re-run test</button>` : ''}
+                <p class="hc-panel__dom-note" id="hc-apply-note-${id}"></p>
+                <pre class="hc-rerun-out" id="hc-rerun-out-${id}" hidden></pre>
+            </div>`
+            : '';
         window[`__fixCode_${id}`] = resolveDisplayCode(fix);
 
         panel.innerHTML = `
@@ -840,7 +852,30 @@ export async function openProposeFix(id) {
             ${expl}
             ${saved}
             ${code}
+            ${applyBlock}
         </div>`;
+        const applyBtn = panel.querySelector(`#hc-apply-${id}`);
+        if (applyBtn) {
+            applyBtn.addEventListener('click', () => {
+                showConfirmModal(
+                    'Apply to test',
+                    `Write ${locs.healed} into ${fix.source_path}?`,
+                    'warning',
+                    () => writeConfirmedLocator(id, locs.healed, applyBtn),
+                );
+            });
+        }
+        const rerunBtn = panel.querySelector(`#hc-rerun-${id}`);
+        if (rerunBtn) {
+            rerunBtn.addEventListener('click', () => {
+                showConfirmModal(
+                    'Re-run test',
+                    'Run this test again? The incident is resolved only if it passes.',
+                    'warning',
+                    () => rerunHealedTest(id, rerunBtn),
+                );
+            });
+        }
         if (fix.recorded) loadLocatorInterventions();
         const changedRow = panel.querySelector('.hc-code-line--verified');
         const box = panel.querySelector('.hc-code-lines');
@@ -850,6 +885,81 @@ export async function openProposeFix(id) {
     }
 }
 window.openProposeFix = openProposeFix;
+
+async function rerunHealedTest(id, btn) {
+    const note = document.getElementById(`hc-apply-note-${id}`);
+    const out = document.getElementById(`hc-rerun-out-${id}`);
+    btn.disabled = true;
+    btn.textContent = 'Re-running…';
+    if (note) note.textContent = 'Running the test. This can take a minute.';
+    if (out) { out.hidden = true; out.textContent = ''; }
+    try {
+        const { ok, data } = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/healing/verify`, {
+            method: 'POST',
+            body: '{}',
+            timeoutMs: 150000,
+        }));
+        if (!ok) {
+            const message = (data && data.error) || 'Could not re-run the test.';
+            notify(message, 'error');
+            if (note) note.textContent = message;
+            btn.disabled = false;
+            btn.textContent = 'Re-run test';
+            return;
+        }
+        if (data.passed && data.resolved) {
+            notify('Test passed. Incident resolved.', 'success');
+            if (note) note.textContent = 'Passed. This incident is resolved.';
+            btn.textContent = 'Passed';
+            if (typeof window.loadHealingView === 'function') window.loadHealingView();
+            return;
+        }
+        notify('The test still fails. The incident stays open.', 'error');
+        if (note) note.textContent = 'Still failing. The incident stays open.';
+        if (out && data.output) {
+            out.hidden = false;
+            out.textContent = data.output;
+        }
+        btn.disabled = false;
+        btn.textContent = 'Re-run test';
+    } catch (e) {
+        notify(String(e), 'error');
+        btn.disabled = false;
+        btn.textContent = 'Re-run test';
+    }
+}
+
+async function writeConfirmedLocator(id, healed, btn) {
+    btn.disabled = true;
+    const note = document.getElementById(`hc-apply-note-${id}`);
+    try {
+        const { ok, data } = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/healing/apply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ healed_locator: healed }),
+        }));
+        if (!ok) {
+            const message = (data && data.error) || 'Could not write the test file.';
+            notify(message, 'error');
+            if (note) note.textContent = message;
+            btn.disabled = false;
+            return;
+        }
+        const path = data.path || 'the test file';
+        if (data.already) {
+            notify(`Already applied in ${path}`, 'info');
+            if (note) note.textContent = `Already in ${path}`;
+            btn.textContent = 'Already applied';
+            return;
+        }
+        notify(`Applied in ${path}`, 'success');
+        if (note) note.textContent = `Written to ${path}`;
+        btn.textContent = 'Applied';
+    } catch (e) {
+        notify(String(e), 'error');
+        btn.disabled = false;
+    }
+}
 
 /* ── Locator interventions ────────────────────────────────────────────── */
 export async function loadLocatorInterventions() {

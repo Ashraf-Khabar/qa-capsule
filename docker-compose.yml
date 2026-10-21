@@ -18,11 +18,15 @@ services:
       SRECAPSULE_MCP_TOKEN: ${SRECAPSULE_MCP_TOKEN:-}
       # GitHub token — required only for create_remediation_pr MCP tool.
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      SRE_VERIFY_RUNNER: http://test-runner:8091
+      SRE_VERIFY_TOKEN: ${SRE_VERIFY_TOKEN:-dev-verify-change-me}
+    depends_on:
+      - test-runner
     volumes:
       - ./reports:/app/reports
       - ./plugins:/app/plugins
       - ./web:/app/web
-      - ./tests:/app/tests:ro
+      - ./tests:/app/tests
       - ./config.yaml:/app/config.yaml:ro
       # Named volume avoids host permission issues (root-owned ./data after a prior Docker run).
       - srecapsule_data:/app/data
@@ -32,6 +36,23 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    restart: unless-stopped
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: tests/runner/Dockerfile
+    container_name: srecapsule-test-runner
+    environment:
+      TEST_ROOT: /work
+      SRE_VERIFY_TOKEN: ${SRE_VERIFY_TOKEN:-dev-verify-change-me}
+      CHROME_BIN: /usr/bin/chromium
+      CHROMEDRIVER: /usr/bin/chromedriver
+    volumes:
+      - ./tests:/work/tests
+    shm_size: "1gb"
+    expose:
+      - "8091"
     restart: unless-stopped
 
 volumes:

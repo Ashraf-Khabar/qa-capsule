@@ -49,6 +49,7 @@ export function initCommentUI() {
         applyCommand(btn.dataset.cmd);
     });
     const editor = document.getElementById('rte-editor');
+    editor?.addEventListener('beforeinput', keepCaretOutOfMention);
     editor?.addEventListener('input', onEditorInput);
     editor?.addEventListener('keydown', onEditorKeydown);
     document.getElementById('rte-mentions')?.addEventListener('mousedown', (event) => {
@@ -125,8 +126,17 @@ function openEditComposer(incidentId, commentId) {
         mode: 'edit',
         incidentId,
         commentId,
-        html: commentHTML.get(String(commentId)) || ''
+        html: storedCommentHTML(commentId)
     });
+}
+
+function storedCommentHTML(commentId) {
+    const id = String(commentId || '');
+    if (/^\d+$/.test(id)) {
+        const node = document.querySelector(`.comment-item[data-comment-id="${id}"] .comment-item__text`);
+        if (node && node.innerHTML.trim()) return node.innerHTML;
+    }
+    return commentHTML.get(id) || '';
 }
 
 function openComposer(action) {
@@ -139,13 +149,59 @@ function openComposer(action) {
     if (title) title.textContent = action.title;
     if (hint) hint.textContent = action.hint;
     if (submit) submit.textContent = action.submit;
-    if (editor) editor.innerHTML = action.html || '';
+    if (editor) {
+        editor.innerHTML = prepareEditableHTML(action.html || '');
+        editor.focus();
+        placeCaretForEdit(editor);
+    }
     hideMentions();
     const modal = document.getElementById('comment-modal');
     if (modal) modal.hidden = false;
     closePops();
     ensureDirectory();
-    editor?.focus();
+}
+
+function prepareEditableHTML(html) {
+    const holder = document.createElement('div');
+    holder.innerHTML = html || '';
+    holder.querySelectorAll('span.mention').forEach((node) => {
+        node.setAttribute('contenteditable', 'false');
+    });
+    return holder.innerHTML;
+}
+
+function keepCaretOutOfMention(event) {
+    const editor = document.getElementById('rte-editor');
+    const sel = window.getSelection();
+    const anchor = sel?.anchorNode;
+    if (!editor || !anchor) return;
+    const host = anchor.nodeType === Node.ELEMENT_NODE ? anchor : anchor.parentElement;
+    const mention = host?.closest?.('.mention');
+    if (!mention || !editor.contains(mention)) return;
+    event.preventDefault();
+    const range = document.createRange();
+    range.setStartAfter(mention);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    if (event.inputType === 'insertText' && event.data) {
+        document.execCommand('insertText', false, event.data);
+    }
+}
+
+function placeCaretForEdit(editor) {
+    const sel = window.getSelection();
+    if (!sel) return;
+    const range = document.createRange();
+    const first = editor.firstChild;
+    if (first && first.nodeType === Node.ELEMENT_NODE && first.classList.contains('mention')) {
+        range.setStartAfter(first);
+    } else {
+        range.setStart(editor, 0);
+    }
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
 }
 
 function closeCommentModal() {

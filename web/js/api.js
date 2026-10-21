@@ -160,16 +160,18 @@ export function fetchWithAuth(url, opts = {}) {
         return Promise.reject('No authentication token found.');
     }
 
-    const headers = { ...opts.headers, 'Authorization': `Bearer ${token}` };
-    const method = (opts.method || 'GET').toUpperCase();
+    const timeoutMs = Number(opts.timeoutMs) > 0 ? Number(opts.timeoutMs) : FETCH_TIMEOUT_MS;
+    const { timeoutMs: _dropTimeout, ...rest } = opts;
+    const headers = { ...rest.headers, 'Authorization': `Bearer ${token}` };
+    const method = (rest.method || 'GET').toUpperCase();
     if (method !== 'GET' && method !== 'HEAD') {
         headers['Content-Type'] = headers['Content-Type'] || 'application/json';
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    return fetch(url, { ...opts, headers, signal: controller.signal })
+    return fetch(url, { ...rest, headers, signal: controller.signal })
         .then(res => {
             clearTimeout(timeoutId);
             if (res.status === 401) performLogout();

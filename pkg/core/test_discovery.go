@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -152,7 +153,7 @@ func FindTestSourceInRepo(repoPath, testName string) string {
 				if d != nil && d.IsDir() {
 					base := d.Name()
 					if base == "node_modules" || base == ".git" || base == "vendor" || base == "dist" || base == "build" ||
-					base == "web" || base == "pkg" || base == "cmd" || base == "docs" {
+						base == "web" || base == "pkg" || base == "cmd" || base == "docs" {
 						return filepath.SkipDir
 					}
 				}
@@ -192,6 +193,156 @@ func FindTestSourceInRepo(repoPath, testName string) string {
 		}
 	}
 	return bestContent
+}
+
+// ResolveTestFile returns the absolute test file and its contents.
+// fileHint comes from a stack trace. The file must sit inside a test directory.
+func ResolveTestFile(repoPath, fileHint, testName string) (string, string) {
+	if path, content := readFirstTest(fileHint, repoPath); path != "" && WithinTestTree(path) {
+		return path, content
+	}
+	path, content := findTestSourcePath(repoPath, testName)
+	if path == "" || !WithinTestTree(path) {
+		return "", ""
+	}
+	return path, content
+}
+
+func readFirstTest(filePath, repoPath string) (string, string) {
+	filePath = strings.TrimSpace(filePath)
+	if filePath == "" {
+		return "", ""
+	}
+	candidates := []string{filePath}
+	if repoPath != "" {
+		candidates = append(candidates,
+			filepath.Join(repoPath, filePath),
+			filepath.Join(repoPath, filepath.Base(filePath)),
+		)
+	}
+	if cwd, err := os.Getwd(); err == nil {
+		candidates = append(candidates, filepath.Join(cwd, filePath))
+		for _, sub := range DefaultTestSearchRoots {
+			candidates = append(candidates, filepath.Join(cwd, sub, filepath.Base(filePath)))
+		}
+		if repoPath != "" {
+			candidates = append(candidates, filepath.Join(cwd, repoPath, filePath))
+		}
+	}
+	seen := map[string]bool{}
+	for _, p := range candidates {
+		if seen[p] {
+			continue
+		}
+		seen[p] = true
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		abs, err := filepath.Abs(p)
+		if err != nil {
+			abs = p
+		}
+		return abs, string(data)
+	}
+	return "", ""
+}
+
+func findTestSourcePath(repoPath, testName string) (string, string) {
+	tokens := TestNameSearchTokens(testName)
+	if len(tokens) == 0 {
+		return "", ""
+	}
+	primary := strings.ToLower(tokens[0])
+	const maxFiles = 800
+	scanned := 0
+	var bestPath, bestContent string
+	bestScore := 0
+	for _, root := range SearchRoots(repoPath) {
+		_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				if d != nil && d.IsDir() {
+					base := d.Name()
+					if base == "node_modules" || base == ".git" || base == "vendor" || base == "dist" || base == "build" ||
+						base == "web" || base == "pkg" || base == "cmd" || base == "docs" {
+						return filepath.SkipDir
+					}
+				}
+				return nil
+			}
+			if scanned >= maxFiles {
+				return fs.SkipAll
+			}
+			if !isTestSourceFile(path) {
+				return nil
+			}
+			scanned++
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+			content := string(data)
+			lower := strings.ToLower(content)
+			if !strings.Contains(lower, primary) {
+				return nil
+			}
+			score := len(primary)
+			for _, tok := range tokens[1:] {
+				if strings.Contains(lower, strings.ToLower(tok)) {
+					score += len(tok)
+				}
+			}
+			if score > bestScore {
+				bestScore = score
+				bestContent = content
+				if abs, err := filepath.Abs(path); err == nil {
+					bestPath = abs
+				} else {
+					bestPath = path
+				}
+			}
+			return nil
+		})
+		if bestScore > 0 {
+			break
+		}
+	}
+	return bestPath, bestContent
+}
+
+// WithinTestTree reports whether path lives under a test directory and not application source.
+func WithinTestTree(path string) bool {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	abs = filepath.Clean(abs)
+	if !isTestSourceFile(abs) {
+		return false
+	}
+	dir := filepath.Dir(abs)
+	for {
+		base := strings.ToLower(filepath.Base(dir))
+		switch base {
+		case "web", "pkg", "cmd", "docs", "node_modules", "vendor":
+			return false
+		case "tests", "test", "e2e", "cypress", "playwright", "robotframework", "spec", "specs", "integration":
+			return true
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return false
+		}
+		dir = parent
+	}
+}
+
+// WriteTestFile replaces a test file that already sits inside a test directory.
+func WriteTestFile(path, content string) error {
+	if !WithinTestTree(path) {
+		return fmt.Errorf("refusing to write outside a test directory")
+	}
+	return os.WriteFile(path, []byte(content), 0644)
 }
 
 func isTestSourceFile(path string) bool {

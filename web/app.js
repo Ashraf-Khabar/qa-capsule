@@ -16,12 +16,12 @@ import { applyRoleVisibility, canAccessFinOps, canAccessPlugins, canResolveIncid
 import * as executionHub from './js/execution-hub.js';
 import * as reportViewer from './js/report-viewer.js';
 import * as workflowEditor from './js/workflow-editor.js';
-import * as healing from './js/healing.js?v=1.0.38-code-where';
+import * as healing from './js/healing.js?v=1.0.42-rerun';
 import * as dora from './js/dora.js';
 import { setupAutocomplete } from './js/autocomplete.js';
 import { initTheme, applyTheme } from './js/ui.js';
 import { initI18n, t, setLocale, applyI18n } from './js/i18n.js';
-import { initCommentUI, openResolveComposer, hydrateOpenComments } from './js/comments.js';
+import { initCommentUI, openResolveComposer, hydrateOpenComments } from './js/comments.js?v=1.0.40-edit-fill';
 import { publishSecureLink, secureLinkTokenFromPath } from './js/links.js';
 
 // EXPORT GLOBALLY FOR HTML INLINE HANDLERS

@@ -94,3 +94,61 @@ func TestReadTestFileAtPaths_RelativePath(t *testing.T) {
 		t.Errorf("expected %q, got %q", want, got)
 	}
 }
+
+func TestWithinTestTree_AllowsTestsRejectsAppSource(t *testing.T) {
+	root := t.TempDir()
+	testFile := filepath.Join(root, "tests", "selenium-pytest", "test_selenium_sample.py")
+	if err := os.MkdirAll(filepath.Dir(testFile), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(testFile, []byte("BROKEN_LOGOUT = 'x'\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !WithinTestTree(testFile) {
+		t.Fatal("expected a file under tests/ to be allowed")
+	}
+	appFile := filepath.Join(root, "pkg", "api", "server", "healing_handlers.go")
+	if err := os.MkdirAll(filepath.Dir(appFile), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(appFile, []byte("package server\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if WithinTestTree(appFile) {
+		t.Fatal("application source must be refused")
+	}
+	if err := WriteTestFile(appFile, "package nope\n"); err == nil {
+		t.Fatal("expected a write outside tests to fail")
+	}
+	next := "BROKEN_LOGOUT = 'a[href=\"/logout\"]'\n"
+	if err := WriteTestFile(testFile, next); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(testFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != next {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestResolveTestFile_UsesHintUnderTests(t *testing.T) {
+	root := t.TempDir()
+	rel := filepath.Join("tests", "selenium-pytest", "test_selenium_sample.py")
+	abs := filepath.Join(root, rel)
+	if err := os.MkdirAll(filepath.Dir(abs), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	body := "BROKEN_LOGOUT = '[data-testid=\"logout-button\"]'\n"
+	if err := os.WriteFile(abs, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	path, content := ResolveTestFile(root, filepath.ToSlash(rel), "test_broken_logout")
+	if path == "" || !strings.Contains(content, "BROKEN_LOGOUT") {
+		t.Fatalf("path %q content %q", path, content)
+	}
+	if !WithinTestTree(path) {
+		t.Fatalf("resolved outside the test tree: %s", path)
+	}
+}

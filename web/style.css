@@ -3675,6 +3675,29 @@ body[data-theme="dark"] .hc-tok--old {
     background: var(--bg-muted);
 }
 .hc-mcp p { margin: 0; font-size: 13px; line-height: 1.5; }
+.hc-panel__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border-main);
+}
+.hc-panel__actions .hc-panel__dom-note,
+.hc-panel__actions .hc-rerun-out {
+    flex-basis: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+}
+.hc-rerun-out {
+    white-space: pre-wrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
 .hc-panel__dom-note {
     margin: 0;
     padding: 10px 18px;
