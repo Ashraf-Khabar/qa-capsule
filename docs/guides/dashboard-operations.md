@@ -6,6 +6,8 @@ icon: material/monitor-dashboard
 
 The **Telemetry Stream** dashboard is the primary interface for monitoring, filtering, resolving, and exporting pipeline failures.
 
+The operator actions on a card — acknowledge, mitigate, same-cause grouping, the nearest deploy, the runbook dry-run, and the postmortem — are mapped from the SRE idea to the button in [SRE theory and SRE Capsule](sre-theory.md).
+
 ---
 
 ## Dashboard Layout

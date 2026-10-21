@@ -160,7 +160,66 @@ Use case: correlate infra alerts with test failures on the same timeline.
 
 ---
 
+## Error budget and the gateway SLO
+
+Change-failure rate is failed runs divided by all runs. The error budget is how many of those failures the gateway is allowed to spend.
+
+```
+allowed = deployments × SLO
+burn    = failed / allowed
+```
+
+| Burn | Card |
+|---|---|
+| No runs | Quiet window |
+| Under 0.8 | Within budget |
+| 0.8 up to 1 | Close to budget |
+| 1 or more | Freeze deploys (a warning, not a pipeline block) |
+
+A manager sets the SLO on **DORA**, from **1% to 50%**, and clicks **Save**. The default is 15%.
+
+```http
+POST /api/dora/slo
+Authorization: Bearer <jwt>
+Content-Type: application/json
+
+{ "project": "checkout-api", "slo_percent": 15 }
+```
+
+---
+
+## Incident runbook dry-run
+
+**Runbook** on a Telemetry Stream incident plans the matching catalog steps (502, OOM, flaky, timeout, regression) through the plugin engine and stores that plan. The confirmation names the steps. No Slack, Jira, or cluster call is made. A symptom with no matching step is left alone.
+
+Applying a template onto a gateway workflow (the table above) is a different action. It writes the gateway DAG. The incident button does not.
+
+---
+
+## Postmortem
+
+After the incident is resolved, **Write postmortem** drafts from the timeline, comments, and the nearest deploy. If AI is enabled, the model may rewrite that draft and must not add a cause, a person, or a time that is not already in it. If AI is off or does not answer, the factual draft is saved.
+
+---
+
+## Maintenance windows
+
+On **DORA**, under the error budget, a manager starts one window per gateway: reason, and **1 to 24 hours**. Telemetry Stream shows a banner. Incidents that start during the window stay in the list and carry the reason. **End** closes it.
+
+```http
+POST /api/maintenance
+{ "project": "checkout-api", "reason": "database upgrade", "hours": 4 }
+
+POST /api/maintenance
+{ "action": "end", "project": "checkout-api" }
+```
+
+Manager or platform admin. The theory map is [SRE theory and SRE Capsule](sre-theory.md).
+
+---
+
 ## Related
 
+- [SRE theory and SRE Capsule](sre-theory.md)
 - [Platform User Guide](platform-user-guide.md) §8–9
 - [System Architecture](architecture.md) — `pipeline_runs`, signals

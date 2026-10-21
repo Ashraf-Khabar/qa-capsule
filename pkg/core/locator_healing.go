@@ -588,6 +588,22 @@ func ListLocatorHealings(projectName string, limit int) ([]LocatorHealing, error
 	return scanLocatorHealings(rows)
 }
 
+func frameworkHintFromName(name string) string {
+	lower := strings.ToLower(name)
+	switch {
+	case strings.Contains(lower, "selenium"):
+		return "Selenium"
+	case strings.Contains(lower, "playwright"):
+		return "Playwright"
+	case strings.Contains(lower, "cypress"):
+		return "Cypress"
+	case strings.Contains(lower, "robot"):
+		return "RobotFramework"
+	default:
+		return ""
+	}
+}
+
 // DetectLocatorFailuresForRun scans all failed incidents for a run and returns
 // those whose error message or test source indicate a locator/selector failure.
 func DetectLocatorFailuresForRun(runID, projectName string) ([]LocatorError, error) {
@@ -598,7 +614,7 @@ func DetectLocatorFailuresForRun(runID, projectName string) ([]LocatorError, err
 	_ = DB.QueryRow(`SELECT COALESCE(repo_path,'') FROM projects WHERE name = ?`, projectName).Scan(&repoPath)
 
 	rows, err := DB.Query(`
-		SELECT id, name, error_message, COALESCE(error_logs,''), COALESCE(framework,'')
+		SELECT id, name, error_message, COALESCE(error_logs,'')
 		FROM incidents
 		WHERE pipeline_run_id = ?
 		  AND (? = '' OR project_name = ?)
@@ -612,10 +628,11 @@ func DetectLocatorFailuresForRun(runID, projectName string) ([]LocatorError, err
 	var out []LocatorError
 	for rows.Next() {
 		var id int64
-		var name, errMsg, errorLogs, framework string
-		if err := rows.Scan(&id, &name, &errMsg, &errorLogs, &framework); err != nil {
+		var name, errMsg, errorLogs string
+		if err := rows.Scan(&id, &name, &errMsg, &errorLogs); err != nil {
 			continue
 		}
+		framework := frameworkHintFromName(name)
 		testSource := FindTestSourceInRepo(repoPath, name)
 		if !IsLocatorFailure(errMsg, errorLogs, testSource, name) {
 			continue
@@ -773,7 +790,9 @@ func ParseInteractiveElements(html string) []domElement {
 			href:        attrFirst(attrHrefRe, attrs),
 			text:        strings.TrimSpace(text),
 		}
-		key := el.tag + "|" + el.id + "|" + el.testID + "|" + el.dataTest + "|" + el.dataQA + "|" + el.name
+		// Include href, type, and text. Two anchors with no id (the flash
+		// close control and the logout link) must stay distinct.
+		key := el.tag + "|" + el.id + "|" + el.testID + "|" + el.dataTest + "|" + el.dataQA + "|" + el.name + "|" + el.typ + "|" + el.href + "|" + el.text
 		if seen[key] {
 			return
 		}

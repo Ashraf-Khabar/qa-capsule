@@ -51,6 +51,12 @@ func registerArtifactRoutes(config *core.Config) {
 			})(w, r)
 			return
 		}
+		if len(parts) >= 2 && parts[1] == "ops" {
+			jwtAuthMiddleware(config, core.RoleLead, func(w http.ResponseWriter, r *http.Request) {
+				handleIncidentOps(w, r, parts[0])
+			})(w, r)
+			return
+		}
 		if len(parts) >= 2 && parts[1] == "artifacts" {
 			handleIncidentArtifacts(config, w, r, parts[0])
 			return

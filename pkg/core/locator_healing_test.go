@@ -322,6 +322,38 @@ func TestExtractLocator_SeleniumQuotedDataTestID(t *testing.T) {
 	}
 }
 
+func TestHealLocatorFromHTML_SecureAreaKeepsLogoutBesideCloseLink(t *testing.T) {
+	html := `<div id="flash" class="flash success">
+            You logged into a secure area!
+            <a href="#" class="close">x</a>
+          </div>
+        <div class="example">
+  <h2><i class="icon-lock"></i> Secure Area</h2>
+    <h4 class="subheader">Welcome to the Secure Area. When you are done click logout below.</h4>
+  <a class="button secondary radius" href="/logout"><i class="icon-2x icon-signout"> Logout</i></a>
+</div>
+<a target="_blank" href="http://elementalselenium.com/">Elemental Selenium</a>`
+	els := ParseInteractiveElements(html)
+	var hrefs []string
+	for _, el := range els {
+		if el.tag == "a" {
+			hrefs = append(hrefs, el.href)
+		}
+	}
+	if len(hrefs) != 3 {
+		t.Fatalf("expected close, logout, and footer links, got %v", hrefs)
+	}
+	original := `[data-testid="logout-button"]`
+	healed, _, _, ok := HealLocatorFromHTML(original, html)
+	if !ok || healed != `a[href="/logout"]` {
+		t.Fatalf("healed=%q ok=%v", healed, ok)
+	}
+	got := AssessLocatorPrecision(html, original, healed, 0.9)
+	if !got.Verified || got.Level != "high" || got.Matches != 1 {
+		t.Fatalf("expected a unique logout link, got %+v", got)
+	}
+}
+
 func TestHealLocatorFromHTML_LogoutAfterLogin(t *testing.T) {
 	html := `<div class="example">
 		<h2>Secure Area</h2>

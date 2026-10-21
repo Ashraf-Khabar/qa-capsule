@@ -7,6 +7,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -61,11 +63,16 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 		// Load the incident to determine the failure type before choosing a strategy.
 		var errMsg, consoleLogs, errorLogs, framework, testName string
 		if core.DB != nil {
-			core.DB.QueryRow(
+			// incidents has no framework column. Selecting it made Scan fail
+			// and dropped the stored error and the captured page HTML.
+			if err := core.DB.QueryRow(
 				`SELECT COALESCE(error_message,''), COALESCE(console_logs,''),
-				        COALESCE(error_logs,''), COALESCE(framework,''), COALESCE(name,'')
+				        COALESCE(error_logs,''), COALESCE(name,'')
 				 FROM incidents WHERE id = ?`, id,
-			).Scan(&errMsg, &consoleLogs, &errorLogs, &framework, &testName)
+			).Scan(&errMsg, &consoleLogs, &errorLogs, &testName); err != nil {
+				slog.Warn("propose-fix: could not load incident", "incident_id", id, "err", err)
+			}
+			framework = detectFramework(testName, errorLogs, errMsg)
 		}
 
 		// Diagnostic logs — visible in the server console to help triage issues.
@@ -166,26 +173,27 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 			changeLines := buildLocatorChangeLines(testSource, fixedCode, originalLocator, healed)
 			spec := healing.SpecialistFor(healing.CategoryLocator, testName, originalLocator)
 			resp := map[string]interface{}{
-				"code":              fixedCode,
-				"source_code":       testSource,
-				"explanation":       explanation,
-				"confidence":        confidence,
-				"healed_locator":    healed,
-				"original_locator":  originalLocator,
-				"framework":         framework,
-				"error_category":    spec.ID,
-				"active_mcp":        spec.ID,
-				"active_mcp_label":  spec.Label,
-				"active_mcp_tool":   spec.Tool,
-				"problem":           spec.Problem,
-				"dom_used":          domUsed,
-				"dom_captured":      domSnapshot != "" && domUsed,
-				"dom_verified":      verdict.Verified,
-				"precision":         verdict.Level,
-				"intent":            intentFromExplanation(explanation),
-				"heal_method":       "pending",
-				"change_lines":      changeLines,
-				"fix_highlights":    buildFixHighlights(testSource, fixedCode, healed),
+				"code":             fixedCode,
+				"source_code":      testSource,
+				"source_path":      extractFileFromStackTrace(combinedErr),
+				"explanation":      explanation,
+				"confidence":       confidence,
+				"healed_locator":   healed,
+				"original_locator": originalLocator,
+				"framework":        framework,
+				"error_category":   spec.ID,
+				"active_mcp":       spec.ID,
+				"active_mcp_label": spec.Label,
+				"active_mcp_tool":  spec.Tool,
+				"problem":          spec.Problem,
+				"dom_used":         domUsed,
+				"dom_captured":     domSnapshot != "" && domUsed,
+				"dom_verified":     verdict.Verified,
+				"precision":        verdict.Level,
+				"intent":           intentFromExplanation(explanation),
+				"heal_method":      "pending",
+				"change_lines":     changeLines,
+				"fix_highlights":   buildFixHighlights(testSource, fixedCode, healed),
 			}
 			method := "unconfirmed"
 			if verdict.Verified {
@@ -251,6 +259,10 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(prop)
+	case "apply":
+		applyConfirmedLocator(w, r, id)
+	case "verify":
+		verifyHealedTest(w, r, id)
 	case "pr":
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -275,6 +287,156 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+// applyConfirmedLocator writes a selector that Propose Fix already confirmed
+// into the test file on disk. It does not accept an arbitrary code body.
+func applyConfirmedLocator(w http.ResponseWriter, r *http.Request, incidentID int64) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var body struct {
+		Healed string `json:"healed_locator"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSONError(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+	healed := strings.TrimSpace(body.Healed)
+	if healed == "" || core.DB == nil {
+		writeJSONError(w, "A confirmed selector is required", http.StatusBadRequest)
+		return
+	}
+	var original string
+	err := core.DB.QueryRow(
+		`SELECT original_locator FROM locator_healings
+		 WHERE incident_id = ? AND healed_locator = ?
+		 ORDER BY id DESC LIMIT 1`, incidentID, healed,
+	).Scan(&original)
+	if err != nil || strings.TrimSpace(original) == "" {
+		writeJSONError(w, "Propose Fix must confirm this selector before it can be written", http.StatusBadRequest)
+		return
+	}
+	original = strings.TrimSpace(original)
+
+	var projectName, testName, errorLogs string
+	if err := core.DB.QueryRow(
+		`SELECT COALESCE(project_name,''), COALESCE(name,''), COALESCE(error_logs,'')
+		 FROM incidents WHERE id = ?`, incidentID,
+	).Scan(&projectName, &testName, &errorLogs); err != nil {
+		writeJSONError(w, "Incident was not found", http.StatusNotFound)
+		return
+	}
+	var repoPath string
+	_ = core.DB.QueryRow(`SELECT COALESCE(repo_path,'') FROM projects WHERE name = ?`, projectName).Scan(&repoPath)
+	hint := extractFileFromStackTrace(errorLogs)
+	path, content := core.ResolveTestFile(repoPath, hint, testName)
+	if path == "" || content == "" {
+		writeJSONError(w, "The test file was not found on disk", http.StatusNotFound)
+		return
+	}
+	updated := applyLocatorFixToSource(content, original, healed)
+	if strings.HasSuffix(content, "\n") && !strings.HasSuffix(updated, "\n") {
+		updated += "\n"
+	}
+	display := hint
+	if display == "" {
+		display = path
+	}
+	if strings.TrimSpace(updated) == strings.TrimSpace(content) {
+		if strings.Contains(content, healed) && !strings.Contains(content, original) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"applied": false,
+				"already": true,
+				"path":    display,
+			})
+			return
+		}
+		writeJSONError(w, "The broken selector was not found in the test file", http.StatusConflict)
+		return
+	}
+	if err := core.WriteTestFile(path, updated); err != nil {
+		writeJSONError(w, "Could not write the test file. The tests folder must be writable.", http.StatusConflict)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"applied": true,
+		"already": false,
+		"path":    display,
+	})
+}
+
+// verifyHealedTest re-runs the failing pytest and resolves the incident only when it passes.
+func verifyHealedTest(w http.ResponseWriter, r *http.Request, incidentID int64) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if core.DB == nil {
+		writeJSONError(w, "Healing service not initialized", http.StatusServiceUnavailable)
+		return
+	}
+	var testName, errorLogs, projectName string
+	if err := core.DB.QueryRow(
+		`SELECT COALESCE(name,''), COALESCE(error_logs,''), COALESCE(project_name,'')
+		 FROM incidents WHERE id = ?`, incidentID,
+	).Scan(&testName, &errorLogs, &projectName); err != nil {
+		writeJSONError(w, "Incident was not found", http.StatusNotFound)
+		return
+	}
+	var repoPath string
+	_ = core.DB.QueryRow(`SELECT COALESCE(repo_path,'') FROM projects WHERE name = ?`, projectName).Scan(&repoPath)
+	hint := extractFileFromStackTrace(errorLogs)
+	path, content := core.ResolveTestFile(repoPath, hint, testName)
+	rel := pytestFileHint(hint, path)
+	node, err := core.PytestNode(rel, testName, content)
+	if err != nil {
+		writeJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 165*time.Second)
+	defer cancel()
+	result, err := core.RunPytestNode(ctx, os.Getenv("SRE_VERIFY_RUNNER"), os.Getenv("SRE_VERIFY_TOKEN"), node)
+	if err != nil {
+		writeJSONError(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	resolved := false
+	if result.Passed {
+		actor := "verify_rerun"
+		if claims := parseClaims(r); claims != nil && strings.TrimSpace(claims.Username) != "" {
+			actor = claims.Username
+		}
+		if err := core.HealingService.ResolveIncident(incidentID, actor); err != nil {
+			writeJSONError(w, err.Error(), http.StatusConflict)
+			return
+		}
+		resolved = true
+		result.Output = ""
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"passed":   result.Passed,
+		"resolved": resolved,
+		"node":     node,
+		"output":   result.Output,
+	})
+}
+
+func pytestFileHint(hint, abs string) string {
+	hint = filepath.ToSlash(strings.TrimSpace(hint))
+	hint = strings.TrimPrefix(hint, "./")
+	if hint != "" && !strings.Contains(hint, "..") && strings.HasSuffix(strings.ToLower(hint), ".py") {
+		return hint
+	}
+	slash := filepath.ToSlash(abs)
+	if i := strings.Index(slash, "/tests/"); i >= 0 {
+		return slash[i+1:]
+	}
+	return ""
 }
 
 // saveConfirmedLocator stores a selector that was unique on the captured page.
@@ -993,6 +1155,20 @@ func buildFixHighlights(before, after, healed string) []map[string]interface{} {
 			}
 		}
 	}
+	if len(out) == 0 {
+		for i := 0; i < max; i++ {
+			var b, a string
+			if i < len(bLines) {
+				b = bLines[i]
+			}
+			if i < len(aLines) {
+				a = aLines[i]
+			}
+			if a != "" && b != a && strings.Contains(a, healed) {
+				add(i + 1)
+			}
+		}
+	}
 	return out
 }
 
@@ -1068,10 +1244,75 @@ func applyLocatorFixToSource(source, original, healed string) string {
 		}
 	}
 	if changed {
-		return strings.Join(lines, "\n")
+		source = strings.Join(lines, "\n")
 	}
-	if original != "" && healed != "" && original != healed && strings.Contains(source, original) {
-		return strings.ReplaceAll(source, original, healed)
+	source = rewriteLocatorCallSites(source, original, healed)
+	if original != "" && healed != "" && original != healed {
+		source = replaceQuotedSelector(source, original, healed)
+	}
+	return source
+}
+
+// selectorQuote wraps a CSS selector in the quote style that keeps it valid.
+func selectorQuote(s string) string {
+	switch {
+	case strings.Contains(s, `'`) && !strings.Contains(s, `"`):
+		return `"` + s + `"`
+	default:
+		return `'` + s + `'`
+	}
+}
+
+var assignedSelectorRes = []*regexp.Regexp{
+	regexp.MustCompile(`(?m)^\s*(?:const|let|var)?\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*'([^']*)'`),
+	regexp.MustCompile(`(?m)^\s*(?:const|let|var)?\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"([^"]*)"`),
+}
+
+func namesHoldingSelector(source, original string) []string {
+	var names []string
+	seen := map[string]bool{}
+	for _, re := range assignedSelectorRes {
+		for _, m := range re.FindAllStringSubmatch(source, -1) {
+			if len(m) < 3 || m[2] != original || seen[m[1]] {
+				continue
+			}
+			seen[m[1]] = true
+			names = append(names, m[1])
+		}
+	}
+	return names
+}
+
+// rewriteLocatorCallSites replaces a variable that holds the broken selector
+// inside find_element, locator, and cy.get calls.
+func rewriteLocatorCallSites(source, original, healed string) string {
+	if source == "" || original == "" || healed == "" || original == healed {
+		return source
+	}
+	quoted := selectorQuote(healed)
+	for _, name := range namesHoldingSelector(source, original) {
+		q := regexp.QuoteMeta(name)
+		for _, re := range []*regexp.Regexp{
+			regexp.MustCompile(`(find_element(?:s)?\s*\(\s*By\.\w+\s*,\s*)` + q + `(\s*\))`),
+			regexp.MustCompile(`((?:page\.)?locator\s*\(\s*)` + q + `(\s*\))`),
+			regexp.MustCompile(`(cy\.get\s*\(\s*)` + q + `(\s*\))`),
+		} {
+			source = re.ReplaceAllString(source, `${1}`+quoted+`${2}`)
+		}
+	}
+	return source
+}
+
+func replaceQuotedSelector(source, original, healed string) string {
+	quoted := selectorQuote(healed)
+	for _, q := range []string{`'`, `"`} {
+		needle := q + original + q
+		if strings.Contains(source, needle) {
+			source = strings.ReplaceAll(source, needle, quoted)
+		}
+	}
+	if strings.Contains(source, original) {
+		source = strings.ReplaceAll(source, original, healed)
 	}
 	return source
 }
@@ -1122,7 +1363,6 @@ func buildLocatorChangeLines(source, proposedCode, original, healed string) []ma
 		if len(codeLines) > max {
 			max = len(codeLines)
 		}
-		actionRe := regexp.MustCompile(`(?im)^\s*(?:Click|Get Element|Tap|Wait For Elements State)\s+\S+`)
 		for i := 0; i < max; i++ {
 			before := ""
 			after := ""
@@ -1132,7 +1372,7 @@ func buildLocatorChangeLines(source, proposedCode, original, healed string) []ma
 			if i < len(codeLines) {
 				after = codeLines[i]
 			}
-			if before != after && actionRe.MatchString(before) && actionRe.MatchString(after) {
+			if before != after && strings.TrimSpace(after) != "" && strings.Contains(after, healed) {
 				add(before, after, i+1)
 			}
 		}

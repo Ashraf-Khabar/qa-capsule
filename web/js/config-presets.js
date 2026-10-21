@@ -3,7 +3,7 @@
  */
 import { fetchWithAuth, parseApiJson } from './api.js';
 import { notify } from './ui.js';
-import { t } from './i18n.js';
+import { t } from './i18n.js?v=1.0.63-docs';
 
 function escapeHtml(s) {
     return String(s ?? '')

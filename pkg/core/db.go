@@ -206,6 +206,10 @@ func runSchemaMigrations() {
 	}{
 		{"user_teams", "inherited_from", `ALTER TABLE user_teams ADD COLUMN inherited_from INTEGER DEFAULT NULL`},
 		{"incidents", "pipeline_run_id", `ALTER TABLE incidents ADD COLUMN pipeline_run_id TEXT DEFAULT ''`},
+		{"incidents", "acknowledged_at", `ALTER TABLE incidents ADD COLUMN acknowledged_at DATETIME`},
+		{"incidents", "acknowledged_by", `ALTER TABLE incidents ADD COLUMN acknowledged_by TEXT DEFAULT ''`},
+		{"incidents", "severity", `ALTER TABLE incidents ADD COLUMN severity TEXT DEFAULT ''`},
+		{"incidents", "mitigated_at", `ALTER TABLE incidents ADD COLUMN mitigated_at DATETIME`},
 		{"incidents", "browser", `ALTER TABLE incidents ADD COLUMN browser TEXT DEFAULT ''`},
 		{"incidents", "os", `ALTER TABLE incidents ADD COLUMN os TEXT DEFAULT ''`},
 		{"incidents", "viewport", `ALTER TABLE incidents ADD COLUMN viewport TEXT DEFAULT ''`},
@@ -213,6 +217,7 @@ func runSchemaMigrations() {
 		{"incidents", "jira_issue_key", `ALTER TABLE incidents ADD COLUMN jira_issue_key TEXT DEFAULT ''`},
 		{"projects", "sre_routing_json", `ALTER TABLE projects ADD COLUMN sre_routing_json TEXT DEFAULT '[]'`},
 		{"projects", "sre_workflow_json", `ALTER TABLE projects ADD COLUMN sre_workflow_json TEXT DEFAULT ''`},
+		{"projects", "slo_failure_rate", `ALTER TABLE projects ADD COLUMN slo_failure_rate REAL DEFAULT 0.15`},
 		{"incidents", "rca_status", `ALTER TABLE incidents ADD COLUMN rca_status TEXT DEFAULT ''`},
 		{"incidents", "has_rca", `ALTER TABLE incidents ADD COLUMN has_rca INTEGER DEFAULT 0`},
 		{"pipeline_runs", "outcome", `ALTER TABLE pipeline_runs ADD COLUMN outcome TEXT DEFAULT 'unknown'`},
@@ -418,6 +423,32 @@ func runSchemaMigrations() {
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_incident_comments_incident ON incident_comments(incident_id, id)`,
+		`CREATE TABLE IF NOT EXISTS incident_runbooks (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			incident_id INTEGER NOT NULL,
+			template_id TEXT NOT NULL,
+			template_name TEXT NOT NULL DEFAULT '',
+			summary TEXT NOT NULL DEFAULT '',
+			actor TEXT NOT NULL DEFAULT '',
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_incident_runbooks_incident ON incident_runbooks(incident_id, id DESC)`,
+		`CREATE TABLE IF NOT EXISTS incident_postmortems (
+			incident_id INTEGER PRIMARY KEY,
+			body TEXT NOT NULL,
+			author TEXT NOT NULL DEFAULT '',
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS gateway_maintenance (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			project_name TEXT NOT NULL,
+			reason TEXT NOT NULL DEFAULT '',
+			starts_at DATETIME NOT NULL,
+			ends_at DATETIME NOT NULL,
+			created_by TEXT NOT NULL DEFAULT '',
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_gateway_maintenance_active ON gateway_maintenance(project_name, ends_at)`,
 		`CREATE TABLE IF NOT EXISTS user_team_inheritance_optouts (
 			user_id INTEGER NOT NULL,
 			team_id INTEGER NOT NULL,

@@ -2,11 +2,13 @@
  * Self-Healing Hub
  */
 import { fetchWithAuth, parseApiJson, parseJwt } from './api.js';
-import { notify } from './ui.js';
+import { notify, showConfirmModal } from './ui.js';
 import { canManageHealing, canDeleteIncidents } from './roles.js';
 
 let currentRole = '';
-const selected = new Set(); // incident ids currently checked
+const selected = new Set(); // kept for bulk helpers that other views may call
+let failures = [];
+let activeId = 0;
 
 /* ── Framework / category metadata ─────────────────────────────────────── */
 const FW = {
@@ -228,6 +230,7 @@ function getHighlightTokenForLine(lineIndex, line, srcLine, healed, original, da
     for (const h of (Array.isArray(data?.fix_highlights) ? data.fix_highlights : [])) {
         if (Number(h.line) === lineNo) return (h.token || healed || '').trim();
     }
+    if (healed && line.includes(healed)) return healed;
     const action = line.match(LOCATOR_ACTION_RE) || line.match(FILL_ACTION_RE);
     if (!action || !healed) return '';
     const tok = action[2].trim();
@@ -288,10 +291,11 @@ function renderFixCodeBlock(code, data, id) {
     }
     const changed = changedLineIndexes(sourceCode, displayCode);
     if (!changed.length) return '';
-    const changes = renderChangeLines(data.change_lines, locs.original, locs.healed, true);
+    const changes = renderChangeLines(data.change_lines, locs.original, locs.healed, true, data.source_path);
     const lines = renderHighlightedLines(displayCode, sourceCode, locs.healed, locs.original, data);
+    const path = String(data.source_path || '').trim();
     return `<div class="hc-panel__code">
-        <div class="hc-panel__code-head"><strong>Code fix</strong></div>
+        <div class="hc-panel__code-head"><strong>Code fix</strong>${path ? `<span> ${esc(path)}</span>` : ''}</div>
         ${changes}
         <div class="hc-code-lines" role="presentation">${lines}</div>
     </div>`;
@@ -433,25 +437,38 @@ function highlightLineTerms(line, planEntry) {
     return out;
 }
 
-function renderChangeLines(changeLines, original, healed, precise) {
+function renderChangeLines(changeLines, original, healed, precise, sourcePath) {
     let rows = Array.isArray(changeLines) ? changeLines.filter(r => r?.before && r?.after) : [];
     if (!rows.length && original && healed && original !== healed) {
         rows = [{ before: original, after: healed }];
     }
     if (!rows.length) return '';
+    const callRe = /find_element|locator\s*\(|cy\.get|^\s*Click\b/i;
+    rows = [...rows].sort((a, b) => {
+        const sa = callRe.test(a.after || a.before || '') ? 0 : 1;
+        const sb = callRe.test(b.after || b.before || '') ? 0 : 1;
+        return sa - sb;
+    });
+    const where = String(sourcePath || '').trim();
     return `<div class="hc-fix-changes">
-        <div class="hc-fix-changes__head">What changes</div>
-        ${rows.map(r => `
+        <div class="hc-fix-changes__head">What changes${where ? ` · ${esc(where)}` : ''}</div>
+        ${rows.map(r => {
+            const lineNo = Number(r.line) > 0 ? `Line ${Number(r.line)}` : 'Change';
+            const after = healed && String(r.after).includes(healed)
+                ? highlightFixToken(r.after, healed, precise)
+                : esc(r.after);
+            return `
         <div class="hc-fix-change">
             <div class="hc-fix-change__row hc-fix-change__row--old">
-                <span class="hc-fix-change__tag">Before</span>
+                <span class="hc-fix-change__tag">${esc(lineNo)} before</span>
                 <code>${esc(r.before)}</code>
             </div>
             <div class="hc-fix-change__row hc-fix-change__row--verified">
-                <span class="hc-fix-change__tag">After</span>
-                <code>${esc(r.after)}</code>
+                <span class="hc-fix-change__tag">${esc(lineNo)} after</span>
+                <code>${after}</code>
             </div>
-        </div>`).join('')}
+        </div>`;
+        }).join('')}
     </div>`;
 }
 
@@ -475,12 +492,20 @@ export function loadHealingView() {
     currentRole = parseJwt(localStorage.getItem('sre-jwt'))?.role || '';
     const sel = document.getElementById('healing-project-filter');
     loadHealingProjects(sel);
+    const list = document.getElementById('healing-insights-body');
+    if (list && !list.dataset.bound) {
+        list.dataset.bound = '1';
+        list.addEventListener('click', (event) => {
+            const row = event.target.closest('.hc-row');
+            if (!row) return;
+            selectFailure(Number(row.dataset.id));
+        });
+    }
     loadHealingInsights();
-    loadLocatorInterventions();
     _loadAIChip();
     if (sel && !sel.dataset.bound) {
         sel.dataset.bound = '1';
-        sel.addEventListener('change', () => { loadHealingInsights(); loadLocatorInterventions(); });
+        sel.addEventListener('change', () => loadHealingInsights());
     }
 }
 
@@ -528,24 +553,89 @@ export async function loadHealingInsights() {
         body.innerHTML = `<div class="hc-empty">No open failures — all tests are passing.</div>`;
         return;
     }
-    body.innerHTML = rows.map(r => renderCard(r)).join('');
+    failures = rows;
+    body.innerHTML = rows.map(r => renderRow(r)).join('');
     const pending = Number(window.__pendingProposeId || 0);
     if (pending) {
         window.__pendingProposeId = 0;
-        const card = document.getElementById(`hc-card-${pending}`);
-        if (card) {
-            card.scrollIntoView({ block: 'center' });
-            openProposeFix(pending);
-        }
+        selectFailure(pending, true);
+        return;
     }
+    if (activeId && failures.some(r => Number(r.incident_id) === activeId)) {
+        document.querySelectorAll('.hc-row').forEach(el => el.classList.toggle('is-active', Number(el.dataset.id) === activeId));
+        return;
+    }
+    activeId = 0;
+    const stage = document.getElementById('healing-stage');
+    if (stage && !stage.querySelector('.hc-stage__empty')) stage.innerHTML = emptyStage();
 }
 window.loadHealingInsights = loadHealingInsights;
 
 function updateStats(rows) {
-    _count('healing-stat-total',         rows.length);
-    _count('healing-stat-categorized',   rows.filter(r => r.error_category && r.error_category !== 'unknown').length);
-    _count('healing-stat-mcp-ready',     rows.length);
-    _count('healing-stat-interventions', rows.filter(r => r.mcp_healed).length);
+    _count('healing-stat-total', rows.length);
+}
+
+function emptyStage() {
+    return `<div class="hc-stage__empty">
+        <h2>Select a failure</h2>
+        <p>The analysis stays on that test. A confirmed locator can be written into the file, then the test is re-run.</p>
+    </div>`;
+}
+
+function shortTestName(name) {
+    const raw = String(name || 'Unknown test');
+    const parts = raw.split('>');
+    const last = parts[parts.length - 1].trim();
+    return last || raw;
+}
+
+function selectFailure(id, autoAnalyze) {
+    const row = failures.find(item => Number(item.incident_id) === id);
+    const stage = document.getElementById('healing-stage');
+    if (!row || !stage) return;
+    activeId = id;
+    document.querySelectorAll('.hc-row').forEach(el => el.classList.toggle('is-active', Number(el.dataset.id) === id));
+    const cause = cat(row.error_category);
+    const framework = fw(row.framework || row.project_name);
+    const causeStyle = `color:${cause.color};border-color:${cause.color}30;background:${cause.color}18`;
+    const role = currentRole || parseJwt(localStorage.getItem('sre-jwt'))?.role || '';
+    const canMgr = canManageHealing(role);
+    const canDel = canDeleteIncidents(role);
+    const fullName = row.test_name || 'Unknown test';
+    const shortName = shortTestName(fullName);
+    stage.innerHTML = `
+        <header class="hc-stage__top">
+            <div class="hc-stage__identity">
+                <p class="hc-stage__kicker">#${id} · ${esc(framework.label)}</p>
+                <h2 title="${esc(fullName)}">${esc(shortName)}</h2>
+                <div class="hc-stage__pills">
+                    <span class="hc-badge" style="${causeStyle}">${esc(cause.label)}</span>
+                    ${row.mcp_healed ? `<span class="hc-badge hc-badge--healed">${ICON.check}&nbsp;Saved</span>` : ''}
+                </div>
+            </div>
+            <div class="hc-stage__actions">
+                ${canMgr ? `<button type="button" class="btn btn-primary" id="hc-analyze">Analyze</button>` : `<p class="hc-stage__note">A lead or manager can analyze this failure.</p>`}
+                ${canDel ? `<button type="button" class="hc-quiet" id="hc-delete">Delete</button>` : ''}
+            </div>
+        </header>
+        <ol class="hc-steps" aria-label="Healing steps">
+            <li class="is-current"><span>1</span> Analyze</li>
+            <li><span>2</span> Review</li>
+            <li><span>3</span> Apply and re-run</li>
+        </ol>
+        <p class="hc-stage__error">${esc(row.summary || row.error_message || 'No description available.')}</p>
+        <p class="hc-stage__hint">Analyze reads this failure and the captured page. The test file changes only when you apply a confirmed selector.</p>
+        <div id="healing-stage-result" class="hc-stage__result"></div>`;
+    stage.querySelector('#hc-analyze')?.addEventListener('click', () => openProposeFix(id));
+    stage.querySelector('#hc-delete')?.addEventListener('click', () => deleteHealingFailure(id));
+    if (autoAnalyze) openProposeFix(id);
+}
+
+function markSteps(current) {
+    document.querySelectorAll('#healing-stage .hc-steps li').forEach((li, index) => {
+        li.classList.toggle('is-done', index + 1 < current);
+        li.classList.toggle('is-current', index + 1 === current);
+    });
 }
 
 function _count(id, n) {
@@ -559,65 +649,20 @@ function _count(id, n) {
 }
 
 /* ── Render one card ──────────────────────────────────────────────────── */
-function renderCard(r) {
-    const id     = Number(r.incident_id) || 0;
-    const f      = fw(r.framework || r.project_name);
-    const c      = cat(r.error_category);
-    const healed = !!r.mcp_healed;
-    const canMgr = canManageHealing(currentRole);
-    const canDel = canDeleteIncidents(currentRole);
-
-    // inline tinted badge style using the framework/category color
-    const fwStyle  = `color:${f.color};border-color:${f.color}30;background:${f.color}18`;
-    const catStyle = `color:${c.color};border-color:${c.color}30;background:${c.color}18`;
-
+function renderRow(r) {
+    const id = Number(r.incident_id) || 0;
+    const framework = fw(r.framework || r.project_name);
+    const cause = cat(r.error_category);
+    const active = id === activeId ? ' is-active' : '';
     return `
-<article class="hc-card${healed ? ' hc-card--healed' : ''}" id="hc-card-${id}" data-id="${id}">
-    <div class="hc-card__top">
-        <!-- Checkbox -->
-        <label class="hc-cb-cell" title="Select failure">
-            <input type="checkbox" class="hc-cb" value="${id}" onchange="window._onCardCheck(${id},this.checked)">
-        </label>
-
-        <!-- Color stripe -->
-        <div class="hc-stripe" style="background:${f.color}"></div>
-
-        <!-- Main body -->
-        <div class="hc-body">
-            <!-- Meta row -->
-            <div class="hc-row-meta">
-                <span class="hc-badge" style="${fwStyle}">${esc(f.label)}</span>
-                <span class="hc-badge" style="${catStyle}">${esc(c.label)}</span>
-                <span class="hc-badge hc-badge--mcp">${esc(r.active_mcp_label || c.mcp)}</span>
-                ${healed ? `<span class="hc-badge hc-badge--healed">${ICON.check}&nbsp;Healed</span>` : ''}
-                <span class="hc-id">#${id}</span>
-            </div>
-
-            <!-- Test name -->
-            <h3 class="hc-test-name">${esc(r.test_name || 'Unknown test')}</h3>
-
-            <!-- Error description -->
-            <p class="hc-test-desc">${esc(r.summary || r.error_message || 'No description available.')}</p>
-
-            <!-- Action bar -->
-            <div class="hc-card__actions">
-                ${canMgr ? `
-                <button class="hc-btn-fix" title="Find the cause and show the fix on this incident" onclick="window.openProposeFix(${id})">
-                    ${ICON.fix} Propose Fix
-                </button>
-                <div class="hc-icon-group">
-                    ${canDel ? `<button class="hc-icon-btn hc-icon-btn--danger" title="Delete failure" onclick="window.deleteHealingFailure(${id})">${ICON.trash}</button>` : ''}
-                </div>` : (canDel ? `
-                <div class="hc-icon-group">
-                    <button class="hc-icon-btn hc-icon-btn--danger" title="Delete failure" onclick="window.deleteHealingFailure(${id})">${ICON.trash}</button>
-                </div>` : '')}
-            </div>
-        </div>
-    </div>
-
-    <!-- Fix proposal panel (injected by openProposeFix) -->
-    <div id="fix-proposal-${id}" class="hc-panel" style="display:none"></div>
-</article>`;
+<button type="button" class="hc-row${active}" id="hc-card-${id}" data-id="${id}" role="listitem">
+    <span class="hc-row__top">
+        <span class="hc-row__cause" style="color:${cause.color}">${esc(cause.label)}</span>
+        <span class="hc-row__id">#${id}</span>
+    </span>
+    <span class="hc-row__name">${esc(shortTestName(r.test_name))}</span>
+    <span class="hc-row__meta">${esc(framework.label)}${r.mcp_healed ? ' · saved' : ''}</span>
+</button>`;
 }
 
 /* ── Checkbox / bulk select ───────────────────────────────────────────── */
@@ -680,6 +725,11 @@ export function deleteHealingFailure(id) {
         if (!ok) { notify('Failed to delete.', 'error'); return; }
         document.getElementById(`hc-card-${id}`)?.remove();
         selected.delete(id); _updateBulkBar();
+        if (activeId === id) {
+            activeId = 0;
+            const stage = document.getElementById('healing-stage');
+            if (stage) stage.innerHTML = emptyStage();
+        }
         notify(`INC #${id} deleted.`, 'success');
         loadHealingInsights();
     });
@@ -741,13 +791,14 @@ function resolveDisplayCode(data) {
 
 /* ── Propose fix ──────────────────────────────────────────────────────── */
 export async function openProposeFix(id) {
-    const panel = document.getElementById(`fix-proposal-${id}`);
+    if (activeId !== id || !document.getElementById('healing-stage-result')) selectFailure(id, false);
+    const panel = document.getElementById('healing-stage-result');
     if (!panel) return;
-
-    // Toggle
-    if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
-    panel.style.display = 'block';
-    panel.innerHTML = `<div class="hc-panel__loading"><span class="hc-panel__loading-icon" aria-hidden="true">${ICON.refresh}</span><span>Finding where the failure comes from…</span></div>`;
+    markSteps(1);
+    document.querySelector('#healing-stage .hc-stage__hint')?.remove();
+    const analyzeBtn = document.getElementById('hc-analyze');
+    if (analyzeBtn) analyzeBtn.disabled = true;
+    panel.innerHTML = `<div class="hc-panel__loading"><span class="hc-panel__loading-icon" aria-hidden="true">${ICON.refresh}</span><span>Reading the failure and the page…</span></div>`;
 
     try {
         const { ok, data } = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/healing/propose`, {
@@ -757,7 +808,8 @@ export async function openProposeFix(id) {
         }));
 
         if (!ok || !data) {
-            panel.innerHTML = `<div class="hc-panel__error">Failed to get a fix proposal. Verify AI configuration.</div>`;
+                if (analyzeBtn) analyzeBtn.disabled = false;
+            panel.innerHTML = `<div class="hc-panel__error">Analysis failed. Check AI Configuration, then try again.</div>`;
             return;
         }
 
@@ -809,14 +861,26 @@ export async function openProposeFix(id) {
             : '';
 
         const code = (locatorMCP || fix.code) && fix.code ? renderFixCodeBlock(fix.code, fix, id) : '';
-        const saved = fix.recorded ? `<p class="hc-panel__dom-note">Saved under Locator Interventions.</p>` : '';
+        const saved = '';
+        const role = currentRole || parseJwt(localStorage.getItem('sre-jwt'))?.role || '';
+        const canApply = badge.precise && locs.healed && locs.healed !== locs.original
+            && fix.source_path && canManageHealing(role);
+        const canRerun = badge.precise && String(fix.source_path || '').endsWith('.py') && canManageHealing(role);
+        const applyBlock = (canApply || canRerun)
+            ? `<div class="hc-panel__actions">
+                ${canApply ? `<button type="button" class="btn btn-primary btn-sm" id="hc-apply-${id}">Apply to test</button>` : ''}
+                ${canRerun ? `<button type="button" class="btn btn-sm" id="hc-rerun-${id}">Re-run test</button>` : ''}
+                <p class="hc-panel__dom-note" id="hc-apply-note-${id}"></p>
+                <pre class="hc-rerun-out" id="hc-rerun-out-${id}" hidden></pre>
+            </div>`
+            : '';
         window[`__fixCode_${id}`] = resolveDisplayCode(fix);
 
+        markSteps(badge.precise ? 3 : 2);
         panel.innerHTML = `
         <div class="hc-panel__inner">
             <div class="hc-panel__head">
-                <span class="hc-panel__title">${ICON.star} ${esc(mcpLabel || 'AI Fix Proposal')}</span>
-                <button class="hc-panel__close" onclick="document.getElementById('fix-proposal-${id}').style.display='none'">${ICON.close}</button>
+                <span class="hc-panel__title">${esc(mcpLabel || 'Result')}</span>
             </div>
             ${mcpBlock}
             ${locRow}
@@ -825,16 +889,115 @@ export async function openProposeFix(id) {
             ${expl}
             ${saved}
             ${code}
+            ${applyBlock}
         </div>`;
-        if (fix.recorded) loadLocatorInterventions();
+        if (analyzeBtn) analyzeBtn.disabled = false;
+        const applyBtn = panel.querySelector(`#hc-apply-${id}`);
+        if (applyBtn) {
+            applyBtn.addEventListener('click', () => {
+                showConfirmModal(
+                    'Apply to test',
+                    `Write ${locs.healed} into ${fix.source_path}?`,
+                    'warning',
+                    () => writeConfirmedLocator(id, locs.healed, applyBtn),
+                );
+            });
+        }
+        const rerunBtn = panel.querySelector(`#hc-rerun-${id}`);
+        if (rerunBtn) {
+            rerunBtn.addEventListener('click', () => {
+                showConfirmModal(
+                    'Re-run test',
+                    'Run this test again? The incident is resolved only if it passes.',
+                    'warning',
+                    () => rerunHealedTest(id, rerunBtn),
+                );
+            });
+        }
         const changedRow = panel.querySelector('.hc-code-line--verified');
         const box = panel.querySelector('.hc-code-lines');
         if (box && changedRow) box.scrollTop = Math.max(0, changedRow.offsetTop - 8);
     } catch (e) {
+        if (analyzeBtn) analyzeBtn.disabled = false;
         panel.innerHTML = `<div class="hc-panel__error">${esc(String(e))}</div>`;
     }
 }
 window.openProposeFix = openProposeFix;
+
+async function rerunHealedTest(id, btn) {
+    const note = document.getElementById(`hc-apply-note-${id}`);
+    const out = document.getElementById(`hc-rerun-out-${id}`);
+    btn.disabled = true;
+    btn.textContent = 'Re-running…';
+    if (note) note.textContent = 'Running the test. This can take a minute.';
+    if (out) { out.hidden = true; out.textContent = ''; }
+    try {
+        const { ok, data } = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/healing/verify`, {
+            method: 'POST',
+            body: '{}',
+            timeoutMs: 150000,
+        }));
+        if (!ok) {
+            const message = (data && data.error) || 'Could not re-run the test.';
+            notify(message, 'error');
+            if (note) note.textContent = message;
+            btn.disabled = false;
+            btn.textContent = 'Re-run test';
+            return;
+        }
+        if (data.passed && data.resolved) {
+            notify('Test passed. Incident resolved.', 'success');
+            if (note) note.textContent = 'Passed. This incident is resolved.';
+            btn.textContent = 'Passed';
+            if (typeof window.loadHealingView === 'function') window.loadHealingView();
+            return;
+        }
+        notify('The test still fails. The incident stays open.', 'error');
+        if (note) note.textContent = 'Still failing. The incident stays open.';
+        if (out && data.output) {
+            out.hidden = false;
+            out.textContent = data.output;
+        }
+        btn.disabled = false;
+        btn.textContent = 'Re-run test';
+    } catch (e) {
+        notify(String(e), 'error');
+        btn.disabled = false;
+        btn.textContent = 'Re-run test';
+    }
+}
+
+async function writeConfirmedLocator(id, healed, btn) {
+    btn.disabled = true;
+    const note = document.getElementById(`hc-apply-note-${id}`);
+    try {
+        const { ok, data } = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/healing/apply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ healed_locator: healed }),
+        }));
+        if (!ok) {
+            const message = (data && data.error) || 'Could not write the test file.';
+            notify(message, 'error');
+            if (note) note.textContent = message;
+            btn.disabled = false;
+            return;
+        }
+        const path = data.path || 'the test file';
+        if (data.already) {
+            notify(`Already applied in ${path}`, 'info');
+            if (note) note.textContent = `Already in ${path}`;
+            btn.textContent = 'Already applied';
+            return;
+        }
+        notify(`Applied in ${path}`, 'success');
+        if (note) note.textContent = `Written to ${path}`;
+        btn.textContent = 'Applied';
+    } catch (e) {
+        notify(String(e), 'error');
+        btn.disabled = false;
+    }
+}
 
 /* ── Locator interventions ────────────────────────────────────────────── */
 export async function loadLocatorInterventions() {

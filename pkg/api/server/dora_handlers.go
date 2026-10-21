@@ -12,8 +12,35 @@ import (
 
 func registerDORARoutes(config *core.Config) {
 	http.HandleFunc("/api/dora/metrics", jwtAuthMiddleware(config, "", managerOnlyHandler(config, handleDORAMetrics)))
+	http.HandleFunc("/api/dora/slo", jwtAuthMiddleware(config, "", managerOnlyHandler(config, handleDORASLO)))
 	http.HandleFunc("/api/dora/signals", jwtAuthMiddleware(config, "", managerOnlyHandler(config, handleDORASignals)))
 	http.HandleFunc("/api/webhooks/prometheus", handlePrometheusWebhook(config))
+}
+
+func handleDORASLO(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var body struct {
+		Project    string  `json:"project"`
+		SLOPercent float64 `json:"slo_percent"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSONError(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	ratio, err := core.NormalizeSLOPercent(body.SLOPercent)
+	if err != nil {
+		writeJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := core.SetProjectSLO(body.Project, ratio); err != nil {
+		writeJSONError(w, "Unknown gateway", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 func handleDORAMetrics(w http.ResponseWriter, r *http.Request) {
@@ -30,13 +57,15 @@ func handleDORAMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 	project := strings.TrimSpace(r.URL.Query().Get("project"))
 	metrics := core.ComputeDORAMetrics(project, fromT, toT)
+	budgets := core.ErrorBudgets(project, fromT, toT)
 	correlations := core.ListSignalCorrelations(project, 25)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"metrics":      metrics,
-		"correlations": correlations,
-		"from":         tw.From,
-		"to":           tw.To,
+		"metrics":       metrics,
+		"error_budgets": budgets,
+		"correlations":  correlations,
+		"from":          tw.From,
+		"to":            tw.To,
 	})
 }
 
@@ -88,10 +117,10 @@ func handlePrometheusWebhook(config *core.Config) http.HandlerFunc {
 		_ = config
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":                "accepted",
-			"signal_id":             signalID,
-			"correlated_incidents":  correlated,
-			"project":               queryProject,
+			"status":               "accepted",
+			"signal_id":            signalID,
+			"correlated_incidents": correlated,
+			"project":              queryProject,
 		})
 	}
 }

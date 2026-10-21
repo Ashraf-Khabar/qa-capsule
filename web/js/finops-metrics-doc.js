@@ -1,5 +1,5 @@
 /**
- * FinOps metrics theory — Help Center (detailed)
+ * FinOps metrics theory — Documentation (detailed)
  */
 import { formulaBlock } from './about-formula.js';
 
@@ -141,7 +141,7 @@ export const FINOPS_METRICS_DOC_HTML = `
   </p>
 
   <h3>11. Dashboard analytics — FinOps metric IDs</h3>
-  <p>When customizing Operations analytics tiles (Help Center → Dashboard analytics), these metric IDs map to the formulas above:</p>
+  <p>When customizing Operations analytics tiles (Documentation → Dashboard analytics), these metric IDs map to the formulas above:</p>
   <table class="about-table">
     <thead><tr><th>METRIC</th><th>Aggregation</th></tr></thead>
     <tbody>

@@ -33,13 +33,14 @@ See [Editions](../guides/editions-community-enterprise.md).
 | **CI/CD Gateways** | Manager | Projects, API keys, webhook URLs, routing matrix |
 | **Plugin Engine** | Lead | Native integrations (Slack, Jira, …), test run |
 | **Visual Workflow** | Lead | Drawflow DAG per gateway, simulate, save |
-| **Runbooks** | Lead | Template apply (502, flaky, OOM, …) |
+| **Runbooks** | Lead | Template apply (502, flaky, OOM, …). On an incident, Runbook is a dry-run: the matching steps are stored, and Slack, Jira, and the cluster are not called. |
 | **FinOps** | Manager | Cost KPIs, evolution charts, PDF export |
 | **Analytics** | Observer | Custom charts (QCL), pinned widgets |
-| **DORA** | Manager | Deployment frequency, lead time, CFR, MTTR |
+| **DORA** | Manager | Deployment frequency, lead time, CFR, MTTR, error budget, SLO 1–50% per gateway, maintenance windows |
+| **Incident lifecycle** | Lead | Acknowledge (sev1–sev4), mitigate, same-cause fold (6h), waiting-for-owner at 15 min, postmortem after resolve |
 | **IAM** | Admin | Users, roles, domain policy, password reset |
 | **System Settings** | Admin | SMTP, security policy, global config |
-| **Help Center** | All | In-app guides (workflows, FinOps formulas, architecture) |
+| **Documentation** | All | In-app guides. First topic maps each SRE practice to the screen that does it. |
 
 ---
 

@@ -109,6 +109,9 @@ func registerIncidentRoutes(config *core.Config) {
 					inc["execution_summary"] = rec.Summary
 				}
 			}
+			attachNearestDeploys(incidents, tw.From, tw.To)
+			attachIncidentOps(incidents)
+			attachMaintenance(incidents, tw.From, tw.To)
 
 			json.NewEncoder(w).Encode(incidents)
 
@@ -516,4 +519,41 @@ func registerIncidentRoutes(config *core.Config) {
 			w.WriteHeader(http.StatusOK)
 		}
 	})))
+}
+
+func attachNearestDeploys(incidents []map[string]interface{}, fromS, toS string) {
+	if len(incidents) == 0 {
+		return
+	}
+	seen := map[string]struct{}{}
+	var projects []string
+	for _, inc := range incidents {
+		name, _ := inc["project_name"].(string)
+		if name == "" {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		projects = append(projects, name)
+	}
+	fromT, _ := time.Parse("2006-01-02 15:04:05", fromS)
+	toT, _ := time.Parse("2006-01-02 15:04:05", toS)
+	if fromT.IsZero() {
+		fromT = time.Now().UTC().Add(-30 * 24 * time.Hour)
+	}
+	if toT.IsZero() {
+		toT = time.Now().UTC()
+	}
+	stamps := core.LoadPipelineStamps(projects, fromT.Add(-24*time.Hour), toT)
+	for _, inc := range incidents {
+		name, _ := inc["project_name"].(string)
+		runID, _ := inc["pipeline_run_id"].(string)
+		created, _ := inc["created_at"].(string)
+		link, ok := core.LinkDeploy(stamps, name, runID, created)
+		if ok {
+			inc["deploy"] = link
+		}
+	}
 }

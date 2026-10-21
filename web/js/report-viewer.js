@@ -3,7 +3,7 @@
  */
 import { fetchWithAuth, parseApiJson } from './api.js';
 import { notify } from './ui.js';
-import { hydrateOpenComments, revealComment } from './comments.js';
+import { hydrateOpenComments, revealComment } from './comments.js?v=1.0.40-edit-fill';
 import { publishSecureLink } from './links.js';
 
 function escapeHtml(s) {
