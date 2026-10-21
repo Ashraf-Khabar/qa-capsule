@@ -375,7 +375,7 @@ func serveAppIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	w.Header().Set("Cache-Control", "no-cache, must-revalidate")
+	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-SRE-Capsule-Edition", core.EditionID())
 	w.Header().Set("X-SRE-Capsule-Version", core.Version)
 	http.ServeFile(w, r, "./web/index.html")

@@ -53,7 +53,6 @@ export default {
     'login.username': '用户名',
     'login.password': '密码',
     'login.signIn': '登录',
-    'login.hint': '首次登录：<strong>admin</strong> / <strong>admin</strong> — 系统将提示您设置新密码。',
     'login.ssoGoogle': '使用 Google Workspace 登录',
     'login.ssoEnterprise': '使用 SSO 登录 (Enterprise)',
     'login.ssoLocked': '请在设置中安装 Enterprise 许可证以启用 SSO。',

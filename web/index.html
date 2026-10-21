@@ -8,7 +8,7 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap">
-    <link rel="stylesheet" href="/style.css?v=1.0.42-rerun">
+    <link rel="stylesheet" href="/style.css?v=1.0.53-title-mask">
     <script>
         try {
             if (localStorage.getItem('sre-sidebar-collapsed') === '1') {
@@ -128,8 +128,6 @@
             <input type="password" id="login-password" class="login-input" data-i18n-placeholder="login.password" placeholder="Password" autocomplete="current-password">
             <br /><br>
             <button class="btn-primary login-btn-full" onclick="performLogin()" data-i18n="login.signIn">Sign in</button>
-
-            <p id="login-community-hint" class="login-hint login-hint--credentials" data-i18n-html="login.hint">First login: <strong>admin</strong> / <strong>admin</strong> — you will be prompted to set a new password.</p>
 
             <div id="login-sso-section" class="login-divider u-hidden">
                 <div id="sso-container" class="u-hidden">
@@ -732,91 +730,42 @@
 
             <section id="view-healing" class="view-section hc-page">
 
-                <!-- ── Header ── -->
-                <div class="hc-header">
-                    <div class="hc-header__left">
-                        <h1 class="hc-header__title">Self-Healing Hub</h1>
-                        <p class="hc-header__sub">Propose Fix names the cause — locator, assertion, timeout, network, stale element, or script — and shows only that problem.</p>
+                <div class="header-bar">
+                    <div>
+                        <h1 class="intelligence-view__title">Self-Healing</h1>
+                        <p class="intelligence-view__subtitle">Choose a failure, analyze it, then write a confirmed change and re-run the test.</p>
                     </div>
                     <div class="hc-header__right">
                         <span id="healing-ai-chip" class="hc-chip hc-chip--off">
                             <span class="hc-dot"></span>AI loading…
                         </span>
-                        <button class="hc-btn-configure role-manager-only" onclick="window.switchView && window.switchView('ai-config', document.querySelector('.nav-item[onclick*=ai-config]'))">
+                        <button type="button" class="btn btn-primary btn-sm role-manager-only" onclick="window.switchView && window.switchView('ai-config', document.querySelector('.nav-item[onclick*=ai-config]'))">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                             AI Configuration
                         </button>
                     </div>
                 </div>
 
-                <!-- ── Stats strip ── -->
-                <div class="hc-stats">
-                    <div class="hc-stat hc-stat--danger">
-                        <span class="hc-stat__val" id="healing-stat-total">—</span>
-                        <span class="hc-stat__lbl">Open failures</span>
-                    </div>
-                    <div class="hc-stat-sep"></div>
-                    <div class="hc-stat hc-stat--warn">
-                        <span class="hc-stat__val" id="healing-stat-categorized">—</span>
-                        <span class="hc-stat__lbl">Categorized</span>
-                    </div>
-                    <div class="hc-stat-sep"></div>
-                    <div class="hc-stat hc-stat--info">
-                        <span class="hc-stat__val" id="healing-stat-mcp-ready">—</span>
-                        <span class="hc-stat__lbl">Ready to fix</span>
-                    </div>
-                    <div class="hc-stat-sep"></div>
-                    <div class="hc-stat hc-stat--pass">
-                        <span class="hc-stat__val" id="healing-stat-interventions">—</span>
-                        <span class="hc-stat__lbl">AI healed</span>
-                    </div>
-                </div>
-
-                <!-- ── Open Failures ── -->
-                <div class="hc-section">
-                    <div class="hc-section__head">
-                        <div class="hc-section__left">
-                            <span class="hc-section__dot hc-section__dot--fail"></span>
-                            <h2 class="hc-section__title">Open Failures</h2>
-                            <span class="hc-section__hint">Select failures and click <strong>Propose fix</strong> — AI fetches the live page and finds the correct locator</span>
+                <div class="hc-desk">
+                    <aside class="hc-listpane">
+                        <div class="hc-listpane__bar">
+                            <div class="hc-listpane__title">
+                                <h2>Open failures</h2>
+                                <span id="healing-stat-total" class="hc-count">—</span>
+                            </div>
+                            <div class="hc-listpane__tools">
+                                <select id="healing-project-filter" class="hc-ctrl-select" title="Filter by gateway"></select>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="window.loadHealingInsights && window.loadHealingInsights()">Refresh</button>
+                            </div>
                         </div>
-                        <div class="hc-section__controls">
-                            <label class="hc-selall">
-                                <input type="checkbox" id="hc-select-all" onchange="window._selectAll && window._selectAll(this.checked)">
-                                Select all
-                            </label>
-                            <select id="healing-project-filter" class="hc-ctrl-select" title="Filter by gateway"></select>
-                            <button class="hc-ctrl-btn" onclick="window.loadHealingInsights && window.loadHealingInsights()">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.08-1.96"/></svg>
-                                Refresh
-                            </button>
+                        <div id="healing-insights-body" role="list"></div>
+                    </aside>
+                    <div class="hc-stage" id="healing-stage">
+                        <div class="hc-stage__empty">
+                            <h2>Select a failure</h2>
+                            <p>The analysis stays on that test. A confirmed locator can be written into the file, then the test is re-run.</p>
                         </div>
                     </div>
-                    <!-- Bulk action bar -->
-                    <div id="hc-bulk-bar" class="hc-bulk-bar">
-                        <span id="hc-bulk-count">0 selected</span>
-                        <button class="hc-bulk-del" onclick="window.bulkDelete && window.bulkDelete()">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
-                            Delete selected
-                        </button>
-                    </div>
-                    <div id="healing-insights-body" role="list"></div>
-                </div>
-
-                <!-- ── Locator Interventions ── -->
-                <div class="hc-section">
-                    <div class="hc-section__head">
-                        <div class="hc-section__left">
-                            <span class="hc-section__dot hc-section__dot--heal"></span>
-                            <h2 class="hc-section__title">Locator Interventions</h2>
-                            <span class="hc-section__hint">Selectors saved when Propose Fix confirms a unique match on the page</span>
-                        </div>
-                        <button class="hc-ctrl-btn" onclick="window.loadLocatorInterventions && window.loadLocatorInterventions()">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.08-1.96"/></svg>
-                            Refresh
-                        </button>
-                    </div>
-                    <div id="healing-interventions-body" role="list"></div>
                 </div>
 
             </section>
@@ -1868,6 +1817,6 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-    <script type="module" src="app.js?v=1.0.42-rerun"></script>
+    <script type="module" src="app.js?v=1.0.49-heal-fit"></script>
 </body>
 </html>

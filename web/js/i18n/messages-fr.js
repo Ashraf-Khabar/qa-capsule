@@ -53,7 +53,6 @@ export default {
     'login.username': 'Nom d\'utilisateur',
     'login.password': 'Mot de passe',
     'login.signIn': 'Se connecter',
-    'login.hint': 'Première connexion : <strong>admin</strong> / <strong>admin</strong> — vous serez invité à définir un nouveau mot de passe.',
     'login.ssoGoogle': 'Se connecter avec Google Workspace',
     'login.ssoEnterprise': 'Se connecter avec SSO (Enterprise)',
     'login.ssoLocked': 'Installez une licence Enterprise dans les Paramètres pour activer le SSO.',
