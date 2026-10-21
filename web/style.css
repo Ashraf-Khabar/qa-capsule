@@ -1098,33 +1098,6 @@ html.reduced-motion *::after {
     margin-bottom: 28px;
 }
 
-/* Titles stay fixed. The band above hides whatever scrolls into the page padding.
-   The band below keeps a small gap so the content never touches the title. */
-.header-bar,
-.aipage-header,
-.finops-page-head,
-.ops-page-head {
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    background: var(--bg-base);
-    box-shadow: 0 14px 0 0 var(--bg-base), 0 18px 14px -16px rgba(15, 23, 42, 0.22);
-}
-
-.header-bar::before,
-.aipage-header::before,
-.finops-page-head::before,
-.ops-page-head::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 100%;
-    height: 40px;
-    background: var(--bg-base);
-    pointer-events: none;
-}
-
 .view-section {
     display: none;
 }
@@ -1793,10 +1766,12 @@ pre {
 .ops-page-head {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     flex-wrap: wrap;
     gap: 20px;
     margin-bottom: 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-main);
 }
 
 .ops-page-head h1 {
@@ -6429,6 +6404,53 @@ body[data-theme="dark"] .hc-code-fix-old {
     text-align: left;
 }
 
+.deploy-link {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-main);
+    text-align: left;
+}
+
+.deploy-link--close {
+    padding: 6px 8px;
+    border-radius: var(--radius-sm, 6px);
+    background: color-mix(in srgb, var(--log-warn, #d97706) 14%, transparent);
+}
+
+.dora-budget {
+    margin-bottom: 16px;
+}
+
+.dora-budget__hint {
+    margin: 0 0 12px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.dora-budget__banner {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm, 6px);
+    background: color-mix(in srgb, var(--log-fatal, #dc2626) 16%, transparent);
+    color: var(--text-main);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.budget-status {
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.budget-status--healthy { color: var(--kpi-success, #16a34a); }
+.budget-status--watch { color: var(--log-warn, #d97706); }
+.budget-status--freeze { color: var(--log-fatal, #dc2626); }
+.budget-status--quiet { color: var(--text-muted); }
+
 .pipeline-exec-toolbar {
     display: flex;
     align-items: center;
@@ -6646,14 +6668,7 @@ body[data-theme="dark"] .hc-code-fix-old {
     --cmd-muted: var(--text-muted);
     width: 100%;
     max-width: none;
-    border-radius: var(--radius-lg);
-    padding: var(--space-md) var(--space-lg) var(--space-lg);
     box-sizing: border-box;
-}
-
-[data-theme="dark"] .ops-dashboard {
-    background: linear-gradient(180deg, var(--bg-base) 0%, var(--bg-muted) 100%);
-    border: 1px solid var(--border-main);
 }
 
 .ops-dashboard #incident-list.loading-placeholder,
@@ -6662,9 +6677,90 @@ body[data-theme="dark"] .hc-code-fix-old {
     text-align: center;
 }
 
-.ops-dashboard .ops-page-head h1 {
-    font-size: var(--text-xl);
+.incident-empty-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.incident-ops {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 8px 0 4px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-main);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--bg-surface) 86%, transparent);
+}
+
+.ops-timeline,
+.ops-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+
+.ops-signal {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     color: var(--text-main);
+    background: color-mix(in srgb, var(--log-warn, #c9842a) 18%, transparent);
+}
+
+.ops-signal-list {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+
+.ops-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.ops-sev {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.ops-sev select,
+.ops-postmortem-edit {
+    border: 1px solid var(--border-main);
+    border-radius: 6px;
+    background: var(--bg-base);
+    color: var(--text-main);
+    font: inherit;
+}
+
+.ops-postmortem,
+.ops-postmortem-edit {
+    width: 100%;
+    margin: 0;
+    white-space: pre-wrap;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.ops-postmortem-edit {
+    min-height: 140px;
+    padding: 8px;
 }
 
 .ops-dashboard .incident-log-toolbar h3,
@@ -6675,7 +6771,6 @@ body[data-theme="dark"] .hc-code-fix-old {
     font-size: var(--text-sm);
 }
 
-.ops-dashboard .ops-page-head p,
 .ops-dashboard .pipeline-exec-submeta,
 .ops-dashboard .metric-label {
     color: var(--cmd-muted);

@@ -97,6 +97,7 @@ export function refreshDORAMetrics() {
 
             renderDORATrend(m.series || []);
             renderCorrelations(data.correlations || []);
+            renderErrorBudgets(data.error_budgets || []);
         });
 }
 
@@ -157,6 +158,51 @@ function renderCorrelations(rows) {
             <td>${escapeHtml(r.fired_at || '')}</td>
         </tr>
     `).join('');
+}
+
+function renderErrorBudgets(rows) {
+    const tbody = document.getElementById('dora-budget-body');
+    const banner = document.getElementById('dora-budget-banner');
+    if (!tbody) return;
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="modern-data-grid__empty">No pipeline runs in this window.</td></tr>';
+        if (banner) banner.hidden = true;
+        return;
+    }
+    const decision = {
+        quiet: 'No runs',
+        healthy: 'Within budget',
+        watch: 'Close to budget',
+        freeze: 'Freeze deploys'
+    };
+    const frozen = rows.filter(row => row.status === 'freeze').map(row => row.project);
+    const watching = rows.filter(row => row.status === 'watch').map(row => row.project);
+    if (banner) {
+        if (frozen.length) {
+            banner.hidden = false;
+            banner.textContent = `Freeze deploys on ${frozen.join(', ')}. Those gateways used their error budget for this window.`;
+        } else if (watching.length) {
+            banner.hidden = false;
+            banner.textContent = `${watching.join(', ')} ${watching.length === 1 ? 'is' : 'are'} close to the error budget.`;
+        } else {
+            banner.hidden = true;
+            banner.textContent = '';
+        }
+    }
+    tbody.innerHTML = rows.map(row => {
+        const left = row.status === 'quiet' ? '—' : `${Math.round((row.remaining_ratio || 0) * 100)}%`;
+        const burn = row.status === 'quiet' ? '—' : `${Number(row.burn_rate || 0).toFixed(1)}×`;
+        const slo = `${Math.round((row.slo_failure_rate || 0) * 100)}%`;
+        return `<tr>
+            <td>${escapeHtml(row.project || '')}</td>
+            <td>${slo}</td>
+            <td>${row.deployments ?? 0}</td>
+            <td>${row.failed ?? 0}</td>
+            <td>${left}</td>
+            <td>${burn}</td>
+            <td><span class="budget-status budget-status--${escapeHtml(row.status || 'quiet')}">${decision[row.status] || 'Within budget'}</span></td>
+        </tr>`;
+    }).join('');
 }
 
 function escapeHtml(s) {

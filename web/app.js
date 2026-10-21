@@ -17,7 +17,7 @@ import * as executionHub from './js/execution-hub.js';
 import * as reportViewer from './js/report-viewer.js';
 import * as workflowEditor from './js/workflow-editor.js';
 import * as healing from './js/healing.js?v=1.0.49-heal-fit';
-import * as dora from './js/dora.js';
+import * as dora from './js/dora.js?v=1.0.54-sre-budget';
 import { setupAutocomplete } from './js/autocomplete.js';
 import { initTheme, applyTheme } from './js/ui.js';
 import { initI18n, t, setLocale, applyI18n } from './js/i18n.js';
@@ -567,6 +567,31 @@ window.refreshDashboard = function () {
     return Promise.resolve(window.fetchIncidents(true)).then(() => window.syncDashboardKpis());
 };
 
+function renderDeployLink(group, userRole) {
+    const inc = (group.incidents || []).find(item => item && item.deploy);
+    const deploy = inc && inc.deploy;
+    if (!deploy || !deploy.run_id) return '';
+    const sha = String(deploy.commit || '').trim();
+    const label = sha ? sha.slice(0, 7) : String(deploy.run_id).slice(0, 12);
+    const branch = deploy.branch ? ` · ${escapeHtml(deploy.branch)}` : '';
+    const outcome = deploy.outcome ? ` · ${escapeHtml(deploy.outcome)}` : '';
+    const mins = Number(deploy.minutes_before);
+    let when = 'on this incident';
+    if (Number.isFinite(mins)) {
+        const rounded = Math.max(0, Math.round(mins));
+        when = rounded <= 1 ? 'with this incident' : `${rounded} min before this incident`;
+    }
+    const workflow = deploy.close && deploy.project_id && canAccessPlugins(userRole)
+        ? `<button type="button" class="btn btn-secondary btn-sm" data-project-id="${escapeHtml(deploy.project_id)}" data-project-name="${escapeHtml(group.project_name || '')}" onclick="openDeployWorkflow(this)">Open workflow</button>`
+        : '';
+    return `<div class="deploy-link${deploy.close ? ' deploy-link--close' : ''}"><span>Deploy ${escapeHtml(label)}${branch}${outcome} · ${when}</span>${workflow}</div>`;
+}
+
+window.openDeployWorkflow = function (button) {
+    if (!button || typeof window.openWorkflowEditor !== 'function') return;
+    window.openWorkflowEditor(button.dataset.projectId || '', button.dataset.projectName || '');
+};
+
 function escapeHtml(s) {
     return String(s ?? '')
         .replace(/&/g, '&amp;')
@@ -986,6 +1011,184 @@ window.fetchIncidents = function (forceRender = false, opts = {}) {
         });
 };
 
+function causeKey(inc) {
+    const fp = String(inc.fingerprint || '').trim();
+    if (fp) return `${inc.project_name}|fp|${fp}`;
+    const name = String(inc.name || '').replace(/^\[FLAKY\]\s*/i, '').trim().toLowerCase();
+    if (!name) return '';
+    return `${inc.project_name}|name|${name}`;
+}
+
+function causeStamp(value) {
+    const parsed = Date.parse(String(value || '').replace(' ', 'T') + 'Z');
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function sameCauseWindow(prev, inc) {
+    const start = causeStamp((prev.signal_list && prev.signal_list[0] && prev.signal_list[0].at) || prev.created_at);
+    const next = causeStamp(inc.created_at);
+    if (!start || !next) return true;
+    return Math.abs(next - start) <= 6 * 60 * 60 * 1000;
+}
+
+function foldSameCause(list) {
+    const order = [];
+    const byKey = new Map();
+    list.forEach(inc => {
+        const key = causeKey(inc);
+        const stamp = { id: inc.id, at: inc.created_at || '' };
+        if (!key) {
+            order.push({ ...inc, signal_count: 1, signal_list: [stamp] });
+            return;
+        }
+        const prev = byKey.get(key);
+        if (!prev || !sameCauseWindow(prev, inc)) {
+            const copy = { ...inc, signal_count: 1, signal_list: [stamp] };
+            byKey.set(key, copy);
+            order.push(copy);
+            return;
+        }
+        prev.signal_count += 1;
+        prev.signal_list.push(stamp);
+        const prevOpen = !normalizeIsResolved(prev);
+        const nextOpen = !normalizeIsResolved(inc);
+        const nextNewer = String(inc.created_at || '') > String(prev.created_at || '');
+        if ((nextOpen && !prevOpen) || (nextOpen === prevOpen && nextNewer)) {
+            const replacement = { ...inc, signal_count: prev.signal_count, signal_list: prev.signal_list };
+            const idx = order.indexOf(prev);
+            if (idx >= 0) order[idx] = replacement;
+            byKey.set(key, replacement);
+        }
+    });
+    return order;
+}
+
+function incidentOpsHTML(inc, canAct) {
+    const bits = [];
+    if (inc.created_at) bits.push(`Detected ${inc.created_at}`);
+    if (inc.acknowledged_at) bits.push(`Acknowledged ${inc.acknowledged_by || ''} ${inc.severity || ''}`.trim());
+    if (inc.mitigated_at) bits.push(`Mitigated ${inc.mitigated_at}`);
+    if (normalizeIsResolved(inc)) bits.push(`Resolved ${inc.resolved_by || ''}`.trim());
+    const signalItems = (inc.signal_list || []).slice(0, 8).map(item =>
+        `<li>#${Number(item.id)} · ${escapeHtml(item.at || '')}</li>`).join('');
+    const signals = Number(inc.signal_count) > 1
+        ? `<span class="ops-signal">${inc.signal_count} signals, same cause</span><ul class="ops-signal-list">${signalItems}</ul>` : '';
+    let actions = '';
+    if (canAct && !normalizeIsResolved(inc)) {
+        if (!inc.acknowledged_at) {
+            actions += `<label class="ops-sev">Severity
+                <select id="sev-${inc.id}">
+                    <option value="sev1">sev1</option>
+                    <option value="sev2">sev2</option>
+                    <option value="sev3" selected>sev3</option>
+                    <option value="sev4">sev4</option>
+                </select></label>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ackIncident(${Number(inc.id)})">Acknowledge</button>`;
+        }
+        if (!inc.mitigated_at) {
+            actions += `<button type="button" class="btn btn-secondary btn-sm" onclick="mitigateIncident(${Number(inc.id)})">Mark mitigated</button>`;
+        }
+        actions += `<button type="button" class="btn btn-secondary btn-sm" onclick="runIncidentRunbook(${Number(inc.id)})">Runbook</button>`;
+    }
+    if (canAct && normalizeIsResolved(inc)) {
+        actions += `<button type="button" class="btn btn-secondary btn-sm" onclick="draftPostmortem(${Number(inc.id)})">${inc.postmortem ? 'Refresh draft' : 'Write postmortem'}</button>`;
+    }
+    const runbook = inc.runbook_summary ? `<p class="ops-note">${escapeHtml(inc.runbook_summary)}</p>` : '';
+    const draft = inc.postmortem
+        ? `<pre class="ops-postmortem">${escapeHtml(inc.postmortem)}</pre>
+           <textarea class="ops-postmortem-edit" id="pm-edit-${inc.id}">${escapeHtml(inc.postmortem)}</textarea>
+           <button type="button" class="btn btn-secondary btn-sm" onclick="savePostmortem(${Number(inc.id)})">Save draft</button>`
+        : '';
+    return `<div class="incident-ops">${signals}<p class="ops-timeline">${escapeHtml(bits.join(' · '))}</p><div class="ops-actions">${actions}</div>${runbook}${draft}</div>`;
+}
+
+async function postIncidentOps(id, payload) {
+    const parsed = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/ops`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    }));
+    if (!parsed.ok) {
+        const message = parsed.data && parsed.data.error ? parsed.data.error : 'Could not update the incident';
+        throw new Error(message);
+    }
+    return parsed.data || {};
+}
+
+window.ackIncident = async function (id) {
+    const sel = document.getElementById(`sev-${id}`);
+    try {
+        await postIncidentOps(id, { action: 'ack', severity: sel ? sel.value : 'sev3' });
+        notify('Incident acknowledged');
+        window.refreshDashboard();
+    } catch (err) {
+        notify(err.message, 'error');
+    }
+};
+
+window.mitigateIncident = async function (id) {
+    try {
+        await postIncidentOps(id, { action: 'mitigate' });
+        notify('Incident marked mitigated');
+        window.refreshDashboard();
+    } catch (err) {
+        notify(err.message, 'error');
+    }
+};
+
+window.runIncidentRunbook = async function (id) {
+    let preview;
+    try {
+        preview = await postIncidentOps(id, { action: 'runbook_preview' });
+    } catch (err) {
+        notify(err.message, 'error');
+        return;
+    }
+    const steps = preview.summary || 'the matching steps';
+    showConfirmModal(
+        preview.template_name || 'Record a runbook?',
+        `The plugin engine would run: ${steps}. This dry-run is saved on the incident. Slack, Jira, and the cluster are not called.`,
+        '',
+        async function () {
+            try {
+                await postIncidentOps(id, { action: 'runbook', template_id: preview.template_id });
+                notify('Runbook recorded on the incident');
+                window.refreshDashboard();
+            } catch (err) {
+                notify(err.message, 'error');
+            }
+        }
+    );
+};
+
+window.draftPostmortem = function (id) {
+    showConfirmModal(
+        'Write the postmortem draft?',
+        'The draft is built from the timeline, comments, and the nearest deploy. You can edit it afterwards.',
+        '',
+        async function () {
+            try {
+                await postIncidentOps(id, { action: 'postmortem' });
+                notify('Postmortem draft saved');
+                window.refreshDashboard();
+            } catch (err) {
+                notify(err.message, 'error');
+            }
+        }
+    );
+};
+
+window.savePostmortem = async function (id) {
+    const box = document.getElementById(`pm-edit-${id}`);
+    const body = box ? box.value : '';
+    try {
+        await postIncidentOps(id, { action: 'postmortem', body });
+        notify('Postmortem draft saved');
+        window.refreshDashboard();
+    } catch (err) {
+        notify(err.message, 'error');
+    }
+};
+
 window.renderIncidentsList = function () {
     const listEl = document.getElementById('incident-list');
     const searchQuery = document.getElementById('incident-search') ? document.getElementById('incident-search').value.toLowerCase() : '';
@@ -1021,14 +1224,23 @@ window.renderIncidentsList = function () {
         const total = (window.currentIncidents || []).length;
         let msg = 'No incidents in this view. Send CI results to your gateway webhook (X-API-Key), wait a few seconds for ingest, then click Refresh.';
         if (total > 0 && searchQuery) msg = 'No incidents match your search. Clear the search box or change filters.';
-        else if (total > 0 && window.statusFilter === 'active') msg = 'No active incidents. Switch status filter to "All" or "Resolved".';
+        else if (total > 0 && window.statusFilter === 'active') {
+            listEl.innerHTML = `<div class="incident-empty-state">
+                <p>No active incidents. ${total} in this range ${total === 1 ? 'is' : 'are'} resolved.</p>
+                <div class="incident-empty-actions">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="setStatusFilter('all')">Show all</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="setStatusFilter('resolved')">Show resolved</button>
+                </div>
+            </div>`;
+            return;
+        }
         else if (total > 0 && window.statusFilter === 'resolved') msg = 'No resolved incidents yet.';
         else if (total > 0) msg = 'No incidents match the current project filter.';
         listEl.innerHTML = `<div class="incident-empty-state">${msg}</div>`;
         return;
     }
 
-    const sortedData = [...filteredData].sort((a, b) => a.id - b.id);
+    const sortedData = foldSameCause([...filteredData].sort((a, b) => a.id - b.id));
     const groupsArray = []; let currentGroup = null;
 
     sortedData.forEach(inc => {
@@ -1130,6 +1342,7 @@ window.renderIncidentsList = function () {
                     </div>
                     ${subAlertFlag}
                 </div>
+                ${incidentOpsHTML(inc, canResolve)}
                 <div class="incident-test-row-actions">
                     <button type="button" class="btn btn-secondary btn-sm exec-detail-btn" onclick="openExecutionSheetFromIncident('${inc.id}', event)">Command panel</button>
                     <button type="button" class="log-toggle-btn" onclick="window.toggleIncidentLog('${inc.id}', event)">
@@ -1166,6 +1379,7 @@ window.renderIncidentsList = function () {
                         <span class="pipeline-exec-label">Pipeline execution</span>
                         <span class="pipeline-exec-title">${group.project_name}</span>
                         <span class="pipeline-exec-submeta">${group.created_at} · ${group.incidents.length} alert(s)${group.has_real_run ? ` · run ${String(group.pipeline_run_id).slice(0, 20)}` : ''}</span>
+                        ${renderDeployLink(group, userRole)}
                         ${executionHub.renderGroupExecFlagsHtml(group, canPatchFlags)}
                     </div>
                 </div>

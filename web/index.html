@@ -8,7 +8,7 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap">
-    <link rel="stylesheet" href="/style.css?v=1.0.53-title-mask">
+    <link rel="stylesheet" href="/style.css?v=1.0.60-ops-live">
     <script>
         try {
             if (localStorage.getItem('sre-sidebar-collapsed') === '1') {
@@ -325,69 +325,14 @@
         <main class="main-content">
 
             <section id="view-dashboard" class="view-section active ops-dashboard">
-                <div class="dashboard-time-bar" role="region" aria-label="Time range filter">
-                    <div class="dashboard-time-head">
-                        <div class="dashboard-time-title">
-                            <svg class="dashboard-time-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                            <span>Time range</span>
-                        </div>
-                        <span id="dashboard-range-summary" class="dashboard-range-badge">Last 1 hour</span>
-                    </div>
-                    <div class="dashboard-time-quick" id="dashboard-range-quick">
-                        <button type="button" class="range-chip" data-range="5m" onclick="setDashboardRangePreset('5m')">5m</button>
-                        <button type="button" class="range-chip" data-range="15m" onclick="setDashboardRangePreset('15m')">15m</button>
-                        <button type="button" class="range-chip active" data-range="1h" onclick="setDashboardRangePreset('1h')">1h</button>
-                        <button type="button" class="range-chip" data-range="24h" onclick="setDashboardRangePreset('24h')">24h</button>
-                        <button type="button" class="range-chip" data-range="7d" onclick="setDashboardRangePreset('7d')">7d</button>
-                        <button type="button" class="range-chip" data-range="today" onclick="setDashboardRangePreset('today')">Today</button>
-                    </div>
-                    <div class="dashboard-time-more">
-                        <label class="sr-only" for="dashboard-range-preset">More ranges</label>
-                        <select id="dashboard-range-preset" class="login-input dashboard-control dashboard-range-select" onchange="onDashboardRangeChange()">
-                            <option value="5m">Last 5 minutes</option>
-                            <option value="15m">Last 15 minutes</option>
-                            <option value="30m">Last 30 minutes</option>
-                            <option value="1h" selected>Last 1 hour</option>
-                            <option value="6h">Last 6 hours</option>
-                            <option value="24h">Last 24 hours</option>
-                            <option value="7d">Last 7 days</option>
-                            <option value="30d">Last 30 days</option>
-                            <option value="today">Today</option>
-                            <option value="yesterday">Yesterday</option>
-                            <option value="all">All time (1 year)</option>
-                            <option value="custom">Absolute time range…</option>
-                        </select>
-                    </div>
-                    <div id="dashboard-custom-range" class="dashboard-custom-panel" style="display: none;">
-                        <div class="dashboard-custom-field">
-                            <span class="dashboard-custom-label">Start</span>
-                            <div class="dashboard-datetime-row">
-                                <input type="date" id="dashboard-range-from-date" class="login-input dashboard-date-input" aria-label="Start date" onchange="onDashboardCustomRangeInput()">
-                                <input type="time" id="dashboard-range-from-time" class="login-input dashboard-time-input" aria-label="Start time" onchange="onDashboardCustomRangeInput()">
-                            </div>
-                        </div>
-                        <span class="dashboard-range-arrow" aria-hidden="true">→</span>
-                        <div class="dashboard-custom-field">
-                            <span class="dashboard-custom-label">End</span>
-                            <div class="dashboard-datetime-row">
-                                <input type="date" id="dashboard-range-to-date" class="login-input dashboard-date-input" aria-label="End date" onchange="onDashboardCustomRangeInput()">
-                                <input type="time" id="dashboard-range-to-time" class="login-input dashboard-time-input" aria-label="End time" onchange="onDashboardCustomRangeInput()">
-                            </div>
-                            <button type="button" class="range-now-link" onclick="setDashboardRangeEndToNow()">Now</button>
-                        </div>
+                <div class="header-bar">
+                    <div>
+                        <h1 class="intelligence-view__title">Telemetry Stream</h1>
+                        <p class="intelligence-view__subtitle">Real-time incident monitoring and correlation.</p>
                     </div>
                 </div>
 
-                <div class="ops-page-head">
-                    <div>
-                        <h1>Telemetry Stream</h1>
-                        <p>Real-time incident monitoring and correlation.</p>
-                    </div>
-
-                    <div class="dashboard-toolbar">
+                <div class="dashboard-toolbar">
                         <div class="dashboard-toolbar-group">
                             <div class="ac-wrap" style="width: 250px;">
                             <input type="text" id="incident-search" class="login-input dashboard-control" style="width: 100%; margin:0;" placeholder="Search error or project..." autocomplete="off">
@@ -444,9 +389,64 @@
                             </button>
                         </div>
 
+                </div>
+
+                <div class="dashboard-time-bar" role="region" aria-label="Time range filter">
+                    <div class="dashboard-time-head">
+                        <div class="dashboard-time-title">
+                            <svg class="dashboard-time-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>Time range</span>
+                        </div>
+                        <span id="dashboard-range-summary" class="dashboard-range-badge">Last 1 hour</span>
+                    </div>
+                    <div class="dashboard-time-quick" id="dashboard-range-quick">
+                        <button type="button" class="range-chip" data-range="5m" onclick="setDashboardRangePreset('5m')">5m</button>
+                        <button type="button" class="range-chip" data-range="15m" onclick="setDashboardRangePreset('15m')">15m</button>
+                        <button type="button" class="range-chip active" data-range="1h" onclick="setDashboardRangePreset('1h')">1h</button>
+                        <button type="button" class="range-chip" data-range="24h" onclick="setDashboardRangePreset('24h')">24h</button>
+                        <button type="button" class="range-chip" data-range="7d" onclick="setDashboardRangePreset('7d')">7d</button>
+                        <button type="button" class="range-chip" data-range="today" onclick="setDashboardRangePreset('today')">Today</button>
+                    </div>
+                    <div class="dashboard-time-more">
+                        <label class="sr-only" for="dashboard-range-preset">More ranges</label>
+                        <select id="dashboard-range-preset" class="login-input dashboard-control dashboard-range-select" onchange="onDashboardRangeChange()">
+                            <option value="5m">Last 5 minutes</option>
+                            <option value="15m">Last 15 minutes</option>
+                            <option value="30m">Last 30 minutes</option>
+                            <option value="1h" selected>Last 1 hour</option>
+                            <option value="6h">Last 6 hours</option>
+                            <option value="24h">Last 24 hours</option>
+                            <option value="7d">Last 7 days</option>
+                            <option value="30d">Last 30 days</option>
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="all">All time (1 year)</option>
+                            <option value="custom">Absolute time range…</option>
+                        </select>
+                    </div>
+                    <div id="dashboard-custom-range" class="dashboard-custom-panel" style="display: none;">
+                        <div class="dashboard-custom-field">
+                            <span class="dashboard-custom-label">Start</span>
+                            <div class="dashboard-datetime-row">
+                                <input type="date" id="dashboard-range-from-date" class="login-input dashboard-date-input" aria-label="Start date" onchange="onDashboardCustomRangeInput()">
+                                <input type="time" id="dashboard-range-from-time" class="login-input dashboard-time-input" aria-label="Start time" onchange="onDashboardCustomRangeInput()">
+                            </div>
+                        </div>
+                        <span class="dashboard-range-arrow" aria-hidden="true">→</span>
+                        <div class="dashboard-custom-field">
+                            <span class="dashboard-custom-label">End</span>
+                            <div class="dashboard-datetime-row">
+                                <input type="date" id="dashboard-range-to-date" class="login-input dashboard-date-input" aria-label="End date" onchange="onDashboardCustomRangeInput()">
+                                <input type="time" id="dashboard-range-to-time" class="login-input dashboard-time-input" aria-label="End time" onchange="onDashboardCustomRangeInput()">
+                            </div>
+                            <button type="button" class="range-now-link" onclick="setDashboardRangeEndToNow()">Now</button>
+                        </div>
                     </div>
                 </div>
-                
+
                 <div class="ops-metric-strip">
                     <div class="kpi-card ops-metric-tile metric-danger">
                         <div class="metric-label">Active alerts</div>
@@ -1007,6 +1007,27 @@
                         <span class="kpi-card-premium__value kpi-tone-neutral" id="dora-kpi-correlated">—</span>
                         <span class="kpi-card-premium__trend kpi-trend-up" id="dora-kpi-correlated-trend" hidden></span>
                     </article>
+                </div>
+                <div class="data-card dora-budget" id="dora-budget-card">
+                    <h3 class="form-section-title" style="border-top:none;padding-top:0;margin:0 0 8px;">Error budget</h3>
+                    <p class="dora-budget__hint">Change failures allowed in this window. A gateway at 1× or above has spent the budget.</p>
+                    <p id="dora-budget-banner" class="dora-budget__banner" hidden></p>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Gateway</th>
+                                <th>SLO</th>
+                                <th>Runs</th>
+                                <th>Failed</th>
+                                <th>Budget left</th>
+                                <th>Burn</th>
+                                <th>Decision</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dora-budget-body">
+                            <tr><td colspan="7" class="modern-data-grid__empty">Loading error budget…</td></tr>
+                        </tbody>
+                    </table>
                 </div>
                 <div class="data-card" style="margin-bottom:16px;">
                     <h3 class="form-section-title" style="border-top:none;padding-top:0;margin:0 0 12px;">Deployments vs failures (weekly)</h3>
@@ -1817,6 +1838,6 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-    <script type="module" src="app.js?v=1.0.49-heal-fit"></script>
+    <script type="module" src="app.js?v=1.0.60-ops-live"></script>
 </body>
 </html>

@@ -1,6 +1,10 @@
 package integrations
 
-import "time"
+import (
+	"sort"
+	"strings"
+	"time"
+)
 
 // RunbookTemplate is a curated remediation DAG users can apply to a CI gateway.
 type RunbookTemplate struct {
@@ -32,6 +36,94 @@ func GetRunbookTemplate(id string) (*RunbookTemplate, bool) {
 		}
 	}
 	return nil, false
+}
+
+// SuggestRunbook picks a catalog template from the incident name and error text.
+// An empty result means no template matches; the caller must not invent one.
+func SuggestRunbook(name, errText string) *RunbookTemplate {
+	blob := strings.ToLower(name + "\n" + errText)
+	id := ""
+	switch {
+	case strings.Contains(blob, "502"):
+		id = "502-restart-pod"
+	case strings.Contains(blob, "out of memory") || strings.Contains(blob, "oomkilled") || strings.Contains(blob, " oom"):
+		id = "oom-restart"
+	case strings.Contains(blob, "[flaky]") || strings.Contains(blob, "flaky"):
+		id = "flaky-triage"
+	case strings.Contains(blob, "timeout") || strings.Contains(blob, "timed out"):
+		id = "timeout-cache-flush"
+	case strings.Contains(blob, "regression") || strings.Contains(blob, "latency"):
+		id = "perf-regression"
+	default:
+		return nil
+	}
+	t, ok := GetRunbookTemplate(id)
+	if !ok {
+		return nil
+	}
+	return t
+}
+
+// PlanRunbook dry-runs the template against one incident and returns the action
+// labels the plugin engine would take. An empty list means the conditions do not match.
+// No vendor is called.
+func PlanRunbook(t *RunbookTemplate, name, errText, status string) []string {
+	if t == nil {
+		return nil
+	}
+	doc := CloneRunbookDocument(t)
+	plan := NewWorkflowEngine(nil).PlanExecution(doc, WorkflowContext{
+		Incident: IncidentContext{Name: name, Error: errText, Status: status},
+	})
+	labels := map[string]string{}
+	for _, n := range doc.Nodes {
+		if n.Type != "action" || n.FilePath == "" {
+			continue
+		}
+		label := strings.TrimSpace(n.Label)
+		if label == "" {
+			label = n.Integration
+		}
+		if label == "" {
+			label = n.FilePath
+		}
+		labels[n.FilePath] = label
+	}
+	var steps []string
+	seen := map[string]bool{}
+	for _, path := range plan.Actions {
+		label := labels[path]
+		if label == "" {
+			label = path
+		}
+		if seen[label] {
+			continue
+		}
+		seen[label] = true
+		steps = append(steps, label)
+	}
+	return steps
+}
+
+// ActionLabels lists the action steps of a template in a stable order.
+func ActionLabels(t *RunbookTemplate) []string {
+	if t == nil {
+		return nil
+	}
+	var steps []string
+	for _, n := range t.Document.Nodes {
+		if n.Type == "action" {
+			label := strings.TrimSpace(n.Label)
+			if label == "" {
+				label = n.Integration
+			}
+			if label != "" {
+				steps = append(steps, label)
+			}
+		}
+	}
+	sort.Strings(steps)
+	return steps
 }
 
 // CloneRunbookDocument returns a copy ready to persist (fresh meta timestamp).
@@ -161,7 +253,7 @@ func templateOOMRestart() RunbookTemplate {
 			Nodes: map[string]WorkflowNode{
 				"start": {Type: "trigger"},
 				"cond": {
-					Type: "condition",
+					Type:  "condition",
 					Label: "OOM or crash loop",
 					When: &ConditionExpr{
 						Op: "or",

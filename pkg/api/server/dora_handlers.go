@@ -30,13 +30,15 @@ func handleDORAMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 	project := strings.TrimSpace(r.URL.Query().Get("project"))
 	metrics := core.ComputeDORAMetrics(project, fromT, toT)
+	budgets := core.ErrorBudgets(project, fromT, toT)
 	correlations := core.ListSignalCorrelations(project, 25)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"metrics":      metrics,
-		"correlations": correlations,
-		"from":         tw.From,
-		"to":           tw.To,
+		"metrics":       metrics,
+		"error_budgets": budgets,
+		"correlations":  correlations,
+		"from":          tw.From,
+		"to":            tw.To,
 	})
 }
 
@@ -88,10 +90,10 @@ func handlePrometheusWebhook(config *core.Config) http.HandlerFunc {
 		_ = config
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":                "accepted",
-			"signal_id":             signalID,
-			"correlated_incidents":  correlated,
-			"project":               queryProject,
+			"status":               "accepted",
+			"signal_id":            signalID,
+			"correlated_incidents": correlated,
+			"project":              queryProject,
 		})
 	}
 }
