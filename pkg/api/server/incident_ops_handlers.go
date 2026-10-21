@@ -1,11 +1,14 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	aiPkg "github.com/SRE-Capsule/sre-capsule-community/pkg/ai"
 	"github.com/SRE-Capsule/sre-capsule-community/pkg/core"
 	"github.com/SRE-Capsule/sre-capsule-community/pkg/integrations"
 )
@@ -145,12 +148,35 @@ func writeIncidentPostmortem(id int64, actor, edited string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		text = core.ComposePostmortem(facts)
+		text = polishPostmortem(core.ComposePostmortem(facts))
 	}
 	if err := core.SavePostmortem(id, text, actor); err != nil {
 		return "", err
 	}
 	return text, nil
+}
+
+func polishPostmortem(draft string) string {
+	draft = strings.TrimSpace(draft)
+	if draft == "" || core.AIService == nil {
+		return draft
+	}
+	cfg, err := core.AIService.GetConfig(context.Background())
+	if err != nil || !cfg.Enabled || cfg.Provider == "" || cfg.Provider == aiPkg.ProviderDisabled {
+		return draft
+	}
+	prompt := "Rewrite this incident postmortem in plain text, under 250 words. Use only the facts below. Do not invent a root cause, a person, a system, or a timestamp. If the cause is not in the facts, say the cause is unknown.\n\n" + draft
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	raw, err := aiPkg.AnalyzeRaw(ctx, cfg, prompt)
+	raw = strings.TrimSpace(raw)
+	if err != nil || len(raw) < 40 {
+		return draft
+	}
+	if len(raw) > 4000 {
+		raw = raw[:4000]
+	}
+	return raw
 }
 
 func deployNote(id int64) string {

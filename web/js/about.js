@@ -1,11 +1,13 @@
 /**
- * Help Center — available to all roles
+ * Documentation — available to all roles
  */
-import { FINOPS_METRICS_DOC_HTML } from './finops-metrics-doc.js';
-import { EXTENDED_HELP_TOPICS } from './help-center-topics.js';
+import { FINOPS_METRICS_DOC_HTML } from './finops-metrics-doc.js?v=1.0.63-docs';
+import { EXTENDED_HELP_TOPICS } from './help-center-topics.js?v=1.0.63-docs';
+import { SRE_THEORY_DOC_HTML } from './sre-theory-doc.js?v=1.0.63-docs';
 import { ROLE_LABELS, ROLE_DESCRIPTIONS } from './roles.js';
 
 const TOPIC_ICONS = {
+    sre_practice: '<svg class="about-topic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
     overview: '<svg class="about-topic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
     architecture: '<svg class="about-topic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
     roles: '<svg class="about-topic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
@@ -19,9 +21,14 @@ const TOPIC_ICONS = {
 };
 
 const ABOUT_TOPICS = {
+    sre_practice: {
+        title: 'SRE theory and the product',
+        breadcrumb: 'Documentation / SRE practice',
+        html: SRE_THEORY_DOC_HTML
+    },
     overview: {
         title: 'Product overview',
-        breadcrumb: 'Help Center / Overview',
+        breadcrumb: 'Documentation / Overview',
         html: `
         <article class="about-doc about-doc-wide">
           <h2>SRE Capsule — SRE control plane</h2>
@@ -54,17 +61,17 @@ const ABOUT_TOPICS = {
     ...EXTENDED_HELP_TOPICS,
     roles: {
         title: 'Role hierarchy',
-        breadcrumb: 'Help Center / Roles',
+        breadcrumb: 'Documentation / Roles',
         html: buildRolesDoc()
     },
     finops_metrics: {
         title: 'About FinOps metrics',
-        breadcrumb: 'Help Center / FinOps metrics',
+        breadcrumb: 'Documentation / FinOps metrics',
         html: FINOPS_METRICS_DOC_HTML
     },
     plugins: {
         title: 'Plugin Engine',
-        breadcrumb: 'Help Center / Plugins',
+        breadcrumb: 'Documentation / Plugins',
         html: `
         <article class="about-doc about-doc-wide">
           <h2>Native integration engine</h2>
@@ -94,7 +101,7 @@ const ABOUT_TOPICS = {
     },
     glossary: {
         title: 'SRE glossary',
-        breadcrumb: 'Help Center / Glossary',
+        breadcrumb: 'Documentation / Glossary',
         html: `
         <article class="about-doc about-doc-wide">
           <h2>SRE &amp; quality engineering glossary</h2>
@@ -118,6 +125,20 @@ const ABOUT_TOPICS = {
             <dd>AI-generated root cause summary stored per incident.</dd>
             <dt>Analytics layout</dt>
             <dd>Per-user dashboard chart configuration (not a separate DSL).</dd>
+            <dt>Error budget</dt>
+            <dd>Failed changes allowed in the DORA window. Burn is failures divided by deployments times the gateway SLO. Freeze on screen means the budget is spent. It does not block a pipeline.</dd>
+            <dt>SLO</dt>
+            <dd>Allowed change-failure rate for one gateway, 1% to 50%, saved on DORA. Default 15%.</dd>
+            <dt>Acknowledge</dt>
+            <dd>A lead or manager takes the incident, with sev1–sev4. The first owner stays.</dd>
+            <dt>Mitigate</dt>
+            <dd>User impact has been stopped. Distinct from Resolved.</dd>
+            <dt>Same cause</dt>
+            <dd>Same gateway and same test, or the same fingerprint, inside 6 hours, shown as one row with a signal list.</dd>
+            <dt>Maintenance window</dt>
+            <dd>A manager marks a gateway for 1–24 hours with a reason. Incidents in that window stay visible and carry the reason.</dd>
+            <dt>Postmortem draft</dt>
+            <dd>Written after resolve from the timeline, comments, and nearest deploy. AI may rewrite only those facts.</dd>
           </dl>
         </article>`
     }
@@ -154,7 +175,7 @@ export function loadAboutView() {
     if (!nav.dataset.built) {
         nav.dataset.built = '1';
         const order = [
-            'overview', 'architecture', 'roles', 'operations', 'gateways',
+            'sre_practice', 'overview', 'architecture', 'roles', 'operations', 'gateways',
             'workflow', 'plugins',
             'analytics', 'finops_metrics', 'glossary'
         ];
@@ -168,7 +189,7 @@ export function loadAboutView() {
             </button>`;
             }).join('');
     }
-    showAboutTopic(window.__pendingAboutTopic || 'overview');
+    showAboutTopic(window.__pendingAboutTopic || 'sre_practice');
     window.__pendingAboutTopic = '';
 }
 
@@ -192,7 +213,7 @@ export function showAboutTopic(key) {
     }
 }
 
-/** Open Help Center from workflow editor (?) */
+/** Open Documentation from workflow editor (?) */
 export function openWorkflowHelpTopic() {
     window.__pendingAboutTopic = 'workflow';
     if (typeof window.switchView === 'function') {

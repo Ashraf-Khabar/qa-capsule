@@ -169,8 +169,30 @@ WHERE is_resolved = 1
 
 ---
 
+## Operator timeline
+
+After detection, a lead or manager moves the incident on **Telemetry Stream**:
+
+| Moment | Control | Stored as |
+|---|---|---|
+| Detected | Ingest | `created_at` |
+| Acknowledged | **Acknowledge** plus sev1–sev4 | `acknowledged_at`, `acknowledged_by`, `severity` |
+| Mitigated | **Mark mitigated** | `mitigated_at` (also acknowledges if nobody has) |
+| Resolved | **Resolve** on the pipeline card | `resolved_at`, `is_resolved` |
+
+The first acknowledgement stays. A second click does not replace the owner. An unresolved incident with no owner for **15 minutes** shows *Waiting N min for an owner*.
+
+Same gateway and same test, or the same fingerprint, inside **6 hours** fold into one row with a signal list. The original rows stay in the database.
+
+A manager can mark the gateway under maintenance for 1–24 hours on **DORA**. Incidents that start inside the window stay visible and show the reason.
+
+Theory and the exact screens: [SRE theory and SRE Capsule](sre-theory.md).
+
+---
+
 ## Related
 
+- [SRE theory and SRE Capsule](sre-theory.md)
 - [Webhooks API](../api/webhooks.md)
 - [Incidents API](../api/incidents-api.md)
 - [Plugin Engine](../plugins/overview.md)

@@ -8,7 +8,7 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap">
-    <link rel="stylesheet" href="/style.css?v=1.0.60-ops-live">
+    <link rel="stylesheet" href="/style.css?v=1.0.63-docs">
     <script>
         try {
             if (localStorage.getItem('sre-sidebar-collapsed') === '1') {
@@ -257,14 +257,6 @@
                     <circle cx="10" cy="17" r="2"></circle>
                 </svg><span class="nav-text" data-i18n="nav.aiConfig">AI &amp; MCP Config</span>
             </div>
-            <div class="nav-section-label role-non-admin" style="margin-top: 10px;" data-i18n="nav.section.help">HELP CENTER</div>
-            <div class="nav-item role-non-admin" onclick="switchView('about', this)" data-tooltip="Help Center">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                </svg><span class="nav-text" data-i18n="nav.help">Help Center</span>
-            </div>
-
             <div class="nav-section-label role-lead" style="margin-top: 10px;" data-i18n="nav.section.infrastructure">INFRASTRUCTURE</div>
             <div class="nav-item role-lead" onclick="switchView('ingestion', this)" data-tooltip="CI/CD Gateways">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -307,6 +299,13 @@
             </div>
 
             <div class="spacer"></div>
+            <div class="nav-section-label" style="margin-top: 10px;" data-i18n="nav.section.help">DOCUMENTATION</div>
+            <div class="nav-item" onclick="switchView('about', this)" data-tooltip="Documentation">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg><span class="nav-text" data-i18n="nav.help">Documentation</span>
+            </div>
             <div class="nav-item nav-theme" style="opacity: 1;" data-tooltip="Dark mode">
                 <span class="nav-text" style="font-size: 11px; opacity: 0.6; font-weight: bold; margin-right: 10px;" data-i18n="common.darkMode">DARK MODE</span>
                 <div class="toggle-switch" onclick="toggleTheme(event)">
@@ -390,6 +389,8 @@
                         </div>
 
                 </div>
+
+                <div id="maintenance-banner" class="maintenance-banner" hidden></div>
 
                 <div class="dashboard-time-bar" role="region" aria-label="Time range filter">
                     <div class="dashboard-time-head">
@@ -1010,7 +1011,7 @@
                 </div>
                 <div class="data-card dora-budget" id="dora-budget-card">
                     <h3 class="form-section-title" style="border-top:none;padding-top:0;margin:0 0 8px;">Error budget</h3>
-                    <p class="dora-budget__hint">Change failures allowed in this window. A gateway at 1× or above has spent the budget.</p>
+                    <p class="dora-budget__hint">Change failures allowed in this window. Set the SLO per gateway, from 1% to 50%. A gateway at 1× or above has spent the budget.</p>
                     <p id="dora-budget-banner" class="dora-budget__banner" hidden></p>
                     <table class="data-table">
                         <thead>
@@ -1028,6 +1029,23 @@
                             <tr><td colspan="7" class="modern-data-grid__empty">Loading error budget…</td></tr>
                         </tbody>
                     </table>
+                </div>
+                <div class="data-card maintenance-card" id="maintenance-card">
+                    <h3 class="form-section-title" style="border-top:none;padding-top:0;margin:0 0 8px;">Maintenance</h3>
+                    <p class="dora-budget__hint">Mark a gateway while you already know why it will fail. Incidents stay on the dashboard and show the reason. They are not hidden.</p>
+                    <form id="maintenance-form" class="maintenance-form" onsubmit="startMaintenance(event)">
+                        <select id="maintenance-project" class="login-input" required></select>
+                        <input id="maintenance-reason" class="login-input" maxlength="160" placeholder="Reason" required>
+                        <select id="maintenance-hours" class="login-input" aria-label="Duration">
+                            <option value="1">1 hour</option>
+                            <option value="2">2 hours</option>
+                            <option value="4" selected>4 hours</option>
+                            <option value="8">8 hours</option>
+                            <option value="24">24 hours</option>
+                        </select>
+                        <button type="submit" class="btn btn-secondary btn-sm">Start</button>
+                    </form>
+                    <div id="maintenance-active" class="maintenance-active"></div>
                 </div>
                 <div class="data-card" style="margin-bottom:16px;">
                     <h3 class="form-section-title" style="border-top:none;padding-top:0;margin:0 0 12px;">Deployments vs failures (weekly)</h3>
@@ -1158,7 +1176,7 @@
                             <option value="GBP">GBP</option>
                         </select>
                         <button class="btn-primary" style="width: 100%; margin-top: 12px;" onclick="saveFinOpsBaselines()">Save baseline</button>
-                        <p class="form-hint" style="margin-top: 12px;">Formulas and theory: <a href="#" class="text-link" onclick="window.__pendingAboutTopic='finops_metrics'; switchView('about', null); return false;">Help Center → FinOps metrics</a>.</p>
+                        <p class="form-hint" style="margin-top: 12px;">Formulas and theory: <a href="#" class="text-link" onclick="window.__pendingAboutTopic='finops_metrics'; switchView('about', null); return false;">Documentation → FinOps metrics</a>.</p>
                     </div>
                 </div>
             </section>
@@ -1166,8 +1184,8 @@
             <section id="view-about" class="view-section">
                 <div class="header-bar">
                     <div>
-                        <h1 style="margin: 0; font-size: 24px;">Help Center</h1>
-                        <p style="margin: 5px 0 0 0; opacity: 0.6; font-size: 14px;">Product documentation, workflows, Super-App features, roles, and FinOps — available to all users.</p>
+                        <h1 class="intelligence-view__title" data-i18n="view.about.title">Documentation</h1>
+                        <p class="intelligence-view__subtitle" data-i18n="view.about.subtitle">SRE theory, and how each practice is done in SRE Capsule.</p>
                     </div>
                 </div>
                 <div class="about-shell">
@@ -1298,7 +1316,7 @@
                                                 <option value="plugins">Plugin Engine</option>
                                                 <option value="healing">Self-Healing Hub</option>
                                                 <option value="ai-config">AI Configuration</option>
-                                                <option value="about">Help Center</option>
+                                                <option value="about">Documentation</option>
                                             </select>
                                             <p class="form-field-hint">Opened after sign-in when your role allows access.</p>
                                         </div>
@@ -1728,7 +1746,7 @@
                     <span>Enable workflow</span>
                 </label>
                 <span id="workflow-readonly-badge">Read-only (Observer)</span>
-                <button type="button" class="btn-secondary" onclick="openWorkflowHelpTopic()" title="Open Help Center — Visual Workflows">?</button>
+                <button type="button" class="btn-secondary" onclick="openWorkflowHelpTopic()" title="Open Documentation — Visual Workflows">?</button>
                 <button type="button" class="btn-secondary wf-edit-only" onclick="loadFlakyExampleWorkflow()">Example</button>
                 <button type="button" class="btn-secondary wf-edit-only" onclick="addWorkflowNode('trigger')">+ Trigger</button>
                 <button type="button" class="btn-secondary wf-edit-only" onclick="addWorkflowNode('condition')">+ Condition</button>
@@ -1764,7 +1782,7 @@
                     <p style="margin-top:10px;"><strong>Example</strong> — Trigger → [FLAKY]? → Slack (yes) / Jira (no).</p>
                     <p><strong>Enable workflow</strong> + Save = DAG live. Unchecked = draft (legacy AUTO-RUN still runs).</p>
                     <p><strong>Simulate</strong> — Dry-run without calling vendors. <strong>Reset</strong> — delete DAG.</p>
-                    <p class="form-hint" style="margin-top:12px;"><a href="#" class="text-link" onclick="openWorkflowHelpTopic();return false;">Full guide in Help Center →</a></p>
+                    <p class="form-hint" style="margin-top:12px;"><a href="#" class="text-link" onclick="openWorkflowHelpTopic();return false;">Full guide in Documentation →</a></p>
                 </aside>
             </div>
         </div>
@@ -1838,6 +1856,6 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-    <script type="module" src="app.js?v=1.0.60-ops-live"></script>
+    <script type="module" src="app.js?v=1.0.63-docs"></script>
 </body>
 </html>

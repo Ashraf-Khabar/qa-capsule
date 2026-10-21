@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 )
 
@@ -112,6 +113,34 @@ func ErrorBudgets(project string, from, to time.Time) []ErrorBudget {
 		out = append(out, ScoreErrorBudget(project, 0, 0, defaultSLOFailureRate))
 	}
 	return out
+}
+
+// NormalizeSLOPercent accepts a percent between 1 and 50 and returns the stored ratio.
+func NormalizeSLOPercent(percent float64) (float64, error) {
+	if math.IsNaN(percent) || percent < 1 || percent > 50 {
+		return 0, fmt.Errorf("SLO must be between 1%% and 50%%")
+	}
+	return percent / 100, nil
+}
+
+// SetProjectSLO stores the change-failure SLO for one gateway.
+func SetProjectSLO(name string, ratio float64) error {
+	name = strings.TrimSpace(name)
+	if DB == nil || name == "" {
+		return sql.ErrNoRows
+	}
+	if ratio < 0.01 || ratio > 0.5 {
+		return fmt.Errorf("SLO must be between 1%% and 50%%")
+	}
+	res, err := DB.Exec(`UPDATE projects SET slo_failure_rate = ? WHERE name = ?`, ratio, name)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 // BudgetDecision is the headline for a set of gateway budgets.

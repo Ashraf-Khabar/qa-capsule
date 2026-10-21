@@ -1,11 +1,11 @@
 /**
  * Internationalization — locale switching and DOM translation.
  */
-import en from './i18n/messages-en.js';
-import fr from './i18n/messages-fr.js';
-import es from './i18n/messages-es.js';
-import zh from './i18n/messages-zh.js';
-import de from './i18n/messages-de.js';
+import en from './i18n/messages-en.js?v=1.0.63-docs';
+import fr from './i18n/messages-fr.js?v=1.0.63-docs';
+import es from './i18n/messages-es.js?v=1.0.63-docs';
+import zh from './i18n/messages-zh.js?v=1.0.63-docs';
+import de from './i18n/messages-de.js?v=1.0.63-docs';
 
 const LOCALE_KEY = 'srecapsule-locale';
 export const PREF_LANGUAGE_KEY = LOCALE_KEY;
@@ -45,7 +45,7 @@ export function setLocale(locale, { persist = true, apply = true } = {}) {
     document.documentElement.lang = next === 'zh' ? 'zh-CN' : next;
     if (apply) {
         applyI18n();
-        import('./config-presets.js').then((mod) => {
+        import('./config-presets.js?v=1.0.63-docs').then((mod) => {
             if (typeof mod.renderConfigurationPresets === 'function') {
                 const prefs = window.__userPreferences;
                 if (prefs) mod.renderConfigurationPresets(prefs);

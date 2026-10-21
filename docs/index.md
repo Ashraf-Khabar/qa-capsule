@@ -38,7 +38,7 @@ When a pipeline fails, engineers typically:
 | **AI RCA** | OpenAI / Ollama async root-cause summaries per incident. |
 | **Smart Quarantine** | Auto/manual deny-list; CI API to skip quarantined tests. |
 | **Runbooks** | One-click apply validated workflow templates (502, flaky, OOM, …). |
-| **DORA metrics** | Deployment frequency, lead time, CFR, MTTR + Prometheus signals. |
+| **DORA metrics** | Deployment frequency, lead time, CFR, MTTR, per-gateway error budget (SLO 1–50%), maintenance windows. |
 | **FinOps & Analytics** | MTTR, CI minutes lost, flaky cost, customizable dashboard charts, PDF export. |
 | **Developer CLI** | `srecapsule run` wraps local tests and warns on known flaky fingerprints. |
 | **Playwright Reporter** | Real-time failure POST + optional trace zip upload. |
@@ -118,7 +118,8 @@ go build -o bin/srecapsule-cli ./cmd/cli
 | [Playwright Reporter](integration/playwright-reporter.md) | Real-time reporter + trace upload |
 | [Webhooks API](api/webhooks.md) | JSON payload, batch mode, headers |
 | [Incidents API](api/incidents-api.md) | Resolve, artifacts, flaky check |
-| [Incident Lifecycle](guides/incident-lifecycle.md) | Correlation, flaky, perf alerts |
+| [SRE theory and the product](guides/sre-theory.md) | Each SRE practice, then the SRE Capsule screen that does it |
+| [Incident Lifecycle](guides/incident-lifecycle.md) | Correlation, flaky, perf alerts, acknowledge, same cause |
 | [Artifacts & CLI](guides/artifacts-and-cli.md) | Upload, storage, local wrapper |
 | [Plugin Engine](plugins/overview.md) | Native Go integrations (manifests) |
 | [Visual Workflow Builder](plugins/visual-workflow.md) | DAG editor, simulate API, enable/draft/legacy modes |

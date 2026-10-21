@@ -22,7 +22,7 @@ export const ROLE_DESCRIPTIONS = {
     admin: 'Workspaces hierarchy, global IAM, license, and system settings. Does not use Operations or FinOps.',
     manager: 'FinOps, workspaces, CI gateways, plugins, and full incident triage.',
     lead: 'Resolve and delete alerts, CI gateways, plugins, and webhook routing.',
-    observer: 'Read-only Operations dashboard, analytics layout, and Help Center.'
+    observer: 'Read-only Operations dashboard, analytics layout, and Documentation.'
 };
 
 export const ROLE_SELECT_OPTIONS = [

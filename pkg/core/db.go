@@ -439,6 +439,16 @@ func runSchemaMigrations() {
 			author TEXT NOT NULL DEFAULT '',
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
+		`CREATE TABLE IF NOT EXISTS gateway_maintenance (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			project_name TEXT NOT NULL,
+			reason TEXT NOT NULL DEFAULT '',
+			starts_at DATETIME NOT NULL,
+			ends_at DATETIME NOT NULL,
+			created_by TEXT NOT NULL DEFAULT '',
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_gateway_maintenance_active ON gateway_maintenance(project_name, ends_at)`,
 		`CREATE TABLE IF NOT EXISTS user_team_inheritance_optouts (
 			user_id INTEGER NOT NULL,
 			team_id INTEGER NOT NULL,

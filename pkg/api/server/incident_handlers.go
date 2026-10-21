@@ -111,6 +111,7 @@ func registerIncidentRoutes(config *core.Config) {
 			}
 			attachNearestDeploys(incidents, tw.From, tw.To)
 			attachIncidentOps(incidents)
+			attachMaintenance(incidents, tw.From, tw.To)
 
 			json.NewEncoder(w).Encode(incidents)
 

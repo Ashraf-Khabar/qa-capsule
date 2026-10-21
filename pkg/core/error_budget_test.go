@@ -42,3 +42,16 @@ func TestScoreErrorBudget_DefaultSLO(t *testing.T) {
 		t.Fatalf("default slo: %+v", got)
 	}
 }
+
+func TestNormalizeSLOPercent(t *testing.T) {
+	got, err := NormalizeSLOPercent(15)
+	if err != nil || got < 0.149 || got > 0.151 {
+		t.Fatalf("15%%: %v %v", got, err)
+	}
+	if _, err := NormalizeSLOPercent(0); err == nil {
+		t.Fatal("0 must be rejected")
+	}
+	if _, err := NormalizeSLOPercent(80); err == nil {
+		t.Fatal("80 must be rejected")
+	}
+}

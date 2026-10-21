@@ -8,19 +8,19 @@ import { notify, showConfirmModal, showPromptModal, closeModal, toggleTheme, ini
 import { parseJwt, performLogout, showLoginScreen, fetchWithAuth, parseApiJson, isApiOffline, pingApiServer, resetApiOfflineBanner } from './js/api.js';
 import * as iam from './js/iam.js';
 import * as settings from './js/settings.js';
-import * as profile from './js/profile.js';
+import * as profile from './js/profile.js?v=1.0.63-docs';
 import * as finops from './js/finops.js';
-import * as about from './js/about.js';
+import * as about from './js/about.js?v=1.0.63-docs';
 import * as analyticsLayout from './js/analytics-layout.js';
 import { applyRoleVisibility, canAccessFinOps, canAccessPlugins, canResolveIncidents, canDeleteIncidents, hasMinRole, roleLabel, canManageTeams, canManageIAM, isAdmin, canAccessView, accessDeniedMessage, defaultViewForRole, canPatchExecutionFlags } from './js/roles.js';
 import * as executionHub from './js/execution-hub.js';
 import * as reportViewer from './js/report-viewer.js';
 import * as workflowEditor from './js/workflow-editor.js';
 import * as healing from './js/healing.js?v=1.0.49-heal-fit';
-import * as dora from './js/dora.js?v=1.0.54-sre-budget';
+import * as dora from './js/dora.js?v=1.0.62-maint';
 import { setupAutocomplete } from './js/autocomplete.js';
 import { initTheme, applyTheme } from './js/ui.js';
-import { initI18n, t, setLocale, applyI18n } from './js/i18n.js';
+import { initI18n, t, setLocale, applyI18n } from './js/i18n.js?v=1.0.63-docs';
 import { initCommentUI, openResolveComposer, hydrateOpenComments } from './js/comments.js?v=1.0.40-edit-fill';
 import { publishSecureLink, secureLinkTokenFromPath } from './js/links.js';
 
@@ -996,6 +996,7 @@ window.fetchIncidents = function (forceRender = false, opts = {}) {
                 }
                 window.syncDashboardKpis();
             }
+            window.refreshMaintenanceBanner();
             return safeData;
         })
         .catch((err) => {
@@ -1073,6 +1074,11 @@ function incidentOpsHTML(inc, canAct) {
         `<li>#${Number(item.id)} · ${escapeHtml(item.at || '')}</li>`).join('');
     const signals = Number(inc.signal_count) > 1
         ? `<span class="ops-signal">${inc.signal_count} signals, same cause</span><ul class="ops-signal-list">${signalItems}</ul>` : '';
+    const maint = inc.maintenance && inc.maintenance.reason
+        ? `<span class="ops-signal">During maintenance · ${escapeHtml(inc.maintenance.reason)}</span>` : '';
+    const waitingMin = unackedMinutes(inc);
+    const waiting = waitingMin >= 15
+        ? `<span class="ops-wait">Waiting ${waitingMin} min for an owner</span>` : '';
     let actions = '';
     if (canAct && !normalizeIsResolved(inc)) {
         if (!inc.acknowledged_at) {
@@ -1099,8 +1105,36 @@ function incidentOpsHTML(inc, canAct) {
            <textarea class="ops-postmortem-edit" id="pm-edit-${inc.id}">${escapeHtml(inc.postmortem)}</textarea>
            <button type="button" class="btn btn-secondary btn-sm" onclick="savePostmortem(${Number(inc.id)})">Save draft</button>`
         : '';
-    return `<div class="incident-ops">${signals}<p class="ops-timeline">${escapeHtml(bits.join(' · '))}</p><div class="ops-actions">${actions}</div>${runbook}${draft}</div>`;
+    return `<div class="incident-ops">${maint}${waiting}${signals}<p class="ops-timeline">${escapeHtml(bits.join(' · '))}</p><div class="ops-actions">${actions}</div>${runbook}${draft}</div>`;
 }
+
+function unackedMinutes(inc) {
+    if (normalizeIsResolved(inc) || inc.acknowledged_at) return 0;
+    const started = causeStamp(inc.created_at);
+    if (!started) return 0;
+    return Math.floor((Date.now() - started) / 60000);
+}
+
+window.refreshMaintenanceBanner = async function () {
+    const el = document.getElementById('maintenance-banner');
+    if (!el) return;
+    const parsed = await parseApiJson(await fetchWithAuth('/api/maintenance'));
+    const windows = parsed.ok && parsed.data && Array.isArray(parsed.data.windows) ? parsed.data.windows : [];
+    if (!windows.length) {
+        el.hidden = true;
+        el.innerHTML = '';
+        return;
+    }
+    const role = parseJwt(localStorage.getItem('sre-jwt')).role;
+    const canEnd = canAccessFinOps(role);
+    el.hidden = false;
+    el.innerHTML = windows.map(windowRow => {
+        const end = canEnd
+            ? ` <button type="button" class="btn btn-secondary btn-sm" data-project="${encodeURIComponent(windowRow.project || '')}" onclick="endMaintenance(this.dataset.project)">End</button>`
+            : '';
+        return `<div><strong>${escapeHtml(windowRow.project || '')}</strong> is in maintenance until ${escapeHtml(windowRow.ends_at || '')}. ${escapeHtml(windowRow.reason || '')}${end}</div>`;
+    }).join('');
+};
 
 async function postIncidentOps(id, payload) {
     const parsed = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/ops`, {
@@ -1163,7 +1197,7 @@ window.runIncidentRunbook = async function (id) {
 window.draftPostmortem = function (id) {
     showConfirmModal(
         'Write the postmortem draft?',
-        'The draft is built from the timeline, comments, and the nearest deploy. You can edit it afterwards.',
+        'The draft is built from the timeline, comments, and the nearest deploy. If AI is enabled, the model rewrites that draft and does not add a cause that is not already written. You can edit it afterwards.',
         '',
         async function () {
             try {

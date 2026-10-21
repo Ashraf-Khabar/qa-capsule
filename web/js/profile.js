@@ -7,8 +7,8 @@ import { secureLinkTokenFromPath } from './links.js';
 import { notify, applyThemeAppearance, previewThemeFromForm } from './ui.js';
 import { roleLabel, normalizeRole, canAccessView } from './roles.js';
 import { setSelectedCurrency } from './settings.js';
-import { renderConfigurationPresets, renderThemePickers, initConfigurationPresetsUI } from './config-presets.js';
-import { setLocale, applyI18n, t, getLocale, PREF_LANGUAGE_KEY } from './i18n.js';
+import { renderConfigurationPresets, renderThemePickers, initConfigurationPresetsUI } from './config-presets.js?v=1.0.63-docs';
+import { setLocale, applyI18n, t, getLocale, PREF_LANGUAGE_KEY } from './i18n.js?v=1.0.63-docs';
 import { avatarMarkup, renderAvatarPicker, resizeProfilePhoto } from './avatars.js';
 
 export const PREF_DEFAULT_RANGE_KEY = 'sre-pref-default-range';

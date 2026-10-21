@@ -143,6 +143,7 @@ func Start(initialConfig core.Config) {
 	registerIntelligenceRoutes(config)
 	registerRunbooksRoutes(config)
 	registerDORARoutes(config)
+	registerMaintenanceRoutes(config)
 	registerWebhookRoutes(config)
 	registerExecutionRoutes(config)
 	registerReportRoutes(config)

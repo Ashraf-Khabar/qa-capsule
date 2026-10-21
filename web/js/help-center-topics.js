@@ -1,12 +1,12 @@
 /**
- * Extended Help Center topics (workflows, Super-App, operations).
+ * Extended Documentation topics (workflows, Super-App, operations).
  * Imported by about.js — replaces legacy QCL v1.0 topic.
  */
 
 export const EXTENDED_HELP_TOPICS = {
     workflow: {
         title: 'Visual Workflows',
-        breadcrumb: 'Help Center / Visual Workflows',
+        breadcrumb: 'Documentation / Visual Workflows',
         html: `
         <article class="about-doc about-doc-wide">
           <h2>Visual Workflow Builder</h2>
@@ -46,7 +46,7 @@ export const EXTENDED_HELP_TOPICS = {
     },
     operations: {
         title: 'Operations dashboard',
-        breadcrumb: 'Help Center / Operations',
+        breadcrumb: 'Documentation / Operations',
         html: `
         <article class="about-doc about-doc-wide">
           <h2>Telemetry Stream (Operations)</h2>
@@ -73,7 +73,7 @@ export const EXTENDED_HELP_TOPICS = {
     },
     gateways: {
         title: 'CI/CD Gateways',
-        breadcrumb: 'Help Center / Gateways',
+        breadcrumb: 'Documentation / Gateways',
         html: `
         <article class="about-doc about-doc-wide">
           <h2>CI/CD Gateways (Ingestion)</h2>
@@ -98,7 +98,7 @@ X-Commit-Sha: abcdef</pre>
     },
     analytics: {
         title: 'Dashboard analytics',
-        breadcrumb: 'Help Center / Analytics',
+        breadcrumb: 'Documentation / Analytics',
         html: `
         <article class="about-doc about-doc-wide">
           <h2>System analytics &amp; quality</h2>
@@ -118,12 +118,12 @@ X-Commit-Sha: abcdef</pre>
             </tbody>
           </table>
           <p>All analytics respect the dashboard <strong>time range</strong> filter and auto-refresh.</p>
-          <div class="about-callout">For FinOps formula details see <strong>FinOps metrics</strong> in this Help Center.</div>
+          <div class="about-callout">For FinOps formula details see <strong>FinOps metrics</strong> in this Documentation.</div>
         </article>`
     },
     architecture: {
         title: 'Architecture (summary)',
-        breadcrumb: 'Help Center / Architecture',
+        breadcrumb: 'Documentation / Architecture',
         html: `
         <article class="about-doc about-doc-wide">
           <h2>How SRE Capsule works</h2>

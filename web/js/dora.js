@@ -11,6 +11,7 @@ let doraTrendChart = null;
 export function loadDORAView() {
     loadDORAProjectFilter();
     refreshDORAMetrics();
+    refreshMaintenanceCard();
 }
 
 export function destroyDORAChart() {
@@ -29,11 +30,14 @@ function loadDORAProjectFilter() {
             if (!ok) return;
             const projects = Array.isArray(data) ? data : data?.projects || [];
             sel.innerHTML = '<option value="">All projects</option>';
+            const maint = document.getElementById('maintenance-project');
+            if (maint) maint.innerHTML = '';
             projects.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.name ?? p.Name ?? '';
                 opt.textContent = opt.value;
                 sel.appendChild(opt);
+                if (maint && opt.value) maint.appendChild(opt.cloneNode(true));
             });
         });
 }
@@ -192,10 +196,17 @@ function renderErrorBudgets(rows) {
     tbody.innerHTML = rows.map(row => {
         const left = row.status === 'quiet' ? '—' : `${Math.round((row.remaining_ratio || 0) * 100)}%`;
         const burn = row.status === 'quiet' ? '—' : `${Number(row.burn_rate || 0).toFixed(1)}×`;
-        const slo = `${Math.round((row.slo_failure_rate || 0) * 100)}%`;
+        const sloPct = Math.round((row.slo_failure_rate || 0.15) * 100);
+        const project = escapeHtml(row.project || '').replace(/"/g, '&quot;');
         return `<tr>
             <td>${escapeHtml(row.project || '')}</td>
-            <td>${slo}</td>
+            <td>
+                <form class="budget-slo" data-project="${project}" onsubmit="saveGatewaySLO(event)">
+                    <input type="number" min="1" max="50" step="1" value="${sloPct}" aria-label="Change-failure SLO percent">
+                    <span>%</span>
+                    <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+                </form>
+            </td>
             <td>${row.deployments ?? 0}</td>
             <td>${row.failed ?? 0}</td>
             <td>${left}</td>
@@ -203,6 +214,76 @@ function renderErrorBudgets(rows) {
             <td><span class="budget-status budget-status--${escapeHtml(row.status || 'quiet')}">${decision[row.status] || 'Within budget'}</span></td>
         </tr>`;
     }).join('');
+}
+
+async function refreshMaintenanceCard() {
+    const list = document.getElementById('maintenance-active');
+    if (!list) return;
+    const parsed = await parseApiJson(await fetchWithAuth('/api/maintenance'));
+    const windows = parsed.ok && parsed.data && Array.isArray(parsed.data.windows) ? parsed.data.windows : [];
+    if (!windows.length) {
+        list.innerHTML = '<p class="dora-budget__hint">No gateway is in maintenance.</p>';
+        return;
+    }
+    list.innerHTML = windows.map(row => `<div><strong>${escapeHtml(row.project || '')}</strong> until ${escapeHtml(row.ends_at || '')} — ${escapeHtml(row.reason || '')}
+        <button type="button" class="btn btn-secondary btn-sm" data-project="${encodeURIComponent(row.project || '')}" onclick="endMaintenance(this.dataset.project)">End</button></div>`).join('');
+}
+
+export async function startMaintenance(event) {
+    event.preventDefault();
+    const project = document.getElementById('maintenance-project')?.value || '';
+    const reason = document.getElementById('maintenance-reason')?.value || '';
+    const hours = Number(document.getElementById('maintenance-hours')?.value || 0);
+    const parsed = await parseApiJson(await fetchWithAuth('/api/maintenance', {
+        method: 'POST',
+        body: JSON.stringify({ project, reason, hours }),
+    }));
+    if (!parsed.ok) {
+        const message = parsed.data && parsed.data.error ? parsed.data.error : 'Could not start maintenance';
+        if (window.notify) window.notify(message, 'error');
+        return;
+    }
+    const reasonBox = document.getElementById('maintenance-reason');
+    if (reasonBox) reasonBox.value = '';
+    if (window.notify) window.notify('Maintenance started');
+    refreshMaintenanceCard();
+    if (window.refreshMaintenanceBanner) window.refreshMaintenanceBanner();
+}
+
+export async function endMaintenance(project) {
+    project = decodeURIComponent(project || '');
+    const parsed = await parseApiJson(await fetchWithAuth('/api/maintenance', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'end', project }),
+    }));
+    if (!parsed.ok) {
+        const message = parsed.data && parsed.data.error ? parsed.data.error : 'Could not end maintenance';
+        if (window.notify) window.notify(message, 'error');
+        return;
+    }
+    if (window.notify) window.notify('Maintenance ended');
+    refreshMaintenanceCard();
+    if (window.refreshMaintenanceBanner) window.refreshMaintenanceBanner();
+    if (window.refreshDashboard) window.refreshDashboard();
+}
+
+export async function saveGatewaySLO(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const project = form.dataset.project || '';
+    const input = form.querySelector('input');
+    const percent = Number(input && input.value);
+    const parsed = await parseApiJson(await fetchWithAuth('/api/dora/slo', {
+        method: 'POST',
+        body: JSON.stringify({ project, slo_percent: percent }),
+    }));
+    if (!parsed.ok) {
+        const message = parsed.data && parsed.data.error ? parsed.data.error : 'Could not save the SLO';
+        if (window.notify) window.notify(message, 'error');
+        return;
+    }
+    if (window.notify) window.notify('SLO saved');
+    refreshDORAMetrics();
 }
 
 function escapeHtml(s) {

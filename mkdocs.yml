@@ -109,6 +109,7 @@ nav:
       - Platform User Guide: guides/platform-user-guide.md
   - Dashboard & Operations:
       - Dashboard Guide: guides/dashboard-operations.md
+      - SRE theory and the product: guides/sre-theory.md
       - Incident Lifecycle: guides/incident-lifecycle.md
       - AI RCA & Intelligence: guides/intelligence-quarantine.md
       - Runbooks & DORA: guides/runbooks-dora.md
