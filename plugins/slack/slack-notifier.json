@@ -6,7 +6,7 @@
   "description": "Dynamically alerts the responsible team on their Slack channel (configured in the project).",
   "integration": "slack",
   "name": "Smart Slack Routing",
-  "routing_enabled": true,
+  "routing_enabled": false,
   "status": "Active",
   "trigger_on": [
     "CRITICAL",

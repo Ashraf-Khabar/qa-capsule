@@ -27,7 +27,7 @@ def pytest_runtest_makereport(item, call):
 
     try:
         snapshot = _build_snapshot(driver.page_source)
-        report.sections.append(("Captured output", "call", snapshot))
+        report.sections.append(("Captured output", snapshot))
         if report.longrepr:
             report.longrepr = f"{report.longrepr}\n{snapshot}"
     except Exception:

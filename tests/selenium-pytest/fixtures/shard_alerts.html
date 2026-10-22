@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Shard alert board</title>
+</head>
+<body>
+  <h1>Active incidents</h1>
+  <table>
+    <tr>
+      <td>sev3</td>
+      <td>disk latency on shard 17</td>
+      <td><button id="ack-lat-shard-17" data-testid="ack-lat-shard-17" aria-label="Acknowledge disk latency on shard 17">Acknowledge</button></td>
+    </tr>
+    <tr>
+      <td>sev1</td>
+      <td>disk latency on shard 7</td>
+      <td><button id="ack-lat-shard-7" data-testid="ack-lat-shard-7" aria-label="Acknowledge active sev1 disk latency on shard 7">Acknowledge</button></td>
+    </tr>
+    <tr>
+      <td>sev2</td>
+      <td>disk latency on shard 70</td>
+      <td><button id="ack-lat-shard-70" data-testid="ack-lat-shard-70" aria-label="Acknowledge disk latency on shard 70">Acknowledge</button></td>
+    </tr>
+  </table>
+  <h2>Draft preview</h2>
+  <p>disk latency on shard 7</p>
+  <button id="ack-lat-shard-7-preview" data-testid="ack-lat-shard-7-preview" aria-label="Acknowledge preview draft of disk latency on shard 7" disabled>Acknowledge</button>
+  <p><a id="history-lat-shard-7" data-testid="history-lat-shard-7" href="#history-lat-shard-7" aria-label="Open history for disk latency on shard 7">History</a></p>
+</body>
+</html>

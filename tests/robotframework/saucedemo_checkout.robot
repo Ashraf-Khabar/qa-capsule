@@ -11,6 +11,7 @@ Library     Browser
 
 Suite Setup      New Browser    chromium    headless=true
 Suite Teardown   Close Browser
+Test Teardown    Capture DOM On Failure
 
 *** Variables ***
 ${BASE_URL}         https://www.saucedemo.com/
@@ -54,7 +55,7 @@ TC-03 Cart Shows Selected Item
 TC-04 Checkout With Broken Locator (Self-Healing Demo)
     [Documentation]
     ...    Fails on purpose — selector does not exist on the cart page.
-    ...    dom_capture_listener stores HTML for heal_incident MCP.
+    ...    The test teardown stores that cart page for self-healing.
     [Tags]    saucedemo    broken-locator    self-healing-demo
     Login To Inventory
     Click    css=[data-test="add-to-cart-sauce-labs-backpack"]
@@ -62,3 +63,16 @@ TC-04 Checkout With Broken Locator (Self-Healing Demo)
     Click    ${BROKEN_CHECKOUT}
     Get Element    css=[data-test="firstName"]
     Close Page
+
+*** Keywords ***
+Capture DOM On Failure
+    [Documentation]    On a failed test, write the open page into the JUnit stdout.
+    Run Keyword If Test Failed    Save Failure Page HTML
+
+Save Failure Page HTML
+    ${ok}    ${html}=    Run Keyword And Ignore Error    Get Page Source
+    Run Keyword If    '${ok}' == 'PASS'    Log Failure DOM    ${html}
+
+Log Failure DOM
+    [Arguments]    ${html}
+    Log    [SRE_CAPSULE_DOM_SNAPSHOT_START]\n${html}\n[SRE_CAPSULE_DOM_SNAPSHOT_END]    console=True    level=INFO

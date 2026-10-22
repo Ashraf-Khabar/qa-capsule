@@ -9,6 +9,41 @@ let currentRole = '';
 const selected = new Set(); // kept for bulk helpers that other views may call
 let failures = [];
 let activeId = 0;
+const ANALYSIS_KEY = 'sre-healing-analyses';
+const ACTIVE_KEY = 'sre-healing-active';
+const analyses = new Map();
+
+function loadStoredAnalyses() {
+    try {
+        const raw = sessionStorage.getItem(ANALYSIS_KEY);
+        if (!raw) return;
+        const obj = JSON.parse(raw);
+        if (!obj || typeof obj !== 'object') return;
+        Object.entries(obj).forEach(([id, payload]) => {
+            const n = Number(id);
+            if (n && payload) analyses.set(n, payload);
+        });
+    } catch (_) { /* private mode or a corrupt cache */ }
+}
+
+function persistAnalyses() {
+    try {
+        const obj = {};
+        analyses.forEach((payload, id) => { obj[id] = payload; });
+        sessionStorage.setItem(ANALYSIS_KEY, JSON.stringify(obj));
+    } catch (_) { /* quota: the in-memory copy still covers this tab */ }
+}
+
+function rememberActive(id) {
+    activeId = id;
+    try { sessionStorage.setItem(ACTIVE_KEY, String(id)); } catch (_) { /* ignore */ }
+}
+
+function storedActiveId() {
+    try { return Number(sessionStorage.getItem(ACTIVE_KEY) || 0); } catch (_) { return 0; }
+}
+
+loadStoredAnalyses();
 
 /* ── Framework / category metadata ─────────────────────────────────────── */
 const FW = {
@@ -561,8 +596,17 @@ export async function loadHealingInsights() {
         selectFailure(pending, true);
         return;
     }
+    if (!activeId) {
+        const saved = storedActiveId();
+        if (saved && analyses.has(saved) && failures.some(r => Number(r.incident_id) === saved)) {
+            selectFailure(saved, false);
+            return;
+        }
+    }
     if (activeId && failures.some(r => Number(r.incident_id) === activeId)) {
         document.querySelectorAll('.hc-row').forEach(el => el.classList.toggle('is-active', Number(el.dataset.id) === activeId));
+        const stage = document.getElementById('healing-stage');
+        if (stage && !stage.querySelector('.hc-panel__inner') && analyses.has(activeId)) selectFailure(activeId, false);
         return;
     }
     activeId = 0;
@@ -593,7 +637,7 @@ function selectFailure(id, autoAnalyze) {
     const row = failures.find(item => Number(item.incident_id) === id);
     const stage = document.getElementById('healing-stage');
     if (!row || !stage) return;
-    activeId = id;
+    rememberActive(id);
     document.querySelectorAll('.hc-row').forEach(el => el.classList.toggle('is-active', Number(el.dataset.id) === id));
     const cause = cat(row.error_category);
     const framework = fw(row.framework || row.project_name);
@@ -614,7 +658,7 @@ function selectFailure(id, autoAnalyze) {
                 </div>
             </div>
             <div class="hc-stage__actions">
-                ${canMgr ? `<button type="button" class="btn btn-primary" id="hc-analyze">Analyze</button>` : `<p class="hc-stage__note">A lead or manager can analyze this failure.</p>`}
+                ${canMgr ? `<button type="button" class="btn btn-primary" id="hc-analyze">${analyses.has(id) ? 'Analyze again' : 'Analyze'}</button>` : `<p class="hc-stage__note">A lead or manager can analyze this failure.</p>`}
                 ${canDel ? `<button type="button" class="hc-quiet" id="hc-delete">Delete</button>` : ''}
             </div>
         </header>
@@ -628,7 +672,8 @@ function selectFailure(id, autoAnalyze) {
         <div id="healing-stage-result" class="hc-stage__result"></div>`;
     stage.querySelector('#hc-analyze')?.addEventListener('click', () => openProposeFix(id));
     stage.querySelector('#hc-delete')?.addEventListener('click', () => deleteHealingFailure(id));
-    if (autoAnalyze) openProposeFix(id);
+    if (analyses.has(id)) paintAnalysis(id, analyses.get(id));
+    else if (autoAnalyze) openProposeFix(id);
 }
 
 function markSteps(current) {
@@ -654,6 +699,7 @@ function renderRow(r) {
     const framework = fw(r.framework || r.project_name);
     const cause = cat(r.error_category);
     const active = id === activeId ? ' is-active' : '';
+    const analyzed = analyses.has(id) ? ' · analyzed' : '';
     return `
 <button type="button" class="hc-row${active}" id="hc-card-${id}" data-id="${id}" role="listitem">
     <span class="hc-row__top">
@@ -661,7 +707,7 @@ function renderRow(r) {
         <span class="hc-row__id">#${id}</span>
     </span>
     <span class="hc-row__name">${esc(shortTestName(r.test_name))}</span>
-    <span class="hc-row__meta">${esc(framework.label)}${r.mcp_healed ? ' · saved' : ''}</span>
+    <span class="hc-row__meta">${esc(framework.label)}${r.mcp_healed ? ' · saved' : ''}${analyzed}</span>
 </button>`;
 }
 
@@ -768,6 +814,9 @@ function formatConfidenceBadge(data, locs) {
     if (isPreciseFix(data)) {
         return { conf: 'high', precise: true, label: `Verified on the page (${pct}%)`, pct };
     }
+    if (data.heal_method === 'comments') {
+        return { conf: 'mid', precise: false, label: 'Named in the test file · not verified on the failure page', pct };
+    }
     if (data.precision === 'medium') {
         return { conf: 'mid', precise: false, label: `Possible match (${pct}%) · not unique enough to apply blindly`, pct };
     }
@@ -789,31 +838,19 @@ function resolveDisplayCode(data) {
     return displayCode;
 }
 
-/* ── Propose fix ──────────────────────────────────────────────────────── */
-export async function openProposeFix(id) {
-    if (activeId !== id || !document.getElementById('healing-stage-result')) selectFailure(id, false);
+function markRowAnalyzed(id) {
+    const meta = document.querySelector(`.hc-row[data-id="${id}"] .hc-row__meta`);
+    if (meta && !meta.textContent.includes('analyzed')) meta.textContent = `${meta.textContent} · analyzed`;
+    const btn = document.getElementById('hc-analyze');
+    if (btn && Number(document.querySelector('.hc-row.is-active')?.dataset.id) === id) btn.textContent = 'Analyze again';
+}
+
+/* Paint a stored or fresh proposal into the open failure. Does not call the model. */
+function paintAnalysis(id, data) {
     const panel = document.getElementById('healing-stage-result');
-    if (!panel) return;
-    markSteps(1);
+    if (!panel || activeId !== id) return;
     document.querySelector('#healing-stage .hc-stage__hint')?.remove();
-    const analyzeBtn = document.getElementById('hc-analyze');
-    if (analyzeBtn) analyzeBtn.disabled = true;
-    panel.innerHTML = `<div class="hc-panel__loading"><span class="hc-panel__loading-icon" aria-hidden="true">${ICON.refresh}</span><span>Reading the failure and the page…</span></div>`;
-
-    try {
-        const { ok, data } = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/healing/propose`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ file_content: '' }),
-        }));
-
-        if (!ok || !data) {
-                if (analyzeBtn) analyzeBtn.disabled = false;
-            panel.innerHTML = `<div class="hc-panel__error">Analysis failed. Check AI Configuration, then try again.</div>`;
-            return;
-        }
-
-        const fix = normalizeFixResponse(data);
+    const fix = normalizeFixResponse(data);
         const locs = resolveFixLocators(fix);
         const badge = formatConfidenceBadge(fix, locs);
         const domOk = fix.dom_used;
@@ -891,6 +928,7 @@ export async function openProposeFix(id) {
             ${code}
             ${applyBlock}
         </div>`;
+        const analyzeBtn = document.getElementById('hc-analyze');
         if (analyzeBtn) analyzeBtn.disabled = false;
         const applyBtn = panel.querySelector(`#hc-apply-${id}`);
         if (applyBtn) {
@@ -917,7 +955,45 @@ export async function openProposeFix(id) {
         const changedRow = panel.querySelector('.hc-code-line--verified');
         const box = panel.querySelector('.hc-code-lines');
         if (box && changedRow) box.scrollTop = Math.max(0, changedRow.offsetTop - 8);
+}
+
+/* ── Propose fix ──────────────────────────────────────────────────────── */
+export async function openProposeFix(id) {
+    if (activeId !== id || !document.getElementById('healing-stage-result')) selectFailure(id, false);
+    const panel = document.getElementById('healing-stage-result');
+    if (!panel) return;
+    markSteps(1);
+    document.querySelector('#healing-stage .hc-stage__hint')?.remove();
+    const analyzeBtn = document.getElementById('hc-analyze');
+    if (analyzeBtn) analyzeBtn.disabled = true;
+    panel.innerHTML = `<div class="hc-panel__loading"><span class="hc-panel__loading-icon" aria-hidden="true">${ICON.refresh}</span><span>Reading the failure and the page…</span></div>`;
+
+    try {
+        const { ok, data } = await parseApiJson(await fetchWithAuth(`/api/incidents/${id}/healing/propose`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file_content: '' }),
+        }));
+
+        if (activeId !== id) {
+            if (ok && data) {
+                analyses.set(id, data);
+                persistAnalyses();
+            }
+            return;
+        }
+        if (!ok || !data) {
+            if (analyzeBtn) analyzeBtn.disabled = false;
+            panel.innerHTML = `<div class="hc-panel__error">Analysis failed. Check AI Configuration, then try again.</div>`;
+            return;
+        }
+        analyses.set(id, data);
+        persistAnalyses();
+        markRowAnalyzed(id);
+        paintAnalysis(id, data);
+        if (analyzeBtn) analyzeBtn.disabled = false;
     } catch (e) {
+        if (activeId !== id) return;
         if (analyzeBtn) analyzeBtn.disabled = false;
         panel.innerHTML = `<div class="hc-panel__error">${esc(String(e))}</div>`;
     }

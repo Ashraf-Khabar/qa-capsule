@@ -93,6 +93,23 @@ func TestExtractLocator_Cypress_DataTestID(t *testing.T) {
 	}
 }
 
+func TestExtractLocator_ChromeStackFrameIsNotASelector(t *testing.T) {
+	msg := "no such element: Unable to locate element: {\\...\\n#15 0x5594dfcb3b63 <unknown>\n#16 0x7f76 <unknown>"
+	got := ExtractLocator(msg, "Selenium")
+	if got == "#15" || got == "#16" {
+		t.Fatalf("stack frame treated as a locator: %q", got)
+	}
+}
+
+func TestResolveOriginalLocator_PrefersBrokenConstantOverStackFrame(t *testing.T) {
+	errMsg := "Unable to locate element: {\\...\\n#15 0x5594dfcb3b63 <unknown>"
+	source := "BROKEN_LOGOUT = '[data-testid=\"logout-button\"]'\ndriver.find_element(By.CSS_SELECTOR, BROKEN_LOGOUT).click()\n"
+	got := ResolveOriginalLocator(errMsg, source, "Selenium")
+	if got != `[data-testid="logout-button"]` {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestExtractLocator_Generic_CSSHash(t *testing.T) {
 	msg := "element #header not found"
 	got := ExtractLocator(msg, "")
@@ -485,6 +502,28 @@ func TestIsLocatorFailure_RobotTimeoutWithTestSource(t *testing.T) {
 	errMsg := "TimeoutError: timeout 10000ms exceeded"
 	if !IsLocatorFailure(errMsg, "", source, "TC-04 Broken Locator") {
 		t.Error("expected timeout + broken selector in test source to be locator failure")
+	}
+}
+
+func TestHealLocatorFromHTML_ShardBoardIsNotAKeywordMatch(t *testing.T) {
+	html := `<html><body>
+<button id="ack-lat-shard-17" data-testid="ack-lat-shard-17" aria-label="Acknowledge disk latency on shard 17">Acknowledge</button>
+<button id="ack-lat-shard-7" data-testid="ack-lat-shard-7" aria-label="Acknowledge active sev1 disk latency on shard 7">Acknowledge</button>
+<button id="ack-lat-shard-70" data-testid="ack-lat-shard-70" aria-label="Acknowledge disk latency on shard 70">Acknowledge</button>
+<button id="ack-lat-shard-7-preview" data-testid="ack-lat-shard-7-preview" aria-label="Acknowledge preview draft of disk latency on shard 7" disabled>Acknowledge</button>
+<a id="history-lat-shard-7" data-testid="history-lat-shard-7" href="#history-lat-shard-7" aria-label="Open history for disk latency on shard 7">History</a>
+</body></html>`
+	original := `[data-testid="confirm-maintenance-window"]`
+	if _, _, _, ok := HealLocatorFromHTML(original, html); ok {
+		t.Fatal("keyword scan must not choose a shard button; this case is for the model")
+	}
+	source := `OUTDATED_ACK = '[data-testid="confirm-maintenance-window"]'
+def test_acknowledge_only_active_sev1_disk_latency_on_shard_7(driver):
+    """Acknowledge only the active sev1 alert titled disk latency on shard 7."""
+    driver.find_element(By.CSS_SELECTOR, OUTDATED_ACK).click()
+`
+	if _, _, _, ok := ResolveHealedFromTestContext(source, original); ok {
+		t.Fatal("the test file must not name the replacement selector")
 	}
 }
 

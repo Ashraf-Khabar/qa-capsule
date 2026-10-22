@@ -377,7 +377,7 @@ export async function openSecureLink(token) {
             throw new Error((data && data.error) || 'This link is not valid');
         }
         if (data.kind === 'view') {
-            const view = data.view === 'rca' ? 'healing' : data.view;
+            const view = (data.view === 'rca' || data.view === 'ai' || data.view === 'ai-usage') ? 'healing' : data.view;
             if (view === 'about') window.__pendingAboutTopic = data.topic || 'overview';
             const nav = document.querySelector(`.nav-item[onclick*="switchView('${view}'"]`);
             if (typeof window.switchView === 'function') window.switchView(view, nav);

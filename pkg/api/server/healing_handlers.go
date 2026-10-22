@@ -104,39 +104,13 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 		// For locator failures, route to the DOM-aware healer (works with or without AI).
 		if isLocatorFail {
 			originalLocator := core.ResolveOriginalLocator(combinedErr, testSource, framework)
+			// Only HTML stored with the failure counts as the page. A live GET of
+			// the suite URL is often the first screen (login), not the page where
+			// a later click failed, so it must not confirm or reject a selector.
 			domUsed := domSnapshot != ""
-
-			// When the DOM was not captured during the test run, attempt to
-			// fetch the page HTML live.  This works for public or intranet pages
-			// that are still accessible and serve static HTML.
 			if !domUsed {
-				// Primary: scan logs/error message for URLs.
-				liveHTML := fetchLivePageHTML(errMsg, errorLogs, consoleLogs)
-
-				// Secondary: if no URL found in logs, read the test source file
-				// and extract URLs from it (e.g. ${BASE_URL} assignments).
-				if liveHTML == "" {
-					if testSource == "" {
-						testSource = autoReadTestFile(id)
-					}
-					if testSource != "" {
-						liveHTML = fetchLivePageHTML("", "", testSource)
-						if liveHTML != "" {
-							slog.Info("propose-fix: URL found in test source file",
-								"incident_id", id, "html_bytes", len(liveHTML))
-						}
-					}
-				}
-
-				if liveHTML != "" {
-					domSnapshot = liveHTML
-					domUsed = true
-					slog.Info("propose-fix: using live-fetched page HTML",
-						"incident_id", id, "html_bytes", len(liveHTML))
-				} else {
-					slog.Warn("propose-fix: no DOM and live fetch failed — AI will guess from error message only",
-						"incident_id", id, "original_locator", originalLocator)
-				}
+				slog.Info("propose-fix: failure page was not stored",
+					"incident_id", id, "original_locator", originalLocator)
 			}
 
 			f := core.LocatorError{
@@ -198,6 +172,8 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 			method := "unconfirmed"
 			if verdict.Verified {
 				method = healMethodFromExplanation(explanation, domUsed)
+			} else if !domUsed && strings.TrimSpace(healed) != "" {
+				method = "comments"
 			} else if !domUsed {
 				method = "no_dom"
 			}
@@ -212,7 +188,11 @@ func handleIncidentHealingAction(w http.ResponseWriter, r *http.Request, idStr, 
 				resp["recorded"] = saveConfirmedLocator(id, framework, originalLocator, healed, explanation, confidence)
 			}
 			if !domUsed {
-				resp["dom_capture_hint"] = "The problem is this selector. This run did not store the page HTML, so a replacement cannot be confirmed."
+				if strings.TrimSpace(healed) != "" {
+					resp["dom_capture_hint"] = "The failure page was not stored with this run. The selector is the one named in the test file, and it is not verified."
+				} else {
+					resp["dom_capture_hint"] = "The problem is this selector. This run did not store the page HTML, so a replacement cannot be confirmed."
+				}
 			}
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(resp)
@@ -488,23 +468,8 @@ func aiLocatorHeal(f core.LocatorError, framework string) (healed string, confid
 	}
 
 	pageHTML := core.ExtractDOMSnapshotFromLogs(consoleLogs, errorLogs, f.ErrorMessage)
-
-	// 2. No snapshot? Fetch the page live so the AI always has real HTML.
 	if pageHTML == "" {
-		pageHTML = fetchLivePageHTML(f.ErrorMessage, errorLogs, consoleLogs)
-		if pageHTML != "" {
-			slog.Info("aiLocatorHeal: used live-fetched page HTML (from logs)", "incident_id", f.IncidentID, "bytes", len(pageHTML))
-		}
-	}
-	// 3. Still no HTML? Try extracting the URL from the test source file.
-	if pageHTML == "" {
-		testSource := autoReadTestFile(f.IncidentID)
-		if testSource != "" {
-			pageHTML = fetchLivePageHTML("", "", testSource)
-			if pageHTML != "" {
-				slog.Info("aiLocatorHeal: used live-fetched page HTML (from test file)", "incident_id", f.IncidentID, "bytes", len(pageHTML))
-			}
-		}
+		slog.Info("aiLocatorHeal: no failure-page snapshot", "incident_id", f.IncidentID)
 	}
 
 	testSource := autoReadTestFile(f.IncidentID)
@@ -594,6 +559,12 @@ func finalizeLocatorProposal(original, testSource, pageHTML, framework, healed s
 	if h, c, e, ok := core.ResolveHealedFromTestContext(testSource, original); ok {
 		if h, c, e, kept := keep(h, c, e); kept {
 			return h, c, e
+		}
+		// The test file names the real selector, but this run did not store the
+		// page where the click failed. Show it without calling it verified.
+		if strings.TrimSpace(pageHTML) == "" {
+			note := "The test file names this selector. This run did not store the page where the click failed, so it is not verified."
+			return h, 0.45, note
 		}
 	}
 	if pageHTML != "" {
