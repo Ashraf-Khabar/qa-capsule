@@ -1,14 +1,15 @@
 """
-Form authentication on the-internet.herokuapp.com (Elemental Selenium demo site).
+Selenium + Pytest suite.
 
-Target: https://the-internet.herokuapp.com/login
-Credentials: tomsmith / SuperSecretPassword!
-
-TC-01..TC-03 pass. TC-04 logs in with the real form, then fails on the
-secure-area logout control so MCP self-healing can be tried after login.
+TC-01..TC-03 check login on the-internet.herokuapp.com.
+The self-healing failure is not login or logout. It opens a local alert
+board with five lookalike controls and clicks a selector that is not on
+the page. The only correct control is the active sev1 row
+"disk latency on shard 7" (#ack-lat-shard-7).
 """
 
 import sys
+from pathlib import Path
 
 import pytest
 from selenium import webdriver
@@ -20,7 +21,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 BASE_URL = "https://the-internet.herokuapp.com/login"
 USERNAME = "tomsmith"
 PASSWORD = "SuperSecretPassword!"
-BROKEN_LOGOUT = '[data-testid="logout-button"]'
+BOARD = Path(__file__).resolve().parent / "fixtures" / "shard_alerts.html"
+# Deliberately unrelated to every id on the page.
+OUTDATED_ACK = '[data-testid="confirm-maintenance-window"]'
 
 
 @pytest.fixture(scope="function")
@@ -65,9 +68,17 @@ class TestFormAuthentication:
         )
         assert driver.find_element(By.CSS_SELECTOR, "a[href='/logout']").is_displayed()
 
-    def test_broken_logout_after_login_self_healing_demo(self, driver):
-        _login(driver)
-        assert "Secure Area" in driver.find_element(By.CSS_SELECTOR, "h2").text
-        sys.stderr.write(f"[STDERR] Logged in. Using outdated logout selector {BROKEN_LOGOUT}\n")
-        driver.find_element(By.CSS_SELECTOR, BROKEN_LOGOUT).click()
-        WebDriverWait(driver, 5).until(EC.url_contains("/login"))
+
+def test_acknowledge_only_active_sev1_disk_latency_on_shard_7(driver):
+    """Acknowledge only the active sev1 alert titled disk latency on shard 7.
+
+    Leave shard 17, shard 70, the preview draft, and the history link alone.
+    """
+    driver.get(BOARD.as_uri())
+    assert "Shard alert board" in driver.title
+    assert driver.find_element(By.ID, "ack-lat-shard-7").is_displayed()
+    sys.stderr.write(
+        "[STDERR] Acknowledging the active sev1 disk latency on shard 7 "
+        f"with outdated selector {OUTDATED_ACK}\n"
+    )
+    driver.find_element(By.CSS_SELECTOR, OUTDATED_ACK).click()
