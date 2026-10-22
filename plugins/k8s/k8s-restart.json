@@ -7,7 +7,7 @@
   "description": "Rollout restart for a Kubernetes deployment (requires kubectl and cluster credentials on the host).",
   "integration": "k8s",
   "name": "K8s Deployment Restart",
-  "routing_enabled": true,
+  "routing_enabled": false,
   "status": "Active",
   "trigger_on": [
     "CRITICAL",

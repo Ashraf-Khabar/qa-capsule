@@ -5,6 +5,35 @@ import (
 	"testing"
 )
 
+func TestFinalizeLocatorProposal_CheckoutWithoutCapturedPage(t *testing.T) {
+	source := "...    Real checkout button: css=[data-test=\"checkout\"]\n" +
+		"...    Broken locator (TC-04): css=[data-test=\"proceed-to-payment\"]\n" +
+		"${BROKEN_CHECKOUT}  css=[data-test=\"proceed-to-payment\"]\n"
+	loginPage := `<html><body><input id="user-name"><input id="password"><input id="login-button" type="submit"></body></html>`
+	// A fetched homepage is not the failure page, so it must not be passed in.
+	healed, conf, expl := finalizeLocatorProposal(
+		`[data-test="proceed-to-payment"]`, source, "", "Robot", "", 0, "",
+	)
+	if healed != `css=[data-test="checkout"]` && healed != `[data-test="checkout"]` {
+		t.Fatalf("expected the documented checkout selector, got %q (%s)", healed, expl)
+	}
+	if conf >= 0.85 {
+		t.Fatalf("unverified selector must not look confirmed, confidence=%v", conf)
+	}
+	if !strings.Contains(expl, "not verified") {
+		t.Fatalf("explanation should say the page was not stored, got %q", expl)
+	}
+	// The same selector is confirmed only when the captured cart page contains it.
+	cart := `<html><body><button id="checkout" data-test="checkout">Checkout</button></body></html>`
+	healed, conf, expl = finalizeLocatorProposal(
+		`[data-test="proceed-to-payment"]`, source, cart, "Robot", "", 0, "",
+	)
+	if healed == "" || conf < 0.9 {
+		t.Fatalf("cart page should verify checkout, got %q conf=%v expl=%q", healed, conf, expl)
+	}
+	_ = loginPage
+}
+
 func TestApplyLocatorFixToSource_RobotBrokenVariable(t *testing.T) {
 	source := `*** Variables ***
 ${BROKEN_SUBMIT}    button[data-qa="submit-v1"]

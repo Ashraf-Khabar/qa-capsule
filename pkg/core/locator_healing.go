@@ -509,9 +509,15 @@ func isUsableExtractedLocator(s string) bool {
 	if !isCompleteLocator(s) {
 		return false
 	}
+	// Chrome stack frames are "#15 0x5594… <unknown>", not CSS ids.
+	if stackFrameHashRe.MatchString(s) {
+		return false
+	}
 	return strings.HasPrefix(s, "#") || strings.HasPrefix(s, ".") || strings.HasPrefix(s, "[") ||
 		strings.Contains(strings.ToLower(s), "css=") || strings.Contains(strings.ToLower(s), "xpath=")
 }
+
+var stackFrameHashRe = regexp.MustCompile(`^#\d+$`)
 
 // ── Database model ────────────────────────────────────────────────────────────
 

@@ -14,9 +14,9 @@ import * as about from './js/about.js?v=1.0.63-docs';
 import * as analyticsLayout from './js/analytics-layout.js';
 import { applyRoleVisibility, canAccessFinOps, canAccessPlugins, canResolveIncidents, canDeleteIncidents, hasMinRole, roleLabel, canManageTeams, canManageIAM, isAdmin, canAccessView, accessDeniedMessage, defaultViewForRole, canPatchExecutionFlags } from './js/roles.js';
 import * as executionHub from './js/execution-hub.js';
-import * as reportViewer from './js/report-viewer.js';
+import * as reportViewer from './js/report-viewer.js?v=1.0.67-no-ai-status';
 import * as workflowEditor from './js/workflow-editor.js';
-import * as healing from './js/healing.js?v=1.0.49-heal-fit';
+import * as healing from './js/healing.js?v=1.0.69-failure-page';
 import * as dora from './js/dora.js?v=1.0.62-maint';
 import { setupAutocomplete } from './js/autocomplete.js';
 import { initTheme, applyTheme } from './js/ui.js';
@@ -1651,7 +1651,7 @@ window.submitNewPassword = function () {
 
 
 window.switchView = function (id, el) {
-    if (id === 'rca') id = 'healing';
+    if (id === 'rca' || id === 'ai' || id === 'ai-usage') id = 'healing';
     const payload = parseJwt(localStorage.getItem('sre-jwt'));
     if (payload?.role && !canAccessView(payload.role, id)) {
         notify(accessDeniedMessage(id), 'error');
@@ -1703,9 +1703,6 @@ window.switchView = function (id, el) {
     }
     if (id === 'ai-config' && payload && canAccessView(payload.role, 'ai-config')) {
         if (window.loadAIConfig) window.loadAIConfig();
-    }
-    if (id === 'ai-usage' && payload && canAccessView(payload.role, 'ai-usage')) {
-        if (window.loadAIUsageView) window.loadAIUsageView();
     }
     if (id === 'dora' && payload && canAccessView(payload.role, 'dora')) {
         if (window.loadDORAView) window.loadDORAView();

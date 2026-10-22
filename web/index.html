@@ -8,7 +8,7 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap">
-    <link rel="stylesheet" href="/style.css?v=1.0.63-docs">
+    <link rel="stylesheet" href="/style.css?v=1.0.66-docs-url">
     <script>
         try {
             if (localStorage.getItem('sre-sidebar-collapsed') === '1') {
@@ -199,6 +199,7 @@
                     <div class="sidebar-brand-text">
                         <span class="sidebar-product-name">SRE Capsule</span>
                         <span class="sidebar-product-tagline">SRE SYS MONITORING</span>
+                        <a class="sidebar-doc-link" href="https://ashraf-khabar.github.io/sre-capsule/" target="_blank" rel="noopener noreferrer" data-i18n="nav.help">Documentation</a>
                     </div>
                 </div>
             </div>
@@ -239,13 +240,6 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12h4l2.5-6 4 12L16 12h5"></path>
                 </svg><span class="nav-text" data-i18n="nav.healing">Self-Healing Hub</span>
-            </div>
-            <div class="nav-item role-non-admin" onclick="switchView('ai-usage', this)" data-tooltip="AI status">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3l1.4 4.2L18 8.5l-4.6 1.3L12 14l-1.4-4.2L6 8.5l4.6-1.3z"></path>
-                    <path d="M18 14l.7 2.1L21 16.8l-2.3.7L18 20l-.7-2.5-2.3-.7 2.3-.7z"></path>
-                </svg>
-                <span class="nav-text">AI status</span>
             </div>
             <div class="nav-item role-manager-only" onclick="switchView('ai-config', this)" data-tooltip="AI Configuration">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -299,13 +293,6 @@
             </div>
 
             <div class="spacer"></div>
-            <div class="nav-section-label" style="margin-top: 10px;" data-i18n="nav.section.help">DOCUMENTATION</div>
-            <div class="nav-item" onclick="switchView('about', this)" data-tooltip="Documentation">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                </svg><span class="nav-text" data-i18n="nav.help">Documentation</span>
-            </div>
             <div class="nav-item nav-theme" style="opacity: 1;" data-tooltip="Dark mode">
                 <span class="nav-text" style="font-size: 11px; opacity: 0.6; font-weight: bold; margin-right: 10px;" data-i18n="common.darkMode">DARK MODE</span>
                 <div class="toggle-switch" onclick="toggleTheme(event)">
@@ -769,41 +756,6 @@
                     </div>
                 </div>
 
-            </section>
-
-            <!-- AI status (read-only). Credentials live in AI Configuration. -->
-            <section id="view-ai-usage" class="view-section intelligence-view">
-                <div class="aipage-header">
-                    <div class="aipage-header__text">
-                        <h1 class="intelligence-view__title">AI status</h1>
-                        <p class="intelligence-view__subtitle">The model Self-Healing uses. A manager changes the provider and the key in <strong>AI Configuration</strong>.</p>
-                    </div>
-                    <span id="ai-usage-status-badge" class="intel-badge intel-badge--manual">Loading…</span>
-                </div>
-                <div class="aipage-status-strip">
-                    <div class="aipage-status-item">
-                        <span class="aipage-status-label">Provider</span>
-                        <span class="aipage-status-value" id="ai-usage-provider">—</span>
-                    </div>
-                    <div class="aipage-status-sep"></div>
-                    <div class="aipage-status-item">
-                        <span class="aipage-status-label">Model</span>
-                        <span class="aipage-status-value" id="ai-usage-model">—</span>
-                    </div>
-                    <div class="aipage-status-sep"></div>
-                    <div class="aipage-status-item">
-                        <span class="aipage-status-label">AI enabled</span>
-                        <span class="aipage-status-value" id="ai-usage-enabled">—</span>
-                    </div>
-                </div>
-                <div class="data-card">
-                    <h3 class="aipage-row__title" style="margin:0 0 8px;">Where the model runs</h3>
-                    <p class="aipage-row__desc" style="margin:0 0 12px;">Open <strong>Self-Healing Hub</strong> and click <strong>Propose Fix</strong> on a failure. The result stays on that incident. A locator is saved under Locator Interventions only when it matches one element on the page.</p>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button type="button" class="btn-secondary" onclick="switchView('healing', document.querySelector('.nav-item[onclick*=healing]'))">Open Self-Healing Hub</button>
-                        <button type="button" class="btn-primary role-manager-only" onclick="switchView('ai-config', document.querySelector('.nav-item[onclick*=ai-config]'))">AI Configuration</button>
-                    </div>
-                </div>
             </section>
 
             <!-- AI CONFIGURATION (Manager only) -->
@@ -1856,6 +1808,6 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-    <script type="module" src="app.js?v=1.0.63-docs"></script>
+    <script type="module" src="app.js?v=1.0.69-failure-page"></script>
 </body>
 </html>
